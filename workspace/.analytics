@@ -1,4 +1,0 @@
-timestamp=[2024-04-30 10:24:43], mode=WORKBENCH_START, duration=0:00:05.325, duration_ms=5325, data={}
-timestamp=[2024-04-30 10:24:43], mode=WORKBENCH_UI_INIT, duration=0:00:00.322, duration_ms=322, data={editors_count=0, platform_editors_count=0, projects_count=0, platform_projects_count=0, active_platform_editor=false, projects=}
-timestamp=[2024-04-30 10:24:44], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:01.034, duration_ms=1034, data={}
-timestamp=[2024-04-30 10:37:01], mode=APP_CREATION, duration=0:00:06.941, duration_ms=6941, data={name=HPPS24-Tensor-Contraction-HLS, project_type=datacenter, os=NA, processor=null, runtime=OpenCL, platform=xilinx_vck5000_gen4x8_qdma_2_202220_1, application_type=application}
