@@ -1,6 +1,7 @@
 #pragma once
 
 #include <complex>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -24,9 +25,12 @@ public:
   Tensor left, right, out;
 };
 
-// class GoldenReader {
-// public:
-//   GoldenReader(const std::string &filename);
-//   bool readNext(std::vector<float> *golden);
-//   void reset();
-// };
+class GoldenReader {
+public:
+  GoldenReader(const std::string &filename);
+  void consume();
+  std::vector<TE> expansions;
+
+private:
+  std::unique_ptr<std::ifstream> inp;
+};

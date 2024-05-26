@@ -48,3 +48,13 @@ void Tensor::print() const {
 }
 
 TE::TE(istream &inp) : left(inp), right(inp), out(inp) {}
+
+GoldenReader::GoldenReader(const string &filename) {
+  inp = make_unique<ifstream>(filename, ios::binary);
+}
+
+void GoldenReader::consume() {
+  while (inp->peek() != EOF) {
+    expansions.emplace_back(*inp);
+  }
+}

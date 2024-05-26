@@ -22,16 +22,12 @@ void print_te_sizes(const TE &te) {
 }
 
 int main() {
-  ifstream inp("golden-vectors.dat", ios::binary);
+  GoldenReader reader("golden-vectors.dat");
+  reader.consume();
+  auto exp = &reader.expansions;
 
-  vector<TE> tes;
-
-  while (inp.peek() != EOF) {
-    tes.emplace_back(inp);
-  }
-
-  cout << "Number of tensor expansions: " << tes.size() << endl;
-  for (const auto &te : tes) {
+  cout << "Number of tensor expansions: " << exp->size() << endl;
+  for (const auto &te : *exp) {
     print_te_sizes(te);
   }
 }
