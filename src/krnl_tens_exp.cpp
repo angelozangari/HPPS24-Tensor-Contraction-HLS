@@ -1,7 +1,5 @@
 #include "krnl_tens_exp.h"
-#include "tensor/io.h"
-
-using namespace Complex;
+#include "io.h"
 
 void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
                       dim_t B_NZ, rank_t A_R, rank_t B_R) {
@@ -23,7 +21,8 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
   Tensor::store(C_stream, C, A_NZ * B_NZ);
 }
 
-namespace Tensor::Expansion {
+namespace Tensor {
+namespace Expansion {
 
 void compute(hls::stream<cmplx_t> &A_stream, hls::stream<cmplx_t> &B_stream,
              hls::stream<cmplx_t> &C_stream, const rank_t A_R,
@@ -62,7 +61,7 @@ LOOP_N: // iterate over all rows of A
       LOOP_J:
         for (int j = 0; j < BD; j++) {
           b = B1_stream_buffer.read();
-          C_stream.write(Complex::mul(a, b));
+          C_stream.write(cmplx_mul(a, b));
           if (i <
               AD - 1) { // reiterate the first row of B if As are not finished
             B1_stream_buffer.write(b);
@@ -78,4 +77,5 @@ LOOP_N: // iterate over all rows of A
   }
 }
 
-} // namespace Tensor::Expansion
+} // namespace Expansion
+} // namespace Tensor

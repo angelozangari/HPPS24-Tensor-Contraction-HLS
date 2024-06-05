@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "../types.h"
 #include "ap_int.h"
 #include "hls_stream.h"
+#include "types.h"
 
 extern "C" {
 /**

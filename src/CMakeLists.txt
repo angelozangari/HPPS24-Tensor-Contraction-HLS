@@ -1,15 +1,15 @@
 add_library(qcslib STATIC
     # Complex
-    src/complex/cmplx.cpp
+    src/cmplx.cpp
 
     # Tensor
-    src/tensor/io.cpp
+    src/io.cpp
 
     # Golden
-    src/golden/golden_reader.cpp
+    # src/golden_reader.cpp
 
     # Kernels
-    src/tensor-expansion/krnl_tens_exp.cpp
-    src/matrix-multiplication/krnl_mat_mul.cpp
+    src/krnl_tens_exp.cpp
+    # src/matrix-multiplication/krnl_mat_mul.cpp
 )
 target_include_directories(qcslib PUBLIC include src)
