@@ -3,7 +3,7 @@
 #include <fstream>
 #include <stdlib.h>
 
-#include "golden_reader.h"
+#include "tensor-expansion/golden-vectors/golden_reader.h"
 
 using namespace std;
 

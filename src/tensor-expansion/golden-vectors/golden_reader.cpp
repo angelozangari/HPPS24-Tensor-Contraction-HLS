@@ -1,4 +1,5 @@
 #include "golden_reader.h"
+#include <algorithm>
 #include <cstdint>
 
 using namespace std;
