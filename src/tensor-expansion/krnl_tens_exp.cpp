@@ -23,7 +23,8 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
   Tensor::store(C_stream, C, A_NZ * B_NZ);
 }
 
-namespace Tensor::Expansion {
+namespace Tensor {
+namespace Expansion {
 
 void compute(hls::stream<cmplx_t> &A_stream, hls::stream<cmplx_t> &B_stream,
              hls::stream<cmplx_t> &C_stream, const rank_t A_R,
@@ -78,4 +79,5 @@ LOOP_N: // iterate over all rows of A
   }
 }
 
-} // namespace Tensor::Expansion
+} // namespace Expansion
+} // namespace Tensor
