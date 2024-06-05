@@ -2,7 +2,8 @@
 
 namespace Tensor {
 
-void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size) {
+void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
+          dim_t A_size) {
   for (int i = 0; i < A_size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
@@ -11,7 +12,8 @@ void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size) {
   }
 }
 
-void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
+void store(hls::stream<Complex::cmplx_t> &C_stream, Complex::cmplx_t *C,
+           dim_t C_size) {
   for (int i = 0; i < C_size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
