@@ -1,4 +1,5 @@
 #include "krnl_tens_exp.h"
+#include "tensor/io.h"
 
 void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
                       rank_t A_R, rank_t B_R) {
@@ -14,33 +15,13 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
   hls::stream<coo_t> A_stream, B_stream, C_stream;
 
 #pragma HLS dataflow
-  tensor::load(A, A_stream, A_NZ);
-  tensor::load(B, B_stream, B_NZ);
-  tensor::expansion::compute(A_stream, B_stream, C_stream, A_R, B_R);
-  tensor::store(C_stream, C, A_NZ * B_NZ);
+  Tensor::load(A, A_stream, A_NZ);
+  Tensor::load(B, B_stream, B_NZ);
+  Tensor::Expansion::compute(A_stream, B_stream, C_stream, A_R, B_R);
+  Tensor::store(C_stream, C, A_NZ * B_NZ);
 }
 
-namespace tensor {
-
-void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size) {
-  for (int i = 0; i < A_size; i++) {
-    // clang-format off
-#pragma HLS PIPELINE II=1
-    // clang-format on
-    A_stream.write(A[i]);
-  }
-}
-
-void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
-  for (int i = 0; i < C_size; i++) {
-    // clang-format off
-#pragma HLS PIPELINE II=1
-    // clang-format on
-    C[i] = C_stream.read();
-  }
-}
-
-namespace expansion {
+namespace Tensor::Expansion {
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, rank_t A_R, rank_t B_R) {
@@ -86,5 +67,4 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   // }
 }
 
-} // namespace expansion
-} // namespace tensor
+} // namespace Tensor::Expansion
