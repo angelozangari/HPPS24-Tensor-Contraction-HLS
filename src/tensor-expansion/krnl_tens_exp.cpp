@@ -9,9 +9,10 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
 #pragma HLS INTERFACE m_axi port=A
 #pragma HLS INTERFACE m_axi port=B
 #pragma HLS INTERFACE m_axi port=C
-#pragma HLS INTERFACE s_axilite port=A_size
-#pragma HLS INTERFACE s_axilite port=B_size
-#pragma HLS INTERFACE s_axilite port=C_size
+#pragma HLS INTERFACE s_axilite port=A_NZ
+#pragma HLS INTERFACE s_axilite port=B_NZ
+#pragma HLS INTERFACE s_axilite port=A_R
+#pragma HLS INTERFACE s_axilite port=B_R
   // clang-format on
 
   hls::stream<cmplx_t> A_stream, B_stream, C_stream;
