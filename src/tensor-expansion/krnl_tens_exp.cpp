@@ -1,5 +1,4 @@
 #include "krnl_tens_exp.h"
-#include "tensor/io.h"
 
 using namespace Complex;
 
@@ -25,6 +24,27 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
 }
 
 namespace Tensor {
+
+void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
+          dim_t A_size) {
+  for (int i = 0; i < A_size; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
+    A_stream.write(A[i]);
+  }
+}
+
+void store(hls::stream<Complex::cmplx_t> &C_stream, Complex::cmplx_t *C,
+           dim_t C_size) {
+  for (int i = 0; i < C_size; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
+    C[i] = C_stream.read();
+  }
+}
+
 namespace Expansion {
 
 void compute(hls::stream<cmplx_t> &A_stream, hls::stream<cmplx_t> &B_stream,
