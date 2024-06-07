@@ -17,7 +17,7 @@ void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
 /**
  * @brief Store a COO matrix from a stream to a memory
 */
-void load(Complex::cmplx_t *C, hls::stream<Complex::cmplx_t> &C_stream,
+void store(Complex::cmplx_t *C, hls::stream<Complex::cmplx_t> &C_stream,
           dim_t C_size);
 
 namespace Multiplication {
@@ -25,9 +25,9 @@ namespace Multiplication {
 /**
  * @brief Compute the matrix multiplication C = A * B
  */
-void compute(hls::stream<coo_t> &A_stream,
-             hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream,
+void compute(hls::stream<Complex::cmplx_t> &A_stream,
+             hls::stream<Complex::cmplx_t> &B_stream,
+             hls::stream<Complex::cmplx_t> &C_stream,
              dim_t A_size,
              dim_t B_size);
 
