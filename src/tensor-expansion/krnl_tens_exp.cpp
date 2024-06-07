@@ -89,10 +89,11 @@ LOOP_N: // iterate over all rows of A
 #pragma HLS PIPELINE II = 1
           b = B1_stream_buffer.read();
           C_stream.write(Complex::mul(a, b));
-          if (i <
-              AD - 1) { // reiterate the first row of B if As are not finished
+          if (i < AD - 1) {
+            // reiterate the first row of B if As are not finished
             B1_stream_buffer.write(b);
-          } else { // recharge the first row of B
+          } else {
+            // recharge the first row of B
             B2_stream_buffer.write(b);
           }
         }
