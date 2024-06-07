@@ -57,8 +57,8 @@ void compute(hls::stream<cmplx_t> &A_stream, hls::stream<cmplx_t> &B_stream,
   hls::stream<cmplx_t> A_stream_buffer, B1_stream_buffer, B2_stream_buffer;
   cmplx_t a, b;
 
-  const dim_t AD = 2 << (A_R - 1);
-  const dim_t BD = 2 << (B_R - 1);
+  const dim_t AD = 1 << A_R;
+  const dim_t BD = 1 << B_R;
 
 LOOP_P: // store the entire B tensor in a stream
   for (int p = 0; p < AD * BD; p++) {
