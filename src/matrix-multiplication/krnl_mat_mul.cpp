@@ -19,3 +19,31 @@ void matrix_multiplication(cmplx_t *A, cmplx_t *B, cmplx_t *C,
     // Store result
     Matrix::store(C, C_stream, A_size);
 }
+
+
+
+
+namespace Matrix {
+
+void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
+          dim_t A_size) {
+    // TODO: pragmas
+    for (int i = 0; i < A_size; i++) {
+        A_stream.write(A[i]);
+    }
+}
+
+void store(Complex::cmplx_t *C, hls::stream<Complex::cmplx_t> &C_stream,
+          dim_t C_size) {
+    // TODO: pragmas
+    for (int i = 0; i < C_size; i++) {
+        C[i] = C_stream.read();
+    }
+}
+
+namespace Multiplication {
+
+    // TODO: impl matmul
+
+} // namespace Multiplication
+} // namespace Matrix
