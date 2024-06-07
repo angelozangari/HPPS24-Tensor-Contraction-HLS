@@ -8,10 +8,14 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
 #pragma HLS INTERFACE m_axi port=A
 #pragma HLS INTERFACE m_axi port=B
 #pragma HLS INTERFACE m_axi port=C
+#pragma HLS INTERFACE s_axilite port=A
+#pragma HLS INTERFACE s_axilite port=B
+#pragma HLS INTERFACE s_axilite port=C
 #pragma HLS INTERFACE s_axilite port=A_NZ
 #pragma HLS INTERFACE s_axilite port=B_NZ
 #pragma HLS INTERFACE s_axilite port=A_R
 #pragma HLS INTERFACE s_axilite port=B_R
+#pragma HLS INTERFACE s_axilite port=return
   // clang-format on
 
   hls::stream<cmplx_t> A_stream, B_stream, C_stream;
@@ -80,9 +84,9 @@ LOOP_N: // iterate over all rows of A
     LOOP_I: // compute the entire line of C
       for (int i = 0; i < AD; i++) {
         a = A_stream_buffer.read();
-#pragma HLS PIPELINE II = 1
       LOOP_J:
         for (int j = 0; j < BD; j++) {
+#pragma HLS PIPELINE II = 1
           b = B1_stream_buffer.read();
           C_stream.write(Complex::mul(a, b));
           if (i <
