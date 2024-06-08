@@ -4,8 +4,10 @@
 #include <stdlib.h>
 
 #include "../golden_reader.h"
+#include "tensor-expansion/krnl_tens_exp.h"
 
 using namespace std;
+using namespace Complex;
 
 void print_te_matrices(const TE &te) {
   cout << "Left tensor:" << endl;
@@ -26,8 +28,12 @@ int main() {
   reader.consume();
   auto exp = &reader.expansions;
 
-  cout << "Number of tensor expansions: " << exp->size() << endl;
-  for (const auto &te : *exp) {
-    print_te_sizes(te);
+  for (TE &te : *exp) {
+    te.left.to_coo_t();
+
+    // Call the kernel
+    // tensor_expansion(left, right, res, te.left.rank);
   }
+
+  return 0;
 }

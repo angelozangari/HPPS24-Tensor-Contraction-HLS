@@ -2,8 +2,8 @@
 
 using namespace Complex;
 
-void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
-                      dim_t B_NZ, rank_t A_R, rank_t B_R) {
+void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
+                      rank_t A_R, rank_t B_R) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=A
 #pragma HLS INTERFACE m_axi port=B
@@ -18,7 +18,7 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
 #pragma HLS INTERFACE s_axilite port=return
   // clang-format on
 
-  hls::stream<cmplx_t> A_stream, B_stream, C_stream;
+  hls::stream<coo_t> A_stream, B_stream, C_stream;
 
 #pragma HLS dataflow
   Tensor::load(A, A_stream, A_NZ);
@@ -29,8 +29,7 @@ void tensor_expansion(cmplx_t *A, cmplx_t *B, cmplx_t *C, dim_t A_NZ,
 
 namespace Tensor {
 
-void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
-          dim_t A_size) {
+void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size) {
   for (int i = 0; i < A_size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
@@ -39,8 +38,7 @@ void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
   }
 }
 
-void store(hls::stream<Complex::cmplx_t> &C_stream, Complex::cmplx_t *C,
-           dim_t C_size) {
+void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
   for (int i = 0; i < C_size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
@@ -51,11 +49,10 @@ void store(hls::stream<Complex::cmplx_t> &C_stream, Complex::cmplx_t *C,
 
 namespace Expansion {
 
-void compute(hls::stream<cmplx_t> &A_stream, hls::stream<cmplx_t> &B_stream,
-             hls::stream<cmplx_t> &C_stream, const rank_t A_R,
-             const rank_t B_R) {
-  hls::stream<cmplx_t> A_stream_buffer, B1_stream_buffer, B2_stream_buffer;
-  cmplx_t a, b;
+void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
+             hls::stream<coo_t> &C_stream, const rank_t A_R, const rank_t B_R) {
+  hls::stream<coo_t> A_stream_buffer, B1_stream_buffer, B2_stream_buffer;
+  coo_t a, b, c;
 
   const dim_t AD = 1 << A_R;
   const dim_t BD = 1 << B_R;
@@ -88,7 +85,10 @@ LOOP_N: // iterate over all rows of A
         for (int j = 0; j < BD; j++) {
 #pragma HLS PIPELINE II = 1
           b = B1_stream_buffer.read();
-          C_stream.write(Complex::mul(a, b));
+          c.data = Complex::mul(a.data, b.data);
+          c.x = a.x * BD + b.x;
+          c.y = a.y * BD + b.y;
+          C_stream.write(c);
           if (i < AD - 1) {
             // reiterate the first row of B if As are not finished
             B1_stream_buffer.write(b);

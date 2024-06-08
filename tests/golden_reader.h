@@ -1,20 +1,20 @@
 #pragma once
 
-#include <complex>
+#include "qcslib/types.h"
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
-class Tensor {
+class Tens {
 public:
-  explicit Tensor(std::istream &inp);
+  explicit Tens(std::istream &inp);
   void print() const;
   size_t size() const { return data.size(); }
+  std::vector<coo_t> to_coo_t();
 
-private:
-  std::vector<std::complex<double>> data;
+  std::vector<Complex::cmplx_t> data;
   int rank;
 };
 
@@ -22,7 +22,7 @@ class TE {
 public:
   explicit TE(std::istream &inp);
 
-  Tensor left, right, out;
+  Tens left, right, out;
 };
 
 class GoldenReader {

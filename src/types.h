@@ -11,6 +11,9 @@ typedef ap_uint<7> rank_t;
 // max size supported is 64 GBs (considering a identity-like sparsity)
 typedef ap_uint<36> dim_t;
 
+// flag
+typedef ap_uint<1> flag_t;
+
 // Complex types and operations
 namespace Complex {
 
@@ -49,4 +52,5 @@ typedef struct {
   Complex::cmplx_t data;
   dim_t x;
   dim_t y;
+  flag_t last_in_row;
 } coo_t;
