@@ -33,19 +33,28 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream) {
 
 // allocate 2 streams to store the two columnns of B
-  hls::stream<coo_t> B_stream_col1_buffer, B_stream_col2_buffer;
+  hls::stream<coo_t> A_stream_row_buffer, B_stream_col1_buffer, B_stream_col2_buffer;
   coo_t a, b, c;
 
-// POTENTIAL IMPROVEMENT: allocate 1 stream to store a column of A
+// POTENTIAL IMPROVEMENT: store 
 
 LOOP_P: // store the matrix by in col_i stream buffers
   for () {
 
   }
 
-LOOP_N: // iterate over a \in A elements
+LOOP_N: // iterate over A rows
+  for () {
+  LOOP_N: // store A row
+  for () {
 
-LOOP_M: // compute c element
+  }
+
+  LOOP_N: // compute c element
+    for () {
+      // iterate over A row buf stream and B cols buf streams
+    }
+  }
 
 }
 
