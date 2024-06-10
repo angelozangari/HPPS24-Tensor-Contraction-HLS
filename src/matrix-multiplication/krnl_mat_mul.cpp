@@ -3,7 +3,8 @@
 
 using namespace Complex;
 
-void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C) {
+void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C,
+                           dim_t A_NZ, dim_t B_NZ) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=A
 #pragma HLS INTERFACE m_axi port=B
@@ -11,13 +12,19 @@ void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C) {
 #pragma HLS INTERFACE s_axilite port=A
 #pragma HLS INTERFACE s_axilite port=B
 #pragma HLS INTERFACE s_axilite port=C
+#pragma HLS INTERFACE s_axilite port=A_NZ
+#pragma HLS INTERFACE s_axilite port=B_NZ
 #pragma HLS INTERFACE s_axilite port=return
   // clang-format on
   
-  hls::stream<coo_t> A_stream, B_Stream, C_Stream;
+  hls::stream<coo_t> A_stream, B_stream, C_stream;
 
 //#pragma HLS dataflow
-  Matrix::load 
+  Tensor::load(A, A_stream, A_NZ);
+  Tensor::load(B, B_stream, B_NZ);
+  Matrix::Multiplication::compute(A_stream, B_stream, C_stream);
+  // TODO: check num of not null elems in res
+  Tensor::store(C_stream, C, );
 }
 
 namespace matrix {
