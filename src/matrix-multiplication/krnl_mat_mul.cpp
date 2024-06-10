@@ -38,9 +38,14 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
 
 // POTENTIAL IMPROVEMENT: allocate 1 stream to store a column of A
 
-// FOR loop to compute 1 row of C at a time
+LOOP_P: // store the matrix by in col_i stream buffers
+  for () {
 
-// reiterate on next row of A
+  }
+
+LOOP_N: // iterate over a \in A elements
+
+LOOP_M: // compute c element
 
 }
 
