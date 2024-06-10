@@ -28,42 +28,50 @@ void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C,
   Tensor::store(C_stream, C, C_NZ);
 }
 
-namespace matrix {
+namespace Matrix {
 
 namespace Multiplication {
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, dim_t *C_NZ) {
-
-// allocate 2 streams to store the two columnns of B
   hls::stream<coo_t> A_stream_row_buffer, B_stream_col1_buffer, B_stream_col2_buffer;
   coo_t a, b, c;
 
   *C_NZ = 0;
-// POTENTIAL IMPROVEMENT: store 
+
+// POTENTIAL IMPROVEMENT: keep 2 rows of A at a time so that we can pipeline the computation of n-C elems
 
 LOOP_P: // store the matrix by in col_i stream buffers
-  for () {
-
+  for (int p = 0; p < MATRIX_SIZE * MATRIX_SIZE; p++) {
+    // ISSUE: how to check when B_stream ends
+    b = B_stream.read();
+    if (b.y == 0) {
+      B_stream_col1_buffer.write(b);
+    } else {
+      B_stream_col2_buffer.write(b);
+    }
   }
 
-LOOP_N: // iterate over A rows
-  for () {
-  LOOP_N: // store A row
-  for () {
-
-  }
-
-  LOOP_N: // compute c element
-    for () {
-      // iterate over A row buf stream and B cols buf streams
+LOOP_N: // iterate over A rows; A is nxn, n = MATRIX_SIZE
+  for (int n = 0; n < MATRIX_SIZE; n++) {
+    LOOP_M: // store A row
+    for (int m = 0; m < MATRIX_SIZE; m++) {
+      A_stream_row_buffer.write(A_stream.read());
     }
 
+  LOOP_L: // compute c element
+    for (int l=0; l < MATRIX_SIZE; l++) {
+      // c += A_stream_row_buffer[]
+    }
+
+    C_stream.write(c);
     // when writing NZ c elem - increment C_NZ
     *C_NZ++;
   }
 
 }
 
+// TODO/ISSUE: add guard on last_in_row
+
 } // namespace Multiplication
-} // namespace matrix
+} // namespace Matrix
