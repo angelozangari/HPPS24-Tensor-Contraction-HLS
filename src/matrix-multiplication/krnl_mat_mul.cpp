@@ -3,7 +3,15 @@
 using namespace Complex;
 
 void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C) {
-
+  // clang-format off
+#pragma HLS INTERFACE m_axi port=A
+#pragma HLS INTERFACE m_axi port=B
+#pragma HLS INTERFACE m_axi port=C
+#pragma HLS INTERFACE s_axilite port=A
+#pragma HLS INTERFACE s_axilite port=B
+#pragma HLS INTERFACE s_axilite port=C
+#pragma HLS INTERFACE s_axilite port=return
+  // clang-format on
 
 }
 
