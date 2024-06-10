@@ -34,7 +34,8 @@ namespace Multiplication {
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, dim_t *C_NZ) {
-  hls::stream<coo_t> A_stream_row_buffer, B_stream_col1_buffer, B_stream_col2_buffer;
+  //hls::stream<coo_t> A_stream_row_buffer, B_stream_col1_buffer, B_stream_col2_buffer;
+  cmplx_t A_row[MATRIX_SIZE], B_col1[MATRIX_SIZE], B_col2[MATRIX_SIZE];
   coo_t a, b, c;
 
   *C_NZ = 0;
@@ -45,18 +46,22 @@ LOOP_P: // store the matrix by in col_i stream buffers
   for (int p = 0; p < MATRIX_SIZE * MATRIX_SIZE; p++) {
     // ISSUE: how to check when B_stream ends
     b = B_stream.read();
+    // TODO: fix: skipped elements must be set to 0
     if (b.y == 0) {
-      B_stream_col1_buffer.write(b);
+      B_col1[p] = b.data;
+      B_col2[p] = ZERO;
     } else {
-      B_stream_col2_buffer.write(b);
+      B_col1[p] = ZERO;
+      B_col2[p] = b.data;
     }
   }
 
-LOOP_N: // iterate over A rows; A is nxn, n = MATRIX_SIZE
+LOOP_N: // iterate over A rows
   for (int n = 0; n < MATRIX_SIZE; n++) {
     LOOP_M: // store A row
-    for (int m = 0; m < MATRIX_SIZE; m++) {
-      A_stream_row_buffer.write(A_stream.read());
+    a = A_stream.read();
+    while(!a.last_in_row) {
+
     }
 
   LOOP_L: // compute c element
@@ -70,8 +75,6 @@ LOOP_N: // iterate over A rows; A is nxn, n = MATRIX_SIZE
   }
 
 }
-
-// TODO/ISSUE: add guard on last_in_row
 
 } // namespace Multiplication
 } // namespace Matrix

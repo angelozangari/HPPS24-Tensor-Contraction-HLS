@@ -4,6 +4,9 @@
 
 #include "ap_int.h"
 
+// TODO: implement better
+#define ZERO {0.0f, 0.0f}
+
 // gate rank, with rank we mean the number of indices of a tensor, thus the
 // number of dimensions. With a single-qubit gate (rank 2) we have 2^2 elements
 typedef ap_uint<7> rank_t;
