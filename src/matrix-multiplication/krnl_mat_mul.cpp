@@ -29,15 +29,20 @@ void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
 
 namespace Multiplication {
 
-void compute();
+void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
+             hls::stream<coo_t> &C_stream) {
 
 // allocate 2 streams to store the two columnns of B
+  hls::stream<coo_t> B_stream_col1_buffer, B_stream_col2_buffer;
+  coo_t a, b, c;
 
-// allocate 1 stream to store a column of A
+// POTENTIAL IMPROVEMENT: allocate 1 stream to store a column of A
 
 // FOR loop to compute 1 row of C at a time
 
 // reiterate on next row of A
+
+}
 
 } // namespace Multiplication
 } // namespace matrix
