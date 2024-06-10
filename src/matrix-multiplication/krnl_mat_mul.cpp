@@ -1,4 +1,5 @@
 #include "krnl_mat_mul.h"
+#include "../tensor-expansion/krnl_tens_exp.h"
 
 using namespace Complex;
 
@@ -12,11 +13,16 @@ void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C) {
 #pragma HLS INTERFACE s_axilite port=C
 #pragma HLS INTERFACE s_axilite port=return
   // clang-format on
+  
+  hls::stream<coo_t> A_stream, B_Stream, C_Stream;
 
+//#pragma HLS dataflow
+  Matrix::load 
 }
 
 namespace matrix {
 
+/*
 void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size) {
   for (int i = 0; i < A_size; i++) {
     // clang-format off
@@ -34,6 +40,7 @@ void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
     C[i] = C_stream.read();
   }
 }
+*/
 
 namespace Multiplication {
 
