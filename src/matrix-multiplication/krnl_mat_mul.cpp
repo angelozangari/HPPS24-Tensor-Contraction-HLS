@@ -1,5 +1,7 @@
 #include "krnl_mat_mul.h"
 
+using namespace Complex;
+
 //void matrix_multiplication() {}
 
 namespace matrix {
