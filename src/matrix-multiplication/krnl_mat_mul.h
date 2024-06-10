@@ -33,7 +33,7 @@ namespace Multiplication {
  * @brief Compute the matrix multiplication C = A * B
  */
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream);
+             hls::stream<coo_t> &C_stream, dim_t *C_NZ);
 
 } // namespace Multiplication
 } // namespace Matrix
