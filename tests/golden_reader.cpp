@@ -49,19 +49,31 @@ void Tens::print() const {
   }
 }
 
-vector<coo_t> Tens::to_coo_t() {
+CooTens::CooTens(Tens &tens) : rank(tens.rank) {
   coo_t u;
-  vector<coo_t> coo;
 
-  for (size_t i = 0; i < data.size(); i++) {
-    u.data = data[i];
-    u.x = i / (rank * 2);
-    u.y = i % (rank * 2);
-    u.last_in_row = (i % (rank * 2) == rank * 2 - 1);
-    coo.push_back(u);
+  for (size_t i = 0; i < tens.data.size(); i++) {
+    u.data = tens.data[i];
+    u.x = i / (tens.rank * 2);
+    u.y = i % (tens.rank * 2);
+    u.last_in_row = (i % (tens.rank * 2) == tens.rank * 2 - 1);
+    data.push_back(u);
   }
+}
 
-  return coo;
+CooTens::CooTens(vector<coo_t> tens, int rank) : data(tens), rank(rank) {}
+
+CooTens::CooTens(coo_t *tens, size_t size, int rank) : rank(rank) {
+  for (size_t i = 0; i < size; i++) {
+    data.push_back(tens[i]);
+  }
+}
+
+void CooTens::print() const {
+  for (size_t i = 0; i < data.size(); i++) {
+    printf("(%f + %fi) at (%lu, %lu)\n", data[i].data.real, data[i].data.imag,
+           data[i].x, data[i].y);
+  }
 }
 
 TE::TE(istream &inp) : left(inp), right(inp), out(inp) {}
