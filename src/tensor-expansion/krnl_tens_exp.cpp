@@ -57,11 +57,6 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   const dim_t AD = 1 << A_R;
   const dim_t BD = 1 << B_R;
 
-LOOP_P: // store the entire B tensor in a stream
-  for (int p = 0; p < AD * BD; p++) {
-    B2_stream_buffer.write(B_stream.read());
-  }
-
 LOOP_N: // iterate over all rows of A
   for (int n = 0; n < AD; n++) {
 
@@ -75,7 +70,7 @@ LOOP_N: // iterate over all rows of A
 
     LOOP_Q: // store in a stream the first row of B
       for (int q = 0; q < BD; q++) {
-        B1_stream_buffer.write(B2_stream_buffer.read());
+        B1_stream_buffer.write(B_stream.read());
       }
 
     LOOP_I: // compute the entire line of C
@@ -92,9 +87,9 @@ LOOP_N: // iterate over all rows of A
           if (i < AD - 1) {
             // reiterate the first row of B if As are not finished
             B1_stream_buffer.write(b);
-          } else {
+          } else if (n < AD - 1) {
             // recharge the first row of B
-            B2_stream_buffer.write(b);
+            B_stream.write(b);
           }
         }
         if (l < BD - 1) {
