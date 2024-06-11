@@ -53,7 +53,6 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, const dim_t B_NZ, const rank_t B_R) {
   hls::stream<coo_t> A_stream_buffer, B_stream_buffer;
   coo_t a, b, c, tmp;
-  int l = 0;
 
   const dim_t BD = 1 << B_R;
 
@@ -62,7 +61,6 @@ LOOP_N: // iterate over all rows of A
 
   LOOP_M: // store in a stream the first row of A
     for (;;) {
-      // std::cout << "66 read A" << std::endl;
       tmp = A_stream.read();
       A_stream_buffer.write(tmp);
       if (tmp.last_in_row) {
@@ -75,7 +73,6 @@ LOOP_N: // iterate over all rows of A
 
     LOOP_Q: // store in a stream the first row of B
       for (;;) {
-        // std::cout << "79 read B" << std::endl;
         tmp = B_stream.read();
         B_stream_buffer.write(tmp);
         if (tmp.last_in_row) {
@@ -86,20 +83,15 @@ LOOP_N: // iterate over all rows of A
     LOOP_I: // compute the entire line of C
       for (;;) {
         a = A_stream_buffer.read();
-        // std::cout << "89 read A(" << a.x << ", " << a.y << ")" << std::endl;
       LOOP_J:
         for (;;) {
-          // std::cout << "l = " << l++ << std::endl;
 #pragma HLS PIPELINE II = 1
-          // std::cout << "95 read B" << std::endl;
           b = B_stream_buffer.read();
           c.data = Complex::mul(a.data, b.data);
           c.x = a.x * BD + b.x;
           c.y = a.y * BD + b.y;
           c.last_in_row = b.last_in_row & a.last_in_row;
           c.last_in_tensor = b.last_in_tensor & a.last_in_tensor;
-          // std::cout << "99 write C(" << c.x << ", " << c.y << ")" <<
-          // std::endl;
           C_stream.write(c);
           if (!a.last_in_row) {
             // reiterate the first row of B if As are not finished
@@ -116,7 +108,6 @@ LOOP_N: // iterate over all rows of A
         if (!b.last_in_tensor) {
           A_stream_buffer.write(a);
         }
-        // std::cout << "a.last_in_row = " << a.last_in_row << std::endl;
         if (a.last_in_row) {
           break;
         }
