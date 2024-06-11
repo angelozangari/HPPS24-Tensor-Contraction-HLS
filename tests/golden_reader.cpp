@@ -31,7 +31,7 @@ Tens::Tens(istream &inp) {
   // read size_t bytes and encode as size_t
   size_t size = read_from_stream<size_t>(inp);
 
-  rank = sqrt(size) / 2;
+  rank = log2(sqrt(size));
   for (size_t i = 0; i < size; i++) {
     double real = read_from_stream<double>(inp);
     double imag = read_from_stream<double>(inp);
@@ -40,10 +40,10 @@ Tens::Tens(istream &inp) {
 }
 
 void Tens::print() const {
-  for (int i = 0; i < rank * 2; i++) {
-    for (int j = 0; j < rank * 2; j++) {
-      printf("(%f + %fi) ", data[i * rank * 2 + j].real,
-             data[i * rank * 2 + j].imag);
+  for (int i = 0; i < 1 << rank; i++) {
+    for (int j = 0; j < 1 << rank; j++) {
+      printf("(%f + %fi) ", data[i * (1 << rank) + j].real,
+             data[i * (1 << rank) + j].imag);
     }
     printf("\n");
   }
@@ -52,13 +52,30 @@ void Tens::print() const {
 CooTens::CooTens(Tens &tens) : rank(tens.rank) {
   coo_t u;
 
+  // add non-zero elements to the COO tensor
   for (size_t i = 0; i < tens.data.size(); i++) {
+    if (tens.data[i].real == 0 && tens.data[i].imag == 0) {
+      continue;
+    }
     u.data = tens.data[i];
-    u.x = i / (tens.rank * 2);
-    u.y = i % (tens.rank * 2);
-    u.last_in_row = (i % (tens.rank * 2) == tens.rank * 2 - 1);
+    u.x = i / (1 << tens.rank);
+    u.y = i % (1 << tens.rank);
+    u.last_in_tensor = false;
     data.push_back(u);
   }
+
+  // set the last element of the row to true
+  for (size_t i = 0; i < data.size(); i++) {
+    if (i + 1 < data.size() && data[i].x != data[i + 1].x) {
+      data[i].last_in_row = true;
+    } else if (i + 1 == data.size()) {
+      data[i].last_in_row = true;
+    }
+  }
+
+  // set the last element of the column to true
+  data.back().last_in_row = true;
+  data.back().last_in_tensor = true;
 }
 
 CooTens::CooTens(vector<coo_t> tens, int rank) : data(tens), rank(rank) {}

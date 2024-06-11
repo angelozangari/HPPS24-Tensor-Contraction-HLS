@@ -36,9 +36,17 @@ cmplx_t mul(cmplx_t a, cmplx_t b);
 } // namespace Complex
 
 // COO format for sparse tensors
-typedef struct {
+struct coo_t {
   Complex::cmplx_t data;
   dim_t x;
   dim_t y;
   flag_t last_in_row;
-} coo_t;
+  flag_t last_in_tensor;
+
+  bool operator==(const coo_t &rhs) const {
+    return abs(data.real - rhs.data.real) < 1e-6 &&
+           abs(data.imag - rhs.data.imag) < 1e-6 && x == rhs.x && y == rhs.y &&
+           last_in_row == rhs.last_in_row &&
+           last_in_tensor == rhs.last_in_tensor;
+  }
+};

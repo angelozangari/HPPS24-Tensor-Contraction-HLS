@@ -18,11 +18,6 @@ void print_te_matrices(const TE &te) {
   te.out.print();
 }
 
-void print_te_sizes(const TE &te) {
-  cout << te.left.size() << " x " << te.right.size() << " -> " << te.out.size()
-       << endl;
-}
-
 int main() {
   GoldenReader reader("golden-vectors.dat");
   reader.consume();
@@ -37,8 +32,8 @@ int main() {
 
     // Call the kernel
     std::vector<coo_t> out(left.size() * right.size());
-    cout << "Running test " << i << " with sizes " << left.size() << " x "
-         << right.size() << " -> " << real_out.size() << " ... " << flush;
+    cout << "Running test " << i << " with sizes " << left.rank << " x "
+         << right.rank << " -> " << real_out.rank << " ... " << flush;
     tensor_expansion(left.data.data(), right.data.data(), out.data(),
                      left.size(), right.size(), left.rank, right.rank);
 
@@ -48,15 +43,27 @@ int main() {
     if (predicted_out.data.size() != real_out.data.size()) {
       cout << "FAILED" << endl;
       cout << "Mismatch in sizes" << endl;
-      print_te_sizes(te);
+      cout << "Predicted output size: " << predicted_out.data.size() << endl;
+      cout << "Real output size: " << real_out.data.size() << endl;
       return 1;
     }
 
     for (size_t i = 0; i < predicted_out.data.size(); i++) {
-      if (predicted_out.data[i].data.real != real_out.data[i].data.real ||
-          predicted_out.data[i].data.imag != real_out.data[i].data.imag) {
+      if (!(predicted_out.data[i] == real_out.data[i])) {
         cout << "FAILED" << endl;
         cout << "Mismatch in data" << endl;
+        // print_te_matrices(te);
+        cout << "Predicted output:" << "(" << predicted_out.data[i].data.real
+             << " + " << predicted_out.data[i].data.imag << "i) at ("
+             << predicted_out.data[i].x << ", " << predicted_out.data[i].y
+             << ")" << endl;
+        cout << "Real output:" << "(" << real_out.data[i].data.real << " + "
+             << real_out.data[i].data.imag << "i) at (" << real_out.data[i].x
+             << ", " << real_out.data[i].y << ")" << endl;
+        cout << "Full Real output:" << endl;
+        real_out.print();
+        cout << "Full Predicted output:" << endl;
+        predicted_out.print();
         print_te_matrices(te);
         return 1;
       }

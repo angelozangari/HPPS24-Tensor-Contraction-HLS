@@ -23,7 +23,7 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
 #pragma HLS dataflow
   Tensor::load(A, A_stream, A_NZ);
   Tensor::load(B, B_stream, B_NZ);
-  Tensor::Expansion::compute(A_stream, B_stream, C_stream, A_R, B_R);
+  Tensor::Expansion::compute(A_stream, B_stream, C_stream, B_NZ, B_R);
   Tensor::store(C_stream, C, A_NZ * B_NZ);
 }
 
@@ -50,51 +50,80 @@ void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
 namespace Expansion {
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream, const rank_t A_R, const rank_t B_R) {
-  hls::stream<coo_t> A_stream_buffer, B1_stream_buffer, B2_stream_buffer;
-  coo_t a, b, c;
+             hls::stream<coo_t> &C_stream, const dim_t B_NZ, const rank_t B_R) {
+  hls::stream<coo_t> A_stream_buffer, B_stream_buffer;
+  coo_t a, b, c, tmp;
+  int l = 0;
 
-  const dim_t AD = 1 << A_R;
   const dim_t BD = 1 << B_R;
 
 LOOP_N: // iterate over all rows of A
-  for (int n = 0; n < AD; n++) {
+  while (!A_stream.empty()) {
 
   LOOP_M: // store in a stream the first row of A
-    for (int m = 0; m < AD; m++) {
-      A_stream_buffer.write(A_stream.read());
+    for (;;) {
+      // std::cout << "66 read A" << std::endl;
+      tmp = A_stream.read();
+      A_stream_buffer.write(tmp);
+      if (tmp.last_in_row) {
+        break;
+      }
     }
 
   LOOP_L: // iter for all the rows of B
-    for (int l = 0; l < BD; l++) {
+    for (;;) {
 
     LOOP_Q: // store in a stream the first row of B
-      for (int q = 0; q < BD; q++) {
-        B1_stream_buffer.write(B_stream.read());
+      for (;;) {
+        // std::cout << "79 read B" << std::endl;
+        tmp = B_stream.read();
+        B_stream_buffer.write(tmp);
+        if (tmp.last_in_row) {
+          break;
+        }
       }
 
     LOOP_I: // compute the entire line of C
-      for (int i = 0; i < AD; i++) {
+      for (;;) {
         a = A_stream_buffer.read();
+        // std::cout << "89 read A(" << a.x << ", " << a.y << ")" << std::endl;
       LOOP_J:
-        for (int j = 0; j < BD; j++) {
+        for (;;) {
+          // std::cout << "l = " << l++ << std::endl;
 #pragma HLS PIPELINE II = 1
-          b = B1_stream_buffer.read();
+          // std::cout << "95 read B" << std::endl;
+          b = B_stream_buffer.read();
           c.data = Complex::mul(a.data, b.data);
           c.x = a.x * BD + b.x;
           c.y = a.y * BD + b.y;
+          c.last_in_row = b.last_in_row & a.last_in_row;
+          c.last_in_tensor = b.last_in_tensor & a.last_in_tensor;
+          // std::cout << "99 write C(" << c.x << ", " << c.y << ")" <<
+          // std::endl;
           C_stream.write(c);
-          if (i < AD - 1) {
+          if (!a.last_in_row) {
             // reiterate the first row of B if As are not finished
-            B1_stream_buffer.write(b);
-          } else if (n < AD - 1) {
+            B_stream_buffer.write(b);
+          } else if (!A_stream.empty()) {
             // recharge the first row of B
             B_stream.write(b);
           }
+
+          if (b.last_in_row) {
+            break;
+          }
         }
-        if (l < BD - 1) {
+        if (!b.last_in_tensor) {
           A_stream_buffer.write(a);
         }
+        // std::cout << "a.last_in_row = " << a.last_in_row << std::endl;
+        if (a.last_in_row) {
+          break;
+        }
+      }
+
+      if (b.last_in_tensor) {
+        break;
       }
     }
   }
