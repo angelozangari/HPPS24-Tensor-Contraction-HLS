@@ -3,8 +3,8 @@
 #include <fstream>
 #include <stdlib.h>
 
-#include "../golden_reader.h"
 #include "tensor-expansion/krnl_tens_exp.h"
+#include "tests/golden_reader.h"
 
 using namespace std;
 using namespace Complex;

@@ -12,8 +12,8 @@ build-ninja:
 test-tensor-expansion: build-ninja
     #!/usr/bin/env bash
     set -euo pipefail
-    cd tests/tensor-expansion
-    ../../build/test-tensor-expansion
+    cd src/tests/tensor-expansion
+    ../../../build/test-tensor-expansion
 
 clean:
     rm -rf ./build

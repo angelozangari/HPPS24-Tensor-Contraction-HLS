@@ -7,4 +7,3 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(QCS-HLS LANGUAGES CXX)
 
 include(src/CMakeLists.txt)
-include(tests/CMakeLists.txt)
