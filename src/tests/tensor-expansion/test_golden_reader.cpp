@@ -9,6 +9,13 @@
 using namespace std;
 using namespace Complex;
 
+bool operator==(const coo_t &lhs, const coo_t &rhs) {
+  return abs(lhs.data.real - rhs.data.real) < 1e-6 &&
+         abs(lhs.data.imag - rhs.data.imag) < 1e-6 && lhs.x == rhs.x &&
+         lhs.y == rhs.y && lhs.last_in_row == rhs.last_in_row &&
+         lhs.last_in_tensor == rhs.last_in_tensor;
+}
+
 void print_te_matrices(const TE &te) {
   cout << "Left tensor:" << endl;
   te.left.print();

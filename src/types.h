@@ -42,11 +42,4 @@ struct coo_t {
   dim_t y;
   flag_t last_in_row;
   flag_t last_in_tensor;
-
-  bool operator==(const coo_t &rhs) const {
-    return abs(data.real - rhs.data.real) < 1e-6 &&
-           abs(data.imag - rhs.data.imag) < 1e-6 && x == rhs.x && y == rhs.y &&
-           last_in_row == rhs.last_in_row &&
-           last_in_tensor == rhs.last_in_tensor;
-  }
 };
