@@ -3,7 +3,7 @@ add_library(qcslib STATIC
 
     # Kernels
     src/tensor-expansion/krnl_tens_exp.cpp
-    src/matrix-multiplication/krnl_mat_mul.cpp
+    # src/matrix-multiplication/krnl_mat_mul.cpp
 
     # Tests
     src/tests/golden_reader.cpp
