@@ -33,10 +33,19 @@ namespace Expansion {
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, const dim_t B_NZ, const rank_t B_R) {
-  hls::stream<coo_t> A_stream_buffer, B_stream_buffer;
+  hls::stream<coo_t> A_stream_buffer, B_stream_buffer, B_cycle_buffer;
   coo_t a, b, c, tmp;
 
   const dim_t BD = 1 << B_R;
+
+LOOP_T:
+  for (;;) {
+    tmp = B_stream.read();
+    B_cycle_buffer.write(tmp);
+    if (tmp.last_in_tensor) {
+      break;
+    }
+  }
 
 LOOP_N: // iterate over all rows of A
   while (!A_stream.empty()) {
@@ -55,7 +64,7 @@ LOOP_N: // iterate over all rows of A
 
     LOOP_Q: // store in a stream the first row of B
       for (;;) {
-        tmp = B_stream.read();
+        tmp = B_cycle_buffer.read();
         B_stream_buffer.write(tmp);
         if (tmp.last_in_row) {
           break;
@@ -80,7 +89,7 @@ LOOP_N: // iterate over all rows of A
             B_stream_buffer.write(b);
           } else if (!A_stream.empty()) {
             // recharge the first row of B
-            B_stream.write(b);
+            B_cycle_buffer.write(b);
           }
 
           if (b.last_in_row) {
