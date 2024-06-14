@@ -31,7 +31,7 @@ Tens::Tens(istream &inp) {
   // read size_t bytes and encode as size_t
   size_t size = read_from_stream<size_t>(inp);
 
-  rank = log2(sqrt(size));
+  rank = ceil(log2(sqrt(size)));
   for (size_t i = 0; i < size; i++) {
     double real = read_from_stream<double>(inp);
     double imag = read_from_stream<double>(inp);
