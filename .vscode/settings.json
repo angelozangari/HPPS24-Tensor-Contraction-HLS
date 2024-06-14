@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "axilite",
+        "gmem",
         "qubit"
     ],
     "files.associations": {
@@ -80,7 +81,12 @@
         "format": "cpp",
         "stop_token": "cpp",
         "cinttypes": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "__tree": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "unordered_set": "cpp"
     },
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/include",
