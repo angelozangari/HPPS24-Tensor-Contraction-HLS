@@ -2,22 +2,28 @@
 
 using namespace Complex;
 
-void matrix_multiplication(cmplx_t *A, cmplx_t *B, cmplx_t *C,
-                           dim_t A_size, dim_t B_size) {
+void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, 
+                           dim_t A_NZ, dim_t B_NZ) {
     // clang-format off
-        // TODO: add pragmas
+#pragma HLS INTERFACE m_axi port=A
+#pragma HLS INTERFACE m_axi port=B
+#pragma HLS INTERFACE m_axi port=C
+#pragma HLS INTERFACE s_axilite port=A
+#pragma HLS INTERFACE s_axilite port=B
+#pragma HLS INTERFACE s_axilite port=C
+#pragma HLS INTERFACE s_axilite port=return
     // clang-format on
     
     // hls-streams for matrices
-    hls::stream<cmplx_t> A_stream, B_stream, C_stream;
+    hls::stream<coo_t> A_stream, B_stream, C_stream;
     
     // Load matrices A, B
-    Matrix::load(A, A_stream, A_size);
-    Matrix::load(B, B_stream, B_size);
+    Matrix::load(A, A_stream, A_NZ);
+    Matrix::load(B, B_stream, B_NZ);
     // Compute matrix multiplication
-    Matrix::Multiplication::compute(A_stream, B_stream, C_stream, A_size, B_size);
+    Matrix::Multiplication::compute(A_stream, B_stream, C_stream);
     // Store result
-    Matrix::store(C, C_stream, A_size);
+    // Matrix::store(C, C_stream, // size of res);
 }
 
 
@@ -25,23 +31,20 @@ void matrix_multiplication(cmplx_t *A, cmplx_t *B, cmplx_t *C,
 
 namespace Matrix {
 
-void load(Complex::cmplx_t *A, hls::stream<Complex::cmplx_t> &A_stream,
-          dim_t A_size) {
-    // TODO: pragmas
+void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size) {
     for (int i = 0; i < A_size; i++) {
         A_stream.write(A[i]);
     }
 }
 
-void store(Complex::cmplx_t *C, hls::stream<Complex::cmplx_t> &C_stream,
-          dim_t C_size) {
-    // TODO: pragmas
+void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size) {
     for (int i = 0; i < C_size; i++) {
         C[i] = C_stream.read();
     }
 }
 
 namespace Multiplication {
+
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream) {
     hls::stream<coo_t> A_stream_buffer, B_stream_buffer;
