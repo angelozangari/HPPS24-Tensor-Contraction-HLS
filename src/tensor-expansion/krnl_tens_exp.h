@@ -18,7 +18,7 @@ namespace Expansion {
  * @brief Compute the tensor expansion of two tensors
  */
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream, const dim_t B_NZ, const rank_t B_R);
+             hls::stream<coo_t> &C_stream, const rank_t B_R);
 
 } // namespace Expansion
 } // namespace Tensor

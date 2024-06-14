@@ -29,7 +29,7 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
 #pragma HLS dataflow
   Tensor::load(A, A_stream, A_NZ);
   Tensor::load(B, B_stream, B_NZ);
-  Tensor::Expansion::compute(A_stream, B_stream, C_stream, B_NZ, B_R);
+  Tensor::Expansion::compute(A_stream, B_stream, C_stream, B_R);
   Tensor::store(C_stream, C, A_NZ * B_NZ);
 }
 
@@ -37,7 +37,7 @@ namespace Tensor {
 namespace Expansion {
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream, const dim_t B_NZ, const rank_t B_R) {
+             hls::stream<coo_t> &C_stream, const rank_t B_R) {
   hls::stream<coo_t> A_stream_buffer, B_stream_buffer, B_cycle_buffer;
   // clang-format off
 #pragma HLS STREAM variable=A_stream_buffer depth=16
