@@ -16,26 +16,17 @@ bool operator==(const coo_t &lhs, const coo_t &rhs) {
          lhs.last_in_tensor == rhs.last_in_tensor;
 }
 
-void print_te_matrices(const TE &te) {
-  cout << "Left tensor:" << endl;
-  te.left.print();
-  cout << "Right tensor:" << endl;
-  te.right.print();
-  cout << "Output tensor:" << endl;
-  te.out.print();
-}
-
 int main() {
   GoldenReader reader("golden-vectors.dat");
   reader.consume();
-  auto exp = &reader.expansions;
+  auto ops = &reader.operations;
 
-  for (size_t i = 0; i < exp->size(); i++) {
-    TE &te = exp->at(i);
+  for (size_t i = 0; i < ops->size(); i++) {
+    OP &op = ops->at(i);
 
-    CooTens left{te.left};
-    CooTens right{te.right};
-    CooTens real_out{te.out};
+    CooTens left{op.left};
+    CooTens right{op.right};
+    CooTens real_out{op.out};
 
     // Call the kernel
     std::vector<coo_t> out(left.size() * right.size());
@@ -59,7 +50,7 @@ int main() {
       if (!(predicted_out.data[i] == real_out.data[i])) {
         cout << "FAILED" << endl;
         cout << "Mismatch in data" << endl;
-        // print_te_matrices(te);
+        // print_op_matrices(op);
         cout << "Predicted output:" << "(" << predicted_out.data[i].data.real
              << " + " << predicted_out.data[i].data.imag << "i) at ("
              << predicted_out.data[i].x << ", " << predicted_out.data[i].y
@@ -71,7 +62,7 @@ int main() {
         real_out.print();
         cout << "Full Predicted output:" << endl;
         predicted_out.print();
-        print_te_matrices(te);
+        op.print();
         return 1;
       }
     }

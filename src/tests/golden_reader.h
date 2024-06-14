@@ -31,9 +31,10 @@ public:
   int rank;
 };
 
-class TE {
+class OP {
 public:
-  explicit TE(std::istream &inp);
+  explicit OP(std::istream &inp);
+  void print() const;
 
   Tens left, right, out;
 };
@@ -42,7 +43,7 @@ class GoldenReader {
 public:
   GoldenReader(const std::string &filename);
   void consume();
-  std::vector<TE> expansions;
+  std::vector<OP> operations;
 
 private:
   std::unique_ptr<std::ifstream> inp;

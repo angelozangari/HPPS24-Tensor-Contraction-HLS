@@ -15,5 +15,11 @@ test-tensor-expansion: build-ninja
     cd src/tests/tensor-expansion
     ../../../build/test-tensor-expansion
 
+test-matrix-multiplication: build-ninja
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd src/tests/matrix-multiplication
+    ../../../build/test-matrix-multiplication
+
 clean:
     rm -rf ./build

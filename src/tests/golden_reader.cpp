@@ -93,7 +93,16 @@ void CooTens::print() const {
   }
 }
 
-TE::TE(istream &inp) : left(inp), right(inp), out(inp) {}
+OP::OP(istream &inp) : left(inp), right(inp), out(inp) {}
+
+void OP::print() const {
+  cout << "Left tensor:" << endl;
+  left.print();
+  cout << "Right tensor:" << endl;
+  right.print();
+  cout << "Output tensor:" << endl;
+  out.print();
+}
 
 GoldenReader::GoldenReader(const string &filename) {
   inp = make_unique<ifstream>(filename, ios::binary);
@@ -101,6 +110,6 @@ GoldenReader::GoldenReader(const string &filename) {
 
 void GoldenReader::consume() {
   while (inp->peek() != EOF) {
-    expansions.emplace_back(*inp);
+    operations.emplace_back(*inp);
   }
 }

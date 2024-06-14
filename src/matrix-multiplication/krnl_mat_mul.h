@@ -6,6 +6,11 @@
 #include "hls_stream.h"
 #include "types.h"
 
+extern "C" {
+void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ,
+                           dim_t B_NZ);
+}
+
 namespace Matrix {
 namespace Multiplication {
 

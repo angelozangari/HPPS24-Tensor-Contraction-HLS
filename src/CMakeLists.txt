@@ -12,6 +12,12 @@ add_library(qcslib STATIC
 target_include_directories(qcslib PUBLIC include src)
 
 # test executable
-add_executable(test-tensor-expansion src/tests/tensor-expansion/test_golden_reader.cpp)
+# expansion
+add_executable(test-tensor-expansion src/tests/tensor-expansion/test_tensor_expansion.cpp)
 target_include_directories(test-tensor-expansion PUBLIC include)
 target_link_libraries(test-tensor-expansion PUBLIC qcslib)
+
+# matmul
+add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)
+target_include_directories(test-matrix-multiplication PUBLIC include)
+target_link_libraries(test-matrix-multiplication PUBLIC qcslib)
