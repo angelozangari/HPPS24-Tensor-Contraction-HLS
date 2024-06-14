@@ -19,7 +19,7 @@ namespace Multiplication {
  */
 void compute(hls::stream<Complex::cmplx_t> &A_stream,
              hls::stream<Complex::cmplx_t> &B_stream,
-             hls::stream<Complex::cmplx_t> &C_stream, dim_t size);
+             hls::stream<Complex::cmplx_t> &C_stream, dim_t size, flag_t row_maj);
 
 } // namespace Multiplication
 } // namespace Matrix
