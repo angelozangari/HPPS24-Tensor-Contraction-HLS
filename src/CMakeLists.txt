@@ -1,5 +1,6 @@
 add_library(qcslib STATIC
     src/types.cpp
+    src/tensors.cpp
 
     # Kernels
     src/tensor-expansion/krnl_tens_exp.cpp
