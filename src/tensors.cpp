@@ -7,6 +7,7 @@ LOAD_LOOP:
   for (int i = 0; i < A_size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
+#pragma HLS DEPENDENCE variable=A type=inter false
     // clang-format on
     A_stream.write(A[i]);
   }
@@ -17,6 +18,7 @@ STORE_LOOP:
   for (int i = 0; i < C_size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
+#pragma HLS DEPENDENCE variable=C type=inter false
     // clang-format on
     C[i] = C_stream.read();
   }

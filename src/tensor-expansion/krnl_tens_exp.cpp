@@ -6,9 +6,9 @@ using namespace Complex;
 void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
                       rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=2
-#pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=4
-#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=8
+#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=2 num_read_outstanding=64
+#pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=4 num_read_outstanding=64
+#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=8 num_write_outstanding=64
 #pragma HLS INTERFACE s_axilite port=A bundle=control
 #pragma HLS INTERFACE s_axilite port=B bundle=control
 #pragma HLS INTERFACE s_axilite port=C bundle=control
@@ -21,14 +21,26 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
 
   hls::stream<coo_t> A_stream, B_stream, C_stream;
   // clang-format off
-#pragma HLS STREAM variable=A_stream depth=2
 #pragma HLS STREAM variable=A_stream depth=4
-#pragma HLS STREAM variable=A_stream depth=8
+#pragma HLS STREAM variable=B_stream depth=8
+#pragma HLS STREAM variable=C_stream depth=16
   // clang-format on
 
 #pragma HLS dataflow
-  Tensor::load(A, A_stream, A_NZ);
-  Tensor::load(B, B_stream, B_NZ);
+  for (int i = 0; i < A_NZ; i++) {
+	  // clang-format off
+	#pragma HLS PIPELINE II=1
+    #pragma HLS DEPENDENCE variable=A type=inter false
+	  // clang-format on
+	  A_stream.write(A[i]);
+  }
+  for (int i = 0; i < B_NZ; i++) {
+  	  // clang-format off
+  	#pragma HLS PIPELINE II=1
+    #pragma HLS DEPENDENCE variable=B type=inter false
+  	  // clang-format on
+  	  B_stream.write(B[i]);
+  }
   Tensor::Expansion::compute(A_stream, B_stream, C_stream, B_NZ, B_R);
   Tensor::store(C_stream, C, A_NZ * B_NZ);
 }
@@ -39,6 +51,10 @@ namespace Expansion {
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, const dim_t B_NZ, const rank_t B_R) {
   hls::stream<coo_t> A_stream_buffer, B_stream_buffer, B_cycle_buffer;
+#pragma HLS STREAM variable=A_stream_buffer depth=4
+#pragma HLS STREAM variable=B_stream_buffer depth=8
+#pragma HLS STREAM variable=B_cycle_buffer depth=8
+
   coo_t a, b, c, tmp;
 
   const dim_t BD = 1 << B_R;
