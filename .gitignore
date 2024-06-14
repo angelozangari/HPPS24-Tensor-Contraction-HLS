@@ -4,9 +4,6 @@
 # C/C++ object files
 *.o
 
-# C/C++ executables
-tensor-expansion/golden-vectors/test_golden_reader
-
 # HLS lib
 include
 build
