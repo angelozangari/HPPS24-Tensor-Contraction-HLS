@@ -28,7 +28,9 @@ int main() {
     CooTens right{op.right};
     CooTens real_out{op.out};
 
-    op.print();
+    // op.print();
+    cout << i << " - left: " << left.size() << " right: " << right.size()
+         << " out: " << real_out.size() << endl;
 
     // Call the kernel
     // std::vector<coo_t> out(left.size() * right.size());
