@@ -21,9 +21,9 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
 
   hls::stream<coo_t> A_stream, B_stream, C_stream;
   // clang-format off
-#pragma HLS STREAM variable=A_stream depth=16
-#pragma HLS STREAM variable=B_stream depth=16
-#pragma HLS STREAM variable=C_stream depth=16
+#pragma HLS STREAM variable=A_stream depth=32
+#pragma HLS STREAM variable=B_stream depth=32
+#pragma HLS STREAM variable=C_stream depth=32
   // clang-format on
 
 #pragma HLS dataflow
@@ -40,9 +40,9 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, const rank_t B_R) {
   hls::stream<coo_t> A_stream_buffer, B_stream_buffer, B_cycle_buffer;
   // clang-format off
-#pragma HLS STREAM variable=A_stream_buffer depth=16
-#pragma HLS STREAM variable=B_stream_buffer depth=16
-#pragma HLS STREAM variable=B_cycle_buffer depth=16
+#pragma HLS STREAM variable=A_stream_buffer depth=32
+#pragma HLS STREAM variable=B_stream_buffer depth=32
+#pragma HLS STREAM variable=B_cycle_buffer depth=32
   // clang-format on
   coo_t a, b, c, tmp;
 
