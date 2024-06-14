@@ -6,9 +6,9 @@ using namespace Complex;
 void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
                       rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 //depth=1024
-#pragma HLS INTERFACE m_axi port=B bundle=gmem1 //depth=1024
-#pragma HLS INTERFACE m_axi port=C bundle=gmem2 //depth=1024
+#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=2
+#pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=4
+#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=8
 #pragma HLS INTERFACE s_axilite port=A bundle=control
 #pragma HLS INTERFACE s_axilite port=B bundle=control
 #pragma HLS INTERFACE s_axilite port=C bundle=control
@@ -20,6 +20,11 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
   // clang-format on
 
   hls::stream<coo_t> A_stream, B_stream, C_stream;
+  // clang-format off
+#pragma HLS STREAM variable=A_stream depth=2
+#pragma HLS STREAM variable=A_stream depth=4
+#pragma HLS STREAM variable=A_stream depth=8
+  // clang-format on
 
 #pragma HLS dataflow
   Tensor::load(A, A_stream, A_NZ);
