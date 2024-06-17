@@ -79,18 +79,8 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   coo_t *old_c = NULL; // use to keep reference to last computed c
   coo_t c_tmp, c; // c_tmp stores partial results of c
   std::vector<coo_t> A_row(size), B_col(size);
-  //int t, l, q1, q2;
   int q, o, n1, n2; // row maj vars
-
-//while(!A_stream.empty()) {
-//  c_tmp = A_stream.read();
-//  std::cout << "\nX val: " << c_tmp.data.real << "," << c_tmp.data.imag << "i" << std::flush;
-//  std::cout << "\nx: " << c_tmp.x << std::flush;
-//  std::cout << "\ny: " << c_tmp.y << std::flush;
-//  std::cout << "\nl_i_r: " << c_tmp.last_in_row << std::flush;
-//  std::cout << "\nl_i_t: " << c_tmp.last_in_tensor << std::flush;
-//}
-//std::cout << "\nprintPIZZA\n" << std::flush;
+  int l, j, i1, i2; // col maj vars
 
 if (row_maj) {
 /******************************** ROW MAJOR ********************************/
@@ -101,13 +91,7 @@ if (row_maj) {
     LOOP_Q: /* read A_row */
     q = 0;
     for(;;) {
-//std::cout << "\nA_row[q] val: " << A_row[q].data.real << "," << A_row[q].data.imag << "i" << std::flush;
       A_row[q] = A_stream.read();
-//std::cout << "\nA_row[q] val: " << A_row[q].data.real << "," << A_row[q].data.imag << "i" << std::flush;
-//std::cout << "\nx: " << A_row[q].x << std::flush;
-//std::cout << "\ny: " << A_row[q].y << std::flush;
-//std::cout << "\nl_i_r: " << A_row[q].last_in_row << std::flush;
-//std::cout << "\nl_i_t: " << A_row[q].last_in_tensor << std::flush;
       if(A_row[q].last_in_row) {
         break;
       }
@@ -120,7 +104,6 @@ if (row_maj) {
       LOOP_O: /* read B_col */
       o = 0;
       for(;;) {
-
         B_col[o] = B_stream.read();
         B_stream_buf.write(B_col[o]);
         if(B_col[o].last_in_row) {
@@ -141,7 +124,8 @@ if (row_maj) {
           c.data = Complex::add(c.data, c_tmp.data);
         }
         
-        if ( ( A_row[n1].last_in_row && B_col[n2].x >= A_row[n1].y ) || ( B_col[n2].last_in_row && A_row[n1].y >= B_col[n2].x ) ) { /* break if last in row */
+        if ( ( A_row[n1].last_in_row && B_col[n2].x >= A_row[n1].y ) 
+          || ( B_col[n2].last_in_row && A_row[n1].y >= B_col[n2].x ) ) { /* break if last in row */
           while (!A_row[n1].last_in_row) { /* go to last elem in A_row */
             n1++;
           }
@@ -156,7 +140,7 @@ if (row_maj) {
       }
 
       if ( !(c.data.real == 0.0f && c.data.imag == 0.0f) ) {  /* update c */
-std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_col[n2].y << "]=(" << c.data.real << "," << c.data.imag << "i)\n" << std::flush;
+//std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_col[n2].y << "]=(" << c.data.real << "," << c.data.imag << "i)\n" << std::flush;
         c.x = A_row[n1].x;
         c.y = B_col[n2].y;
         if(old_c) {
@@ -170,12 +154,6 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
         old_c = &c;
       }
       
-// of B_col[n2] - val, x, y, lir, lit
-//std::cout << "\nB_col[n2] val: " << B_col[n2].data.real << "," << B_col[n2].data.imag << "i" << std::flush;
-//std::cout << "\nx: " << B_col[n2].x << std::flush;
-//std::cout << "\ny: " << B_col[n2].y << std::flush;
-//std::cout << "\nl_i_r: " << B_col[n2].last_in_row << std::flush;
-//std::cout << "\nl_i_t: " << B_col[n2].last_in_tensor << std::flush;
       if(B_col[n2].last_in_tensor) {  /* exit if B_col last in tensor */
         break;
       }
@@ -183,18 +161,13 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
     while(!B_stream_buf.empty()) {  /* recharge B cols */
       B_stream.write(B_stream_buf.read());
     }
-// of A_row[n1] - val, x, y, lir, lit
-//std::cout << "\nA_row[n1] val: " << A_row[n1].data.real << "," << A_row[n1].data.imag << "i" << std::flush;
-//std::cout << "\nx: " << A_row[n1].x << std::flush;
-//std::cout << "\ny: " << A_row[n1].y << std::flush;
-//std::cout << "\nl_i_r: " << A_row[n1].last_in_row << std::flush;
-//std::cout << "\nl_i_t: " << A_row[n1].last_in_tensor << std::flush;
+
     if(A_row[n1].last_in_tensor) {  /* exit if A_row last in tensor */
         break;
     }
   }
-  // update last in tensor for c
-  if (old_c) {
+
+  if (old_c) {  /* update last in tensor for c */
     (*old_c).last_in_row = 1;
     (*old_c).last_in_tensor = 1;
     C_stream.write(*old_c);
@@ -202,89 +175,95 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
 
 } else {
 /******************************** COL MAJOR ********************************/
-//
-  return;
-//LOOP_M:
-//  for(;;) { // iterate over B cols
-//
-//    // read B_col
-//    t = 0;
-//  LOOP_L:
-//    for(;;) {
-//      B_col[t] = B_stream.read();
-//      t++;
-//      if(B_col[t].last_in_row) {
-//        break;
-//      }
-//    }
-//
-//  LOOP_K:
-//    for(;;) { // iterate over A rows
-//    LOOP_J:
-//      // read A_row
-//      l = 0;
-//      for(;;) {
-//        A_row[l] = A_stream.read();
-//        A_stream_buf.write(A_row[l]);
-//        l++;
-//        if(A_row[l].last_in_row) {
-//          break;
-//        }
-//      }
-//      
-//    LOOP_I:// read first elems A_row, B_col
-//    q1 = 0;
-//    q2 = 0;
-//    // init c.data to 0
-//    c.data.real = 0.0f;
-//    c.data.imag = 0.0f;
-//      for(;;) { // compute c
-//        // compute if i=j
-//        if(A_row[q1].y == B_col[q2].x) {
-//          c_tmp.data = Complex::mul(A_row[q1].data, B_col[q2].data);
-//          c.data = Complex::add(c.data, c_tmp.data);
-//        }
-//        // break if last in row
-//        if (A_row[q1].last_in_row || B_col[q2].last_in_row) {
-//          break;
-//        }
-//        // find next elem to check
-//        if (q1 < q2) {
-//          q1++;
-//        } else {
-//          q2++;
-//        }
-//      }
-//      // update c
-//      if ( !(c.data.real == 0.0f && c.data.imag == 0.0f) ) {
-//        c.x = A_row[q1].x;
-//        c.y = B_col[q2].y;
-//        if(old_c) {
-//          if((*old_c).x != c.x) {
-//            (*old_c).last_in_row = 1;
-//          } else {
-//            (*old_c).last_in_row = 0;
-//          }
-//        }
-//        C_stream.write(*old_c);
-//        old_c = &c;
-//      }
-//      // exit if A_row last in tensor
-//      if(A_row[q1].last_in_tensor) {
-//        break;
-//      }
-//    }
-//    // recharge A rows
-//    while(!A_stream_buf.empty()) {
-//      A_stream.write(A_stream_buf.read());
-//    }
-//  }
-//  // update last in tensor for c
-//  if (old_c) {
-//    (*old_c).last_in_row = 1;
-//    (*old_c).last_in_tensor = 1;
-//    C_stream.write(*old_c);
-//  }
+
+  LOOP_M: /* iterate over B cols */
+  for(;;) {
+
+    LOOP_L: /* read B_col */
+    l = 0;
+    for(;;) {
+      B_col[l] = B_stream.read();
+      if(B_col[l].last_in_row) {
+        break;
+      }
+      l++;
+    }
+
+    LOOP_K: /* iterate over A rows */
+    for(;;) {
+
+      LOOP_J: /* read A_row */
+      j = 0;
+      for(;;) {
+        A_row[j] = A_stream.read();
+        A_stream_buf.write(A_row[j]);
+        if(A_row[j].last_in_row) {
+          break;
+        }
+        j++;
+      }
+      
+      LOOP_I:  /* compute c = A_row * B_col */
+      i1 = 0;
+      i2 = 0;
+      // init c.data to 0
+      c.data.real = 0.0f;
+      c.data.imag = 0.0f;
+      for(;;) {
+
+        if(A_row[i1].y == B_col[i2].x) { /* if same index multiply */
+          c_tmp.data = Complex::mul(A_row[i1].data, B_col[i2].data);
+          c.data = Complex::add(c.data, c_tmp.data);
+        }
+
+        if ( ( A_row[i1].last_in_row && B_col[i2].x >= A_row[i1].y ) 
+          || ( B_col[i2].last_in_row && A_row[i1].y >= B_col[i2].x )) {  /* break if last in row */
+          while (!B_col[i2].last_in_row) { /* go to last elem in B_col */
+            i2++;
+          }
+          break;
+        }
+
+        if (A_row[i1].y < B_col[i2].x) { /* find next elem to check */
+          i1++;
+        } else {
+          i2++;
+        }
+      }
+
+      if ( !(c.data.real == 0.0f && c.data.imag == 0.0f) ) {  /* update c */
+        c.x = A_row[i1].x;
+        c.y = B_col[i2].y;
+        if(old_c) {
+          if((*old_c).x != c.x) {
+            (*old_c).last_in_row = 1;
+          } else {
+            (*old_c).last_in_row = 0;
+          }
+          C_stream.write(*old_c);
+        }
+        old_c = &c;
+      }
+
+      if(A_row[i1].last_in_tensor) { /* exit if A_row last in tensor */
+        break;
+      }
+    }
+
+    while(!A_stream_buf.empty()) {  /* recharge A rows */
+      A_stream.write(A_stream_buf.read());
+    }
+
+    if(B_col[i2].last_in_tensor) {  /* exit if B_col last in tensor */
+        break;
+    }
+  }
+
+  if (old_c) {  /* update last in tensor for c */
+    (*old_c).last_in_row = 1;
+    (*old_c).last_in_tensor = 1;
+    C_stream.write(*old_c);
+  }
 }
 
 }
