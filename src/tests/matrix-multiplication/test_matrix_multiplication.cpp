@@ -18,7 +18,7 @@ bool operator==(const coo_t &lhs, const coo_t &rhs) {
 
 int main() {
   GoldenReader reader("golden-vectors.dat");
-  reader.consume();
+  reader.consume(true); // SET TO TRUE TO REVERSE THE RIGHT TENSOR
   auto ops = &reader.operations;
 
   for (size_t i = 0; i < ops->size(); i++) {

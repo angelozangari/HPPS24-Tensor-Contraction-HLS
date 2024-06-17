@@ -9,11 +9,12 @@
 
 class Tens {
 public:
-  explicit Tens(std::istream &inp);
+  explicit Tens(std::istream &inp, bool reversed = false);
 
   void print() const;
   size_t size() const { return data.size(); }
 
+  bool reversed;
   std::vector<Complex::cmplx_t> data;
   int rank;
 };
@@ -33,7 +34,7 @@ public:
 
 class OP {
 public:
-  explicit OP(std::istream &inp);
+  explicit OP(std::istream &inp, bool right_reversed = false);
   void print() const;
 
   Tens left, right, out;
@@ -42,7 +43,7 @@ public:
 class GoldenReader {
 public:
   GoldenReader(const std::string &filename);
-  void consume();
+  void consume(bool right_reversed = false);
   std::vector<OP> operations;
 
 private:

@@ -27,7 +27,7 @@ template <typename T> T read_from_stream(std::istream &inp) {
   return val;
 }
 
-Tens::Tens(istream &inp) {
+Tens::Tens(istream &inp, bool reversed) : reversed(reversed) {
   // read size_t bytes and encode as size_t
   size_t size = read_from_stream<size_t>(inp);
 
@@ -42,8 +42,13 @@ Tens::Tens(istream &inp) {
 void Tens::print() const {
   for (int i = 0; i < 1 << rank; i++) {
     for (int j = 0; j < 1 << rank; j++) {
-      printf("(%f + %fi) ", data[i * (1 << rank) + j].real,
-             data[i * (1 << rank) + j].imag);
+      if (reversed) {
+        printf("(%f + %fi) ", data[j * (1 << rank) + i].real,
+               data[j * (1 << rank) + i].imag);
+      } else {
+        printf("(%f + %fi) ", data[i * (1 << rank) + j].real,
+               data[i * (1 << rank) + j].imag);
+      }
     }
     printf("\n");
   }
@@ -58,8 +63,13 @@ CooTens::CooTens(Tens &tens) : rank(tens.rank) {
       continue;
     }
     u.data = tens.data[i];
-    u.x = i / (1 << tens.rank);
-    u.y = i % (1 << tens.rank);
+    if (tens.reversed) {
+      u.y = i % (1 << tens.rank);
+      u.x = i / (1 << tens.rank);
+    } else {
+      u.x = i / (1 << tens.rank);
+      u.y = i % (1 << tens.rank);
+    }
     u.last_in_tensor = false;
     data.push_back(u);
   }
@@ -93,7 +103,8 @@ void CooTens::print() const {
   }
 }
 
-OP::OP(istream &inp) : left(inp), right(inp), out(inp) {}
+OP::OP(istream &inp, bool right_reversed)
+    : left(inp), right(inp, right_reversed), out(inp) {}
 
 void OP::print() const {
   cout << "Left tensor:" << endl;
@@ -108,8 +119,8 @@ GoldenReader::GoldenReader(const string &filename) {
   inp = make_unique<ifstream>(filename, ios::binary);
 }
 
-void GoldenReader::consume() {
+void GoldenReader::consume(bool right_reversed) {
   while (inp->peek() != EOF) {
-    operations.emplace_back(*inp);
+    operations.emplace_back(*inp, right_reversed);
   }
 }
