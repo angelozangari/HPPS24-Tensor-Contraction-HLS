@@ -83,6 +83,15 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   //int t, l, q1, q2;
   int q, o, n1, n2; // row maj vars
 
+while(!A_stream.empty()) {
+  c_tmp = A_stream.read();
+  std::cout << "\nX val: " << c_tmp.data.real << "," << c_tmp.data.imag << "i" << std::flush;
+  std::cout << "\nx: " << c_tmp.x << std::flush;
+  std::cout << "\ny: " << c_tmp.y << std::flush;
+  std::cout << "\nl_i_r: " << c_tmp.last_in_row << std::flush;
+  std::cout << "\nl_i_t: " << c_tmp.last_in_tensor << std::flush;
+}
+std::cout << "\nprintPIZZA\n" << std::flush;
 
 if (row_maj) {
 /******************************** ROW MAJOR ********************************/
@@ -100,7 +109,7 @@ if (row_maj) {
 //std::cout << "\ny: " << A_row[q].y << std::flush;
 //std::cout << "\nl_i_r: " << A_row[q].last_in_row << std::flush;
 //std::cout << "\nl_i_t: " << A_row[q].last_in_tensor << std::flush;
-      if(A_row[q].last_in_tensor) {
+      if(A_row[q].last_in_row) {
         break;
       }
       q++;
