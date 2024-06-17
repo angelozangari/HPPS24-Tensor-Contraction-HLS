@@ -59,7 +59,7 @@ void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, rank_t A_R,
   // Compute matrix multiplication
   Matrix::Multiplication::compute(A_stream, B_stream, C_stream, A_R, row_maj);
   // Store result
-  Tensor::store(C_stream, C, 1); // FIX how to pass dimension of c stream
+  Tensor::store(C_stream, C, 4); // FIX how to pass dimension of c stream
 }
 
 namespace Matrix {
@@ -82,15 +82,15 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   //int t, l, q1, q2;
   int q, o, n1, n2; // row maj vars
 
-while(!A_stream.empty()) {
-  c_tmp = A_stream.read();
-  std::cout << "\nX val: " << c_tmp.data.real << "," << c_tmp.data.imag << "i" << std::flush;
-  std::cout << "\nx: " << c_tmp.x << std::flush;
-  std::cout << "\ny: " << c_tmp.y << std::flush;
-  std::cout << "\nl_i_r: " << c_tmp.last_in_row << std::flush;
-  std::cout << "\nl_i_t: " << c_tmp.last_in_tensor << std::flush;
-}
-std::cout << "\nprintPIZZA\n" << std::flush;
+//while(!A_stream.empty()) {
+//  c_tmp = A_stream.read();
+//  std::cout << "\nX val: " << c_tmp.data.real << "," << c_tmp.data.imag << "i" << std::flush;
+//  std::cout << "\nx: " << c_tmp.x << std::flush;
+//  std::cout << "\ny: " << c_tmp.y << std::flush;
+//  std::cout << "\nl_i_r: " << c_tmp.last_in_row << std::flush;
+//  std::cout << "\nl_i_t: " << c_tmp.last_in_tensor << std::flush;
+//}
+//std::cout << "\nprintPIZZA\n" << std::flush;
 
 if (row_maj) {
 /******************************** ROW MAJOR ********************************/

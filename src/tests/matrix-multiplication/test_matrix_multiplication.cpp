@@ -41,7 +41,7 @@ int main() {
     cout << "Running test " << i << " with sizes " << left.rank << " x "
          << right.rank << " -> " << real_out.rank << " ... " << flush;
     matrix_multiplication(left.data.data(), right.data.data(), out.data(), left.rank,
-                          1, &real_size);
+                          left.size(), right.size(), 1);
 
     // Compare the output
     CooTens predicted_out{out, left.rank};
