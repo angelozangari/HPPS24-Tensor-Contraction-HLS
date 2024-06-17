@@ -1,6 +1,9 @@
 alias b := build-ninja
 alias c := clean
 
+_default:
+  just --choose
+
 build-make:
     cmake -S . -B build
     cmake --build build
