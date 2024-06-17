@@ -38,7 +38,7 @@
 using namespace Complex;
 
 void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, rank_t A_R,
-                           flag_t row_maj, dim_t *CD) {
+                           dim_t A_NZ, dim_t B_NZ, flag_t row_maj) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=A
 #pragma HLS INTERFACE m_axi port=B
@@ -53,16 +53,13 @@ void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, rank_t A_R,
   // hls-streams for matrices
   hls::stream<coo_t> A_stream, B_stream, C_stream;
 
-  const dim_t AD = 1 << A_R;
-  *CD = 0;
-
   // Load matrices A, B
-  Tensor::load(A, A_stream, AD);
-  Tensor::load(B, B_stream, AD);
+  Tensor::load(A, A_stream, A_NZ);
+  Tensor::load(B, B_stream, B_NZ);
   // Compute matrix multiplication
-  Matrix::Multiplication::compute(A_stream, B_stream, C_stream, AD, row_maj, CD);
+  Matrix::Multiplication::compute(A_stream, B_stream, C_stream, A_R, row_maj);
   // Store result
-  Tensor::store(C_stream, C, *CD);
+  Tensor::store(C_stream, C, 1); // FIX how to pass dimension of c stream
 }
 
 namespace Matrix {
@@ -74,7 +71,9 @@ namespace Multiplication {
 */
 
 void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream, dim_t size, flag_t row_maj, dim_t *CD) {
+             hls::stream<coo_t> &C_stream, const rank_t A_R, flag_t row_maj) {
+
+  const dim_t size = 1 << A_R;
 
   hls::stream<coo_t> A_stream_buf, B_stream_buf;
   coo_t *old_c = NULL; // use to keep reference to last computed c
@@ -167,7 +166,6 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
             (*old_c).last_in_row = 0;
           }
           C_stream.write(*old_c);
-          CD++;
         }
         old_c = &c;
       }
@@ -200,7 +198,6 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
     (*old_c).last_in_row = 1;
     (*old_c).last_in_tensor = 1;
     C_stream.write(*old_c);
-    CD++;
   } 
 
 } else {
@@ -270,7 +267,6 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
 //          }
 //        }
 //        C_stream.write(*old_c);
-//        CD++;
 //        old_c = &c;
 //      }
 //      // exit if A_row last in tensor
@@ -288,7 +284,6 @@ std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_
 //    (*old_c).last_in_row = 1;
 //    (*old_c).last_in_tensor = 1;
 //    C_stream.write(*old_c);
-//    CD++;
 //  }
 }
 
