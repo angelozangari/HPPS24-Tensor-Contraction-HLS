@@ -41,18 +41,18 @@ int main() {
     cout << "Running test " << i << " with sizes " << left.rank << " x "
          << right.rank << " -> " << real_out.rank << " ... " << flush;
     matrix_multiplication(left.data.data(), right.data.data(), out.data(), left.rank,
-                          left.size(), right.size(), 1);
+                          left.size(), right.size(), 1, &real_size);
 
     // Compare the output
     CooTens predicted_out{out, left.rank};
 
-    // if (predicted_out.data.size() != real_out.data.size()) {
-    //   cout << "FAILED" << endl;
-    //   cout << "Mismatch in sizes" << endl;
-    //   cout << "Predicted output size: " << predicted_out.data.size() << endl;
-    //   cout << "Real output size: " << real_out.data.size() << endl;
-    //   return 1;
-    // }
+    if (predicted_out.data.size() != real_out.data.size()) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in sizes" << endl;
+      cout << "Predicted output size: " << predicted_out.data.size() << endl;
+      cout << "Real output size: " << real_out.data.size() << endl;
+      return 1;
+    }
 
     for (size_t i = 0; i < predicted_out.data.size(); i++) {
       if (!(predicted_out.data[i] == real_out.data[i])) {
@@ -73,12 +73,6 @@ int main() {
         op.print();
         return 1;
       }
-    }
-
-    if(predicted_out.data[i].last_in_tensor != 1) {
-      cout << "FAILED" << endl;
-      cout << "Mismatch in sizes" << endl;
-      return 1;
     }
 
     cout << "PASSED" << endl;
