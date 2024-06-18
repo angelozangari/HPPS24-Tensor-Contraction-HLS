@@ -43,11 +43,11 @@ void Tens::print() const {
   for (int i = 0; i < 1 << rank; i++) {
     for (int j = 0; j < 1 << rank; j++) {
       if (reversed) {
-        printf("(%f + %fi) ", data[j * (1 << rank) + i].real,
-               data[j * (1 << rank) + i].imag);
-      } else {
         printf("(%f + %fi) ", data[i * (1 << rank) + j].real,
                data[i * (1 << rank) + j].imag);
+      } else {
+        printf("(%f + %fi) ", data[j * (1 << rank) + i].real,
+               data[j * (1 << rank) + i].imag);
       }
     }
     printf("\n");
@@ -64,8 +64,8 @@ CooTens::CooTens(Tens &tens) : rank(tens.rank) {
     }
     u.data = tens.data[i];
     if (tens.reversed) {
-      u.y = i % (1 << tens.rank);
-      u.x = i / (1 << tens.rank);
+      u.x = i % (1 << tens.rank);
+      u.y = i / (1 << tens.rank);
     } else {
       u.x = i / (1 << tens.rank);
       u.y = i % (1 << tens.rank);
