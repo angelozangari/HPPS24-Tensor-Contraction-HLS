@@ -70,22 +70,24 @@ CooTens::CooTens(Tens &tens) : rank(tens.rank) {
       u.x = i / (1 << tens.rank);
       u.y = i % (1 << tens.rank);
     }
+    u.last_in_row = false;
     u.last_in_tensor = false;
     data.push_back(u);
   }
 
   // set the last element of the row to true
   for (size_t i = 0; i < data.size(); i++) {
-    if (i + 1 < data.size() && data[i].x != data[i + 1].x) {
-      data[i].last_in_row = true;
+    if (i + 1 < data.size()) {
+      if ((!tens.reversed && data[i].x != data[i + 1].x) ||
+          (tens.reversed && data[i].y != data[i + 1].y)) {
+        data[i].last_in_row = true;
+      }
     } else if (i + 1 == data.size()) {
-      data[i].last_in_row = true;
+      // set the last element of the column to true
+      data.back().last_in_row = true;
+      data.back().last_in_tensor = true;
     }
   }
-
-  // set the last element of the column to true
-  data.back().last_in_row = true;
-  data.back().last_in_tensor = true;
 }
 
 CooTens::CooTens(vector<coo_t> tens, int rank) : data(tens), rank(rank) {}
