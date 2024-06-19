@@ -92,28 +92,34 @@ if (row_maj) {
   for(;;) {
 
     LOOP_Q: /* read A_row */
+std::cout << "\nReading A_row: " << std::flush;
     q = 0;
     for(;;) {
       A_row[q] = A_stream.read();
+std::cout << "(" << A_row[q].data.real << "," << A_row[q].data.imag << "i) -> " << std::flush;
       if(A_row[q].last_in_row) {
         break;
       }
       q++;
     }
+std::cout << "//\n" << std::flush;
 
     LOOP_P: /* iterate over B cols */
     for(;;) {
 
       LOOP_O: /* read B_col */
       o = 0;
+std::cout << "\nReading B_col: " << std::flush;
       for(;;) {
         B_col[o] = B_stream.read();
+std::cout << "(" << B_col[0].data.real << "," << B_col[0].data.imag << "i) -> " << std::flush;
         B_stream_buf.write(B_col[o]);
         if(B_col[o].last_in_row) {
           break;
         }
         o++;
       }
+std::cout << "//\n" << std::flush;
 
       LOOP_N: /* compute c = A_row * B_col */
       n1 = 0;
@@ -125,6 +131,20 @@ if (row_maj) {
         if(A_row[n1].y == B_col[n2].x) {  /* if same index multiply */
           c_tmp.data = Complex::mul(A_row[n1].data, B_col[n2].data);
           c.data = Complex::add(c.data, c_tmp.data);
+
+std::cout << "\n" << std::flush;
+// What to print: which c elem I am computing (rows, cols)
+std::cout << "computing c[" << A_row[n1].x << "][" << B_col[n2].y << "] w/ current values: " << "\n" << std::flush;
+std::cout << "A_row[" << A_row[n1].x <<"][" << A_row[n1].y << "]=(" << A_row[n1].data.real << ", " << A_row[n1].data.imag << "i) ; last in row: " <<  A_row[n1].last_in_row << "\n" << std::flush;
+std::cout << "B_col[" << B_col[n2].x <<"][" << B_col[n2].y << "]=(" << B_col[n2].data.real << ", " << B_col[n2].data.imag << "i) ; last in row: " <<  B_col[n2].last_in_row << "\n" << std::flush;      
+// What are the state of n1, n2
+std::cout << "n1: " << n1 << ", n2: " << n2 << "\n" << std::flush;
+// What is the current value of c_tmp
+std::cout << "(" << c_tmp.data.real << ", " << c_tmp.data.imag << "i)" << "\n" << std::flush;
+// What is the current value of c
+std::cout << "(" << c.data.real << ", " << c.data.imag << "i)" << "\n" << std::flush;
+std::cout << "\n" << std::flush;
+
         }
         
         if ( ( A_row[n1].last_in_row && B_col[n2].x >= A_row[n1].y ) 
@@ -142,11 +162,11 @@ if (row_maj) {
         }
       }
 
-std::cout << "\nExiting w/ n1: " << n1 << "\n" << std::flush;
-std::cout << "Exiting w/ n2: " << n2 << "\n" << std::flush;
-std::cout << "\nc val: " << c.data.real << "," << c.data.imag << "i" << std::flush;
-std::cout << "\nx: " << A_row[n1].x << std::flush;
-std::cout << "\ny: " << B_col[n2].y << std::flush;
+//std::cout << "\nExiting w/ n1: " << n1 << "\n" << std::flush;
+//std::cout << "Exiting w/ n2: " << n2 << "\n" << std::flush;
+std::cout << "\n\nfinal c[" << A_row[n1].x << "][" << B_col[n2].y << "] = " << c.data.real << "," << c.data.imag << "i" << std::flush;
+std::cout << "\nlast y of A_row: " << A_row[n1].y << std::flush;
+std::cout << "\nlast x of B_col: " << B_col[n2].x << "\n\n\n\n" << std::flush;
 
       if ( !(c.data.real == 0.0f && c.data.imag == 0.0f) ) {  /* update c */
 //std::cout << "\n\033[1;31mFINAL COMPUTED C \033[0m[" << A_row[n1].x << "," << B_col[n2].y << "]=(" << c.data.real << "," << c.data.imag << "i)\n" << std::flush;
