@@ -178,6 +178,7 @@ std::cout << "\nlast x of B_col: " << B_col[n2].x << "\n\n\n\n" << std::flush;
           } else {
             old_c.last_in_row = 0;
           }
+          old_c.last_in_tensor = 0;
           C_stream.write(old_c);
 std::cout << "\nwrote on stream old_c: " << old_c.data.real << "," << old_c.data.imag << "i" << std::flush;
 std::cout << "\nx: " << old_c.x << std::flush;
