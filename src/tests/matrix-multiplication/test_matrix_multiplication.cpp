@@ -40,16 +40,16 @@ int main() {
     // instead of size us nxn (dim*dim)
     // std::vector<coo_t> out(N*N);
     coo_t tmp[max_out_size];
-//    cout << "Running test " << i << " with sizes " << left.rank << " x "
+//   cout << "Running test " << i << " with sizes " << left.rank << " x "
 //         << right.rank << " -> " << real_out.rank << " ... " << flush;
     //matrix_multiplication(left.data.data(), right.data.data(), out.data(), left.rank,
     //                      left.size(), right.size(), 1, &real_size);
     matrix_multiplication(left.data.data(), right.data.data(), tmp, left.rank,
-                          left.size(), right.size(), 1, &real_size);
+                          left.size(), right.size(), &real_size);
 
-//    cout << "\n\033[1;31mTEST RESULTS for test no. " << i << "\033[0m\n"
-//         << "max_out_size: " << max_out_size << "\n"
-//         << "real_size: " << real_size << "\n";
+    cout << "\n\033[1;31mTEST RESULTS for test no. " << i << "\033[0m\n"
+         << "max_out_size: " << max_out_size << "\n"
+         << "real_size: " << real_size << "\n";
 
     // Compare the output
     //CooTens predicted_out{out, left.rank};
