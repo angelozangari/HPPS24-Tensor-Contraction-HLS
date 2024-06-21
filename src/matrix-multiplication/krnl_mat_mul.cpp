@@ -68,37 +68,86 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
 namespace Matrix {
 namespace Multiplication {
 
+/* WHAT ARRAY WILL WE HAVE:
+ for each A,B,C, 3 arrays (*3 = 9 in total)
+ 2 array float (real, imag)
+ 1 array of meta (max 512) infomations -> macro to access
+*/
+
 void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
              hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
              hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
              hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
              hls::stream<coo_meta_t> &Cm_stream, dim_t *CD) {
 
-  // for each A,B,C
-  // 2 array float (real, imag)
-  // 1 array of meta (max 512) infomations -> macro to access
+  hls::stream<float> Br_stream_buf, Bi_stream_buf;
+  hls::stream<coo_meta_t> Bm_stream_buf;
+
+  *CD = 0;
+
+  float cr, ci, c_tmp_r, c_tmp_i;
+  coo_meta_t cm, c_tmp_m;
+  cr = 0.0f;
+  ci = 0.0f;
+
+  flag_t c_ready = 0;
+
+  uint8_t i, j; // indexes to read packets A, B
+  i = 0;
+  j = 0;
 
   for (;;) {
-    uint8_t i, j; // indexes to read packets A, B
-    i = 0;
-    j = 0;
 
     float Ar_row[PACKET_SIZE], Ai_row[PACKET_SIZE], Br_col[PACKET_SIZE],
-        Bi_row[PACKET_SIZE];
+        Bi_col[PACKET_SIZE];
     coo_meta_t Am_row[PACKET_SIZE], Bm_col[PACKET_SIZE];
 
-  LOOP_t: // if need to read, read packet A (16 x stream)
-    for (;;)
+  LOOP_T: // if need to read, read packet A (16 x stream)
+    // TODO: add check if need to read
+    for (int t = 0; t < PACKET_SIZE; t++) {
+      Ar_row[t] = Ar_stream.read();
+      Ai_row[t] = Ai_stream.read();
+      Am_row[t] = Am_stream.read();
+    }
 
-      // if need to read, read packet B -> write B back into a stream
+  LOOP_Q: // if need to read, read packet B -> write B back into a stream
+    // TODO: add check if need to read
+    for (int q = 0; q < PACKET_SIZE; q++) {
+      Br_col[q] = Br_stream.read();
+      Bi_col[q] = Bi_stream.read();
+      Bm_col[q] = Bm_stream.read();
+      // TODO: add check that doesn't write in B_stream_buf if last row of A
+      Br_stream_buf.write(Br_col[q]);
+      Bi_stream_buf.write(Bi_col[q]);
+      Bm_stream_buf.write(Bm_col[q]);
+    }
 
-      for (int i = 0; i < PACKET_SIZE; i++) {
-        // UNROLLED (dont write/read streams inside unrolled)
-
-        // c = A[i] * B*J
+    for (int i = 0; i < PACKET_SIZE; i++) {
+      // UNROLLED (dont write/read streams inside unrolled)
+      // c = A[i] * B*J
+      if (!(LAST_IN_ROW(Am_row[i]) && (Y(Am_row[i]) > X(Bm_col[j]))) ||
+          !(LAST_IN_ROW(Bm_col[j]) && (Y(Am_row[i]) < X(Bm_col[j])))) {
+        // update accumulator
+        c_tmp_r = Ar_row[i] * Br_col[j] - Ai_row[i] * Bi_col[j];
+        c_tmp_i = Ar_row[i] * Bi_col[j] + Ai_row[i] * Br_col[j];
+        cr += c_tmp_r;
+        ci += c_tmp_i;
+      } else {
+        c_ready = 1;
+        break;
       }
+    }
 
-    // write result on stream C
+    // write result on stream C & update c to 0
+    if (c_ready && (cr != 0.0f || ci != 0.0f)) {
+      Cr_stream.write(cr);
+      Ci_stream.write(ci);
+      Cm_stream.write(cm);
+      (*CD)++;
+      c_ready = 0;
+      cr = 0.0f;
+      ci = 0.0f;
+    }
 
     if (LAST_IN_TENSOR(Am_row[i]) &&
         LAST_IN_TENSOR(Bm_col[j])) { // exit if both A, B read
