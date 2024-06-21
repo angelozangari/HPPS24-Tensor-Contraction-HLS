@@ -43,3 +43,11 @@ struct coo_t {
   flag_t last_in_row;
   flag_t last_in_tensor;
 };
+
+// Meta data for COO format
+struct coo_meta_t {
+  dim_t x;
+  dim_t y;
+  flag_t last_in_row;
+  flag_t last_in_tensor;
+};

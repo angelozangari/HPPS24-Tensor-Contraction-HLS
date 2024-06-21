@@ -92,9 +92,26 @@ CooTens::CooTens(Tens &tens) : rank(tens.rank) {
 
 CooTens::CooTens(vector<coo_t> tens, int rank) : data(tens), rank(rank) {}
 
+CooTens::CooTens(vector<cmplx_t> tens_data, vector<coo_meta_t> tens_meta,
+                 int rank) {
+  for (size_t i = 0; i < tens_data.size(); i++) {
+    data.push_back({tens_data[i], tens_meta[i].x, tens_meta[i].y,
+                    tens_meta[i].last_in_row, tens_meta[i].last_in_tensor});
+  }
+}
+
 CooTens::CooTens(coo_t *tens, size_t size, int rank) : rank(rank) {
   for (size_t i = 0; i < size; i++) {
     data.push_back(tens[i]);
+  }
+}
+
+CooTens::CooTens(cmplx_t *tens_data, coo_meta_t *tens_meta, size_t size,
+                 int rank)
+    : rank(rank) {
+  for (size_t i = 0; i < size; i++) {
+    data.push_back({tens_data[i], tens_meta[i].x, tens_meta[i].y,
+                    tens_meta[i].last_in_row, tens_meta[i].last_in_tensor});
   }
 }
 
@@ -103,6 +120,23 @@ void CooTens::print() const {
     printf("(%f + %fi) at (%lu, %lu)\n", data[i].data.real, data[i].data.imag,
            data[i].x, data[i].y);
   }
+}
+
+vector<cmplx_t> CooTens::cmplx_data() const {
+  vector<cmplx_t> res;
+  for (size_t i = 0; i < data.size(); i++) {
+    res.push_back(data[i].data);
+  }
+  return res;
+}
+
+vector<coo_meta_t> CooTens::meta_data() const {
+  vector<coo_meta_t> res;
+  for (size_t i = 0; i < data.size(); i++) {
+    res.push_back(
+        {data[i].x, data[i].y, data[i].last_in_row, data[i].last_in_tensor});
+  }
+  return res;
 }
 
 OP::OP(istream &inp, bool right_reversed)

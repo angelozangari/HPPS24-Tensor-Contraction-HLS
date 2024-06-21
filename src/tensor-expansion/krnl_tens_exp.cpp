@@ -3,12 +3,16 @@
 
 using namespace Complex;
 
-void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
+void tensor_expansion(cmplx_t *Ad, coo_meta_t *Am, cmplx_t *Bd, coo_meta_t *Bm,
+                      cmplx_t *Cd, coo_meta_t *Cm, dim_t A_NZ, dim_t B_NZ,
                       rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 //depth=1024
-#pragma HLS INTERFACE m_axi port=B bundle=gmem1 //depth=1024
-#pragma HLS INTERFACE m_axi port=C bundle=gmem2 //depth=1024
+#pragma HLS INTERFACE m_axi port=Ad bundle=gmem0 //depth=1024
+#pragma HLS INTERFACE m_axi port=Am bundle=gmem0 //depth=1024
+#pragma HLS INTERFACE m_axi port=Bd bundle=gmem1 //depth=1024
+#pragma HLS INTERFACE m_axi port=Bm bundle=gmem1 //depth=1024
+#pragma HLS INTERFACE m_axi port=Cd bundle=gmem2 //depth=1024
+#pragma HLS INTERFACE m_axi port=Cm bundle=gmem2 //depth=1024
 #pragma HLS INTERFACE s_axilite port=A bundle=control
 #pragma HLS INTERFACE s_axilite port=B bundle=control
 #pragma HLS INTERFACE s_axilite port=C bundle=control
@@ -19,6 +23,7 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
 
+  dim_t C_NZ = A_NZ * B_NZ;
   hls::stream<coo_t> A_stream, B_stream, C_stream;
   // clang-format off
 #pragma HLS STREAM variable=A_stream depth=32
@@ -27,10 +32,10 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
   // clang-format on
 
 #pragma HLS dataflow
-  Tensor::load(A, A_stream, A_NZ);
-  Tensor::load(B, B_stream, B_NZ);
+  Tensor::load(Ad, Am, A_stream, A_NZ);
+  Tensor::load(Bd, Bm, B_stream, B_NZ);
   Tensor::Expansion::compute(A_stream, B_stream, C_stream, B_R);
-  Tensor::store(C_stream, C, A_NZ * B_NZ);
+  Tensor::store(C_stream, Cd, Cm, C_NZ);
 }
 
 namespace Tensor {

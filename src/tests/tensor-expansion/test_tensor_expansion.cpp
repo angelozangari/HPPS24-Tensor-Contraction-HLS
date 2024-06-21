@@ -29,14 +29,17 @@ int main() {
     CooTens real_out{op.out};
 
     // Call the kernel
-    std::vector<coo_t> out(left.size() * right.size());
+    std::vector<cmplx_t> out_data(left.size() * right.size());
+    std::vector<coo_meta_t> out_meta(left.size() * right.size());
     cout << "Running test " << i << " with sizes " << left.rank << " x "
          << right.rank << " -> " << real_out.rank << " ... " << flush;
-    tensor_expansion(left.data.data(), right.data.data(), out.data(),
-                     left.size(), right.size(), left.rank, right.rank);
+    tensor_expansion(left.cmplx_data().data(), left.meta_data().data(),
+                     right.cmplx_data().data(), right.meta_data().data(),
+                     out_data.data(), out_meta.data(), left.size(),
+                     right.size(), left.rank, right.rank);
 
     // Compare the output
-    CooTens predicted_out{out, left.rank * 2};
+    CooTens predicted_out{out_data, out_meta, left.rank * 2};
 
     if (predicted_out.data.size() != real_out.data.size()) {
       cout << "FAILED" << endl;

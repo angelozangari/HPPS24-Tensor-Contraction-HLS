@@ -7,7 +7,9 @@
 #include "types.h"
 
 extern "C" {
-void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, rank_t A_R,
+void matrix_multiplication(Complex::cmplx_t *Ad, coo_meta_t *Am,
+                           Complex::cmplx_t *Bd, coo_meta_t *Bm,
+                           Complex::cmplx_t *Cd, coo_meta_t *Cm, rank_t A_R,
                            dim_t A_NZ, dim_t B_NZ, dim_t *CD);
 }
 
