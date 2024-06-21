@@ -45,6 +45,8 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   std::vector<coo_t> A_row(size), B_col(size);
   int q, o, n1, n2; // row maj vars
 
+  flag_t last_row = 0;
+
 /******************************** ROW MAJOR ********************************/
 
   LOOP_T: /* iterate over A rows */
@@ -57,6 +59,7 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
       if(A_row[q].last_in_row) {
         if(A_row[q].last_in_tensor) {
           // TODO: set flag to not repopulate B
+          last_row = 1;
         }
         break;
       }
@@ -70,7 +73,9 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
       o = 0;
       for(;;) {
         B_col[o] = B_stream.read();
-        B_stream_buf.write(B_col[o]);
+        if(!last_row) {
+          B_stream_buf.write(B_col[o]);
+        }
         if(B_col[o].last_in_row) {
           break;
         }
