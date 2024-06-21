@@ -7,8 +7,7 @@
 
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
                            float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
-                           coo_meta_t *Cm, rank_t A_R, dim_t A_NZ, dim_t B_NZ,
-                           dim_t *CD) {
+                           coo_meta_t *Cm, dim_t A_NZ, dim_t B_NZ, dim_t *CD) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 //depth=1024
 #pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 //depth=1024
@@ -60,7 +59,7 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
   // Compute matrix multiplication
   Matrix::Multiplication::compute(Ar_stream, Ai_stream, Am_stream, Br_stream,
                                   Bi_stream, Bm_stream, Cr_stream, Ci_stream,
-                                  Cm_stream, A_R, CD);
+                                  Cm_stream, CD);
   // Store result
   // FIXME how to pass dimension of c stream
   Tensor::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, *CD);

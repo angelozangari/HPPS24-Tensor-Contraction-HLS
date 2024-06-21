@@ -29,10 +29,10 @@ int main() {
     coo_meta_t tmp_m[max_out_size];
 
     // Call the kernel
-    matrix_multiplication(
-        left.data_r.data(), left.data_i.data(), left.data_m.data(),
-        right.data_r.data(), right.data_i.data(), right.data_m.data(), tmp_r,
-        tmp_i, tmp_m, left.rank, left.size(), right.size(), &real_size);
+    matrix_multiplication(left.data_r.data(), left.data_i.data(),
+                          left.data_m.data(), right.data_r.data(),
+                          right.data_i.data(), right.data_m.data(), tmp_r,
+                          tmp_i, tmp_m, left.size(), right.size(), &real_size);
 
     // Compare the output
     CooTens predicted_out{tmp_r, tmp_i, tmp_m, real_size, left.rank};
