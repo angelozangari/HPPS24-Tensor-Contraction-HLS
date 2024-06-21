@@ -7,14 +7,6 @@
 #include "tests/golden_reader.h"
 
 using namespace std;
-using namespace Complex;
-
-bool operator==(const coo_t &lhs, const coo_t &rhs) {
-  return abs(lhs.data.real - rhs.data.real) < 1e-6 &&
-         abs(lhs.data.imag - rhs.data.imag) < 1e-6 && lhs.x == rhs.x &&
-         lhs.y == rhs.y && lhs.last_in_row == rhs.last_in_row &&
-         lhs.last_in_tensor == rhs.last_in_tensor;
-}
 
 int main() {
   GoldenReader reader("golden-vectors.dat");
@@ -29,35 +21,42 @@ int main() {
     CooTens real_out{op.out};
 
     // Call the kernel
-    std::vector<coo_t> out(left.size() * right.size());
+    std::vector<float> out_r(left.size() * right.size());
+    std::vector<float> out_i(left.size() * right.size());
+    std::vector<coo_meta_t> out_m(left.size() * right.size());
     cout << "Running test " << i << " with sizes " << left.rank << " x "
          << right.rank << " -> " << real_out.rank << " ... " << flush;
-    tensor_expansion(left.data.data(), right.data.data(), out.data(),
-                     left.size(), right.size(), left.rank, right.rank);
+    tensor_expansion(left.data_r.data(), left.data_i.data(), left.data_m.data(),
+                     right.data_r.data(), right.data_i.data(),
+                     right.data_m.data(), out_r.data(), out_i.data(),
+                     out_m.data(), left.size(), right.size(), left.rank,
+                     right.rank);
 
     // Compare the output
-    CooTens predicted_out{out, left.rank * 2};
+    CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};
 
-    if (predicted_out.data.size() != real_out.data.size()) {
+    if (predicted_out.size() != real_out.size()) {
       cout << "FAILED" << endl;
       cout << "Mismatch in sizes" << endl;
-      cout << "Predicted output size: " << predicted_out.data.size() << endl;
-      cout << "Real output size: " << real_out.data.size() << endl;
+      cout << "Predicted output size: " << predicted_out.size() << endl;
+      cout << "Real output size: " << real_out.size() << endl;
       return 1;
     }
 
-    for (size_t i = 0; i < predicted_out.data.size(); i++) {
-      if (!(predicted_out.data[i] == real_out.data[i])) {
+    for (size_t i = 0; i < predicted_out.size(); i++) {
+      if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
+            predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
+            predicted_out.data_m[i] == real_out.data_m[i])) {
         cout << "FAILED" << endl;
         cout << "Mismatch in data" << endl;
         // print_op_matrices(op);
-        cout << "Predicted output:" << "(" << predicted_out.data[i].data.real
-             << " + " << predicted_out.data[i].data.imag << "i) at ("
-             << predicted_out.data[i].x << ", " << predicted_out.data[i].y
+        cout << "Predicted output:" << "(" << predicted_out.data_r[i] << " + "
+             << predicted_out.data_i[i] << "i) at ("
+             << X(predicted_out.data_m[i]) << ", " << Y(predicted_out.data_m[i])
              << ")" << endl;
-        cout << "Real output:" << "(" << real_out.data[i].data.real << " + "
-             << real_out.data[i].data.imag << "i) at (" << real_out.data[i].x
-             << ", " << real_out.data[i].y << ")" << endl;
+        cout << "Real output:" << "(" << real_out.data_r[i] << " + "
+             << real_out.data_i[i] << "i) at (" << X(real_out.data_m[i]) << ", "
+             << Y(real_out.data_m[i]) << ")" << endl;
         cout << "Full Real output:" << endl;
         real_out.print();
         cout << "Full Predicted output:" << endl;

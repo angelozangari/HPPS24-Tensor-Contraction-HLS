@@ -4,6 +4,18 @@
 
 #include "ap_int.h"
 
+#define X(v) v(35, 0)
+#define Y(v) v(71, 36)
+#define LAST_IN_ROW(v) v(72, 72)
+#define LAST_IN_TENSOR(v) v(73, 73)
+
+// Type containing the metadata of a tensor in COO format
+// 0-35: x
+// 36-71: y
+// 72: last_in_row
+// 73: last_in_tensor
+typedef ap_uint<74> coo_meta_t;
+
 // gate rank, with rank we mean the number of indices of a tensor, thus the
 // number of dimensions. With a single-qubit gate (rank 2) we have 2^2 elements
 typedef ap_uint<7> rank_t;
@@ -13,33 +25,3 @@ typedef ap_uint<36> dim_t;
 
 // flag
 typedef ap_uint<1> flag_t;
-
-// Complex types and operations
-namespace Complex {
-
-// complex number type
-typedef struct {
-  float real;
-  float imag;
-} cmplx_t;
-
-/**
- * @brief Add two complex numbers
- */
-cmplx_t add(cmplx_t a, cmplx_t b);
-
-/**
- * @brief Multiply two complex numbers
- */
-cmplx_t mul(cmplx_t a, cmplx_t b);
-
-} // namespace Complex
-
-// COO format for sparse tensors
-struct coo_t {
-  Complex::cmplx_t data;
-  dim_t x;
-  dim_t y;
-  flag_t last_in_row;
-  flag_t last_in_tensor;
-};

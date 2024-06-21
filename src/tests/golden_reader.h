@@ -12,23 +12,28 @@ public:
   explicit Tens(std::istream &inp, bool reversed = false);
 
   void print() const;
-  size_t size() const { return data.size(); }
+  size_t size() const { return data_r.size(); }
 
   bool reversed;
-  std::vector<Complex::cmplx_t> data;
+  std::vector<float> data_r;
+  std::vector<float> data_i;
   int rank;
 };
 
 class CooTens {
 public:
   CooTens(Tens &tens);
-  CooTens(std::vector<coo_t> tens, int rank);
-  CooTens(coo_t *tens, size_t size, int rank);
+  CooTens(std::vector<float> tens_r, std::vector<float> tens_i,
+          std::vector<coo_meta_t> tens_m, int rank);
+  CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size,
+          int rank);
 
   void print() const;
-  size_t size() const { return data.size(); }
+  size_t size() const { return data_r.size(); }
 
-  std::vector<coo_t> data;
+  std::vector<float> data_r;
+  std::vector<float> data_i;
+  std::vector<coo_meta_t> data_m;
   int rank;
 };
 

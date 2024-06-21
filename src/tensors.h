@@ -8,11 +8,15 @@ namespace Tensor {
 /**
  * @brief Load a COO tensor from memory to a stream
  */
-void load(coo_t *A, hls::stream<coo_t> &A_stream, dim_t A_size);
+void load(float *Ar, float *Ai, coo_meta_t *Am, hls::stream<float> &Ar_stream,
+          hls::stream<float> &Ai_stream, hls::stream<coo_meta_t> &Am_stream,
+          dim_t A_size);
 
 /**
  * @brief Store a COO tensor from a stream to memory
  */
-void store(hls::stream<coo_t> &C_stream, coo_t *C, dim_t C_size);
+void store(hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
+           hls::stream<coo_meta_t> &Cm_stream, float *Cr, float *Ci,
+           coo_meta_t *Cm, dim_t C_size);
 
 } // namespace Tensor

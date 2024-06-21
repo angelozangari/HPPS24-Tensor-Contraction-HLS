@@ -1,17 +1,29 @@
 #include "krnl_tens_exp.h"
 #include "tensors.h"
 
-using namespace Complex;
-
-void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
-                      rank_t A_R, rank_t B_R) {
+void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
+                      float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
+                      coo_meta_t *Cm, dim_t A_NZ, dim_t B_NZ, rank_t A_R,
+                      rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 //depth=1024
-#pragma HLS INTERFACE m_axi port=B bundle=gmem1 //depth=1024
-#pragma HLS INTERFACE m_axi port=C bundle=gmem2 //depth=1024
-#pragma HLS INTERFACE s_axilite port=A bundle=control
-#pragma HLS INTERFACE s_axilite port=B bundle=control
-#pragma HLS INTERFACE s_axilite port=C bundle=control
+#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 //depth=1024
+#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 //depth=1024
+#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 //depth=1024
+#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 //depth=1024
+#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 //depth=1024
+#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 //depth=1024
+#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 //depth=1024
+#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 //depth=1024
+#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 //depth=1024
+#pragma HLS INTERFACE s_axilite port=Ar bundle=control
+#pragma HLS INTERFACE s_axilite port=Ai bundle=control
+#pragma HLS INTERFACE s_axilite port=Am bundle=control
+#pragma HLS INTERFACE s_axilite port=Br bundle=control
+#pragma HLS INTERFACE s_axilite port=Bi bundle=control
+#pragma HLS INTERFACE s_axilite port=Bm bundle=control
+#pragma HLS INTERFACE s_axilite port=Cr bundle=control
+#pragma HLS INTERFACE s_axilite port=Ci bundle=control
+#pragma HLS INTERFACE s_axilite port=Cm bundle=control
 #pragma HLS INTERFACE s_axilite port=A_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=B_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=A_R bundle=control
@@ -19,52 +31,88 @@ void tensor_expansion(coo_t *A, coo_t *B, coo_t *C, dim_t A_NZ, dim_t B_NZ,
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
 
-  hls::stream<coo_t> A_stream, B_stream, C_stream;
+  dim_t C_NZ = A_NZ * B_NZ;
+  hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream,
+      Ci_stream;
   // clang-format off
-#pragma HLS STREAM variable=A_stream depth=32
-#pragma HLS STREAM variable=B_stream depth=32
-#pragma HLS STREAM variable=C_stream depth=32
+#pragma HLS STREAM variable=Ar_stream depth=32
+#pragma HLS STREAM variable=Ai_stream depth=32
+#pragma HLS STREAM variable=Br_stream depth=32
+#pragma HLS STREAM variable=Bi_stream depth=32
+#pragma HLS STREAM variable=Cr_stream depth=32
+#pragma HLS STREAM variable=Ci_stream depth=32
+  // clang-format on
+
+  hls::stream<coo_meta_t> Am_stream, Bm_stream, Cm_stream;
+  // clang-format off
+#pragma HLS STREAM variable=Am_stream depth=32
+#pragma HLS STREAM variable=Bm_stream depth=32
+#pragma HLS STREAM variable=Cm_stream depth=32
   // clang-format on
 
 #pragma HLS dataflow
-  Tensor::load(A, A_stream, A_NZ);
-  Tensor::load(B, B_stream, B_NZ);
-  Tensor::Expansion::compute(A_stream, B_stream, C_stream, B_R);
-  Tensor::store(C_stream, C, A_NZ * B_NZ);
+  Tensor::load(Ar, Ai, Am, Ar_stream, Ai_stream, Am_stream, A_NZ);
+  Tensor::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
+  Tensor::Expansion::compute(Ar_stream, Ai_stream, Am_stream, Br_stream,
+                             Bi_stream, Bm_stream, Cr_stream, Ci_stream,
+                             Cm_stream, B_R);
+  Tensor::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, C_NZ);
 }
 
 namespace Tensor {
 namespace Expansion {
 
-void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
-             hls::stream<coo_t> &C_stream, const rank_t B_R) {
-  hls::stream<coo_t> A_stream_buffer, B_stream_buffer, B_cycle_buffer;
+void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
+             hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
+             hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
+             hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
+             hls::stream<coo_meta_t> &Cm_stream, const rank_t B_R) {
+  hls::stream<float> Ar_stream_buffer, Ai_stream_buffer, Br_stream_buffer,
+      Bi_stream_buffer, Br_cycle_buffer, Bi_cycle_buffer;
   // clang-format off
-#pragma HLS STREAM variable=A_stream_buffer depth=32
-#pragma HLS STREAM variable=B_stream_buffer depth=32
-#pragma HLS STREAM variable=B_cycle_buffer depth=32
+#pragma HLS STREAM variable=Ar_stream_buffer depth=32
+#pragma HLS STREAM variable=Ai_stream_buffer depth=32
+#pragma HLS STREAM variable=Br_stream_buffer depth=32
+#pragma HLS STREAM variable=Bi_stream_buffer depth=32
+#pragma HLS STREAM variable=Br_cycle_buffer depth=32
+#pragma HLS STREAM variable=Bi_cycle_buffer depth=32
   // clang-format on
-  coo_t a, b, c, tmp;
+  hls::stream<coo_meta_t> Am_stream_buffer, Bm_stream_buffer, Bm_cycle_buffer;
+  // clang-format off
+#pragma HLS STREAM variable=Am_stream_buffer depth=32
+#pragma HLS STREAM variable=Bm_stream_buffer depth=32
+#pragma HLS STREAM variable=Bm_cycle_buffer depth=32
+  // clang-format on
+  float ar, ai, br, bi, cr, ci, tmp_r, tmp_i;
+  coo_meta_t am, bm, cm, tmp_m;
 
   const dim_t BD = 1 << B_R;
 
 LOOP_T:
   for (;;) {
-    tmp = B_stream.read();
-    B_cycle_buffer.write(tmp);
-    if (tmp.last_in_tensor) {
+    tmp_r = Br_stream.read();
+    tmp_i = Bi_stream.read();
+    tmp_m = Bm_stream.read();
+    Br_cycle_buffer.write(tmp_r);
+    Bi_cycle_buffer.write(tmp_i);
+    Bm_cycle_buffer.write(tmp_m);
+    if (LAST_IN_TENSOR(tmp_m)) {
       break;
     }
   }
 
 LOOP_N: // iterate over all rows of A
-  while (!A_stream.empty()) {
+  while (!Ar_stream.empty()) {
 
   LOOP_M: // store in a stream the first row of A
     for (;;) {
-      tmp = A_stream.read();
-      A_stream_buffer.write(tmp);
-      if (tmp.last_in_row) {
+      tmp_r = Ar_stream.read();
+      tmp_i = Ai_stream.read();
+      tmp_m = Am_stream.read();
+      Ar_stream_buffer.write(tmp_r);
+      Ai_stream_buffer.write(tmp_i);
+      Am_stream_buffer.write(tmp_m);
+      if (LAST_IN_ROW(tmp_m)) {
         break;
       }
     }
@@ -74,47 +122,64 @@ LOOP_N: // iterate over all rows of A
 
     LOOP_Q: // store in a stream the first row of B
       for (;;) {
-        tmp = B_cycle_buffer.read();
-        B_stream_buffer.write(tmp);
-        if (tmp.last_in_row) {
+        tmp_r = Br_cycle_buffer.read();
+        tmp_i = Bi_cycle_buffer.read();
+        tmp_m = Bm_cycle_buffer.read();
+        Br_stream_buffer.write(tmp_r);
+        Bi_stream_buffer.write(tmp_i);
+        Bm_stream_buffer.write(tmp_m);
+        if (LAST_IN_ROW(tmp_m)) {
           break;
         }
       }
 
     LOOP_I: // compute the entire line of C
       for (;;) {
-        a = A_stream_buffer.read();
+        ar = Ar_stream_buffer.read();
+        ai = Ai_stream_buffer.read();
+        am = Am_stream_buffer.read();
       LOOP_J:
         for (;;) {
 #pragma HLS PIPELINE II = 1
-          b = B_stream_buffer.read();
-          c.data = Complex::mul(a.data, b.data);
-          c.x = a.x * BD + b.x;
-          c.y = a.y * BD + b.y;
-          c.last_in_row = b.last_in_row & a.last_in_row;
-          c.last_in_tensor = b.last_in_tensor & a.last_in_tensor;
-          C_stream.write(c);
-          if (!a.last_in_row) {
+          br = Br_stream_buffer.read();
+          bi = Bi_stream_buffer.read();
+          bm = Bm_stream_buffer.read();
+          cr = ar * br - ai * bi;
+          ci = ar * bi + ai * br;
+          X(cm) = X(am) * BD + X(bm);
+          Y(cm) = Y(am) * BD + Y(bm);
+          LAST_IN_ROW(cm) = LAST_IN_ROW(bm) & LAST_IN_ROW(am);
+          LAST_IN_TENSOR(cm) = LAST_IN_TENSOR(bm) & LAST_IN_TENSOR(am);
+          Cr_stream.write(cr);
+          Ci_stream.write(ci);
+          Cm_stream.write(cm);
+          if (!LAST_IN_ROW(am)) {
             // reiterate the first row of B if As are not finished
-            B_stream_buffer.write(b);
-          } else if (!A_stream.empty()) {
+            Br_stream_buffer.write(br);
+            Bi_stream_buffer.write(bi);
+            Bm_stream_buffer.write(bm);
+          } else if (!Ar_stream.empty()) {
             // recharge the first row of B
-            B_cycle_buffer.write(b);
+            Br_cycle_buffer.write(br);
+            Bi_cycle_buffer.write(bi);
+            Bm_cycle_buffer.write(bm);
           }
 
-          if (b.last_in_row) {
+          if (LAST_IN_ROW(bm)) {
             break;
           }
         }
-        if (!b.last_in_tensor) {
-          A_stream_buffer.write(a);
+        if (!LAST_IN_TENSOR(bm)) {
+          Ar_stream_buffer.write(ar);
+          Ai_stream_buffer.write(ai);
+          Am_stream_buffer.write(am);
         }
-        if (a.last_in_row) {
+        if (LAST_IN_ROW(am)) {
           break;
         }
       }
 
-      if (b.last_in_tensor) {
+      if (LAST_IN_TENSOR(bm)) {
         break;
       }
     }

@@ -3,7 +3,6 @@
 #include <cstdint>
 
 using namespace std;
-using namespace Complex;
 
 // Helper function to check if the system is little-endian
 bool is_little_endian() {
@@ -35,7 +34,8 @@ Tens::Tens(istream &inp, bool reversed) : reversed(reversed) {
   for (size_t i = 0; i < size; i++) {
     double real = read_from_stream<double>(inp);
     double imag = read_from_stream<double>(inp);
-    data.push_back(cmplx_t{(float)real, (float)imag});
+    data_r.push_back((float)real);
+    data_i.push_back((float)imag);
   }
 }
 
@@ -43,11 +43,11 @@ void Tens::print() const {
   for (int i = 0; i < 1 << rank; i++) {
     for (int j = 0; j < 1 << rank; j++) {
       if (reversed) {
-        printf("(%f + %fi) ", data[j * (1 << rank) + i].real,
-               data[j * (1 << rank) + i].imag);
+        printf("(%f + %fi) ", data_r[j * (1 << rank) + i],
+               data_i[j * (1 << rank) + i]);
       } else {
-        printf("(%f + %fi) ", data[i * (1 << rank) + j].real,
-               data[i * (1 << rank) + j].imag);
+        printf("(%f + %fi) ", data_r[i * (1 << rank) + j],
+               data_i[i * (1 << rank) + j]);
       }
     }
     printf("\n");
@@ -55,53 +55,63 @@ void Tens::print() const {
 }
 
 CooTens::CooTens(Tens &tens) : rank(tens.rank) {
-  coo_t u;
+  float ur, ui;
+  coo_meta_t um;
 
   // add non-zero elements to the COO tensor
-  for (size_t i = 0; i < tens.data.size(); i++) {
-    if (tens.data[i].real == 0 && tens.data[i].imag == 0) {
+  for (size_t i = 0; i < tens.size(); i++) {
+    if (tens.data_r[i] == 0 && tens.data_i[i] == 0) {
       continue;
     }
-    u.data = tens.data[i];
+    ur = tens.data_r[i];
+    ui = tens.data_i[i];
     if (tens.reversed) {
-      u.x = i % (1 << tens.rank);
-      u.y = i / (1 << tens.rank);
+      X(um) = i % (1 << tens.rank);
+      Y(um) = i / (1 << tens.rank);
     } else {
-      u.x = i / (1 << tens.rank);
-      u.y = i % (1 << tens.rank);
+      X(um) = i / (1 << tens.rank);
+      Y(um) = i % (1 << tens.rank);
     }
-    u.last_in_row = false;
-    u.last_in_tensor = false;
-    data.push_back(u);
+    LAST_IN_ROW(um) = false;
+    LAST_IN_TENSOR(um) = false;
+    data_r.push_back(ur);
+    data_i.push_back(ui);
+    data_m.push_back(um);
   }
 
   // set the last element of the row to true
-  for (size_t i = 0; i < data.size(); i++) {
-    if (i + 1 < data.size()) {
-      if ((!tens.reversed && data[i].x != data[i + 1].x) ||
-          (tens.reversed && data[i].y != data[i + 1].y)) {
-        data[i].last_in_row = true;
+  for (size_t i = 0; i < size(); i++) {
+    if (i + 1 < size()) {
+      if ((!tens.reversed && X(data_m[i]) != X(data_m[i + 1])) ||
+          (tens.reversed && Y(data_m[i]) != Y(data_m[i + 1]))) {
+        LAST_IN_ROW(data_m[i]) = true;
       }
-    } else if (i + 1 == data.size()) {
+    } else if (i + 1 == size()) {
       // set the last element of the column to true
-      data.back().last_in_row = true;
-      data.back().last_in_tensor = true;
+      LAST_IN_ROW(data_m.back()) = true;
+      LAST_IN_TENSOR(data_m.back()) = true;
     }
   }
 }
 
-CooTens::CooTens(vector<coo_t> tens, int rank) : data(tens), rank(rank) {}
+CooTens::CooTens(vector<float> tens_r, vector<float> tens_i,
+                 vector<coo_meta_t> tens_m, int rank)
+    : data_r(tens_r), data_i(tens_i), data_m(tens_m), rank(rank) {}
 
-CooTens::CooTens(coo_t *tens, size_t size, int rank) : rank(rank) {
+CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size,
+                 int rank)
+    : rank(rank) {
   for (size_t i = 0; i < size; i++) {
-    data.push_back(tens[i]);
+    data_r.push_back(tens_r[i]);
+    data_i.push_back(tens_i[i]);
+    data_m.push_back(tens_m[i]);
   }
 }
 
 void CooTens::print() const {
-  for (size_t i = 0; i < data.size(); i++) {
-    printf("(%f + %fi) at (%lu, %lu)\n", data[i].data.real, data[i].data.imag,
-           data[i].x, data[i].y);
+  for (size_t i = 0; i < size(); i++) {
+    printf("(%f + %fi) at (%lu, %lu)\n", data_r[i], data_i[i],
+           X(data_m[i]).to_long(), Y(data_m[i]).to_long());
   }
 }
 
