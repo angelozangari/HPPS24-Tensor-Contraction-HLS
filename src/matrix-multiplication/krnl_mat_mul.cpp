@@ -1,6 +1,8 @@
 #include "krnl_mat_mul.h"
 #include "tensors.h"
 
+//#include <cstdint>
+
 using namespace Complex;
 
 void matrix_multiplication(coo_t *A, coo_t *B, coo_t *C, rank_t A_R,
@@ -35,6 +37,7 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
              hls::stream<coo_t> &C_stream, const rank_t A_R, dim_t *CD) {
 
   const dim_t size = 1 << A_R;
+//uint32_t size = 1 << A_R;
   *CD = 0;
 
   hls::stream<coo_t> A_stream_buf, B_stream_buf;
@@ -43,6 +46,7 @@ void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
   old_c.data.imag = 0.0f;
   coo_t c_tmp, c; // c_tmp stores partial results of c
   std::vector<coo_t> A_row(size), B_col(size);
+//coo_t A_row[size], B_col[size];
   int q, o, n1, n2; // row maj vars
 
   flag_t last_row = 0;
