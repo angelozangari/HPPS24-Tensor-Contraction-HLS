@@ -68,94 +68,222 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
 namespace Matrix {
 namespace Multiplication {
 
-/* WHAT ARRAY WILL WE HAVE:
- for each A,B,C, 3 arrays (*3 = 9 in total)
- 2 array float (real, imag)
- 1 array of meta (max 512) infomations -> macro to access
-*/
+void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
+             hls::stream<coo_t> &C_stream, dim_t *CD) {
 
-void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
-             hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
-             hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
-             hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-             hls::stream<coo_meta_t> &Cm_stream, dim_t *CD) {
+  float A_row[PACKET_SIZE], B_col[PACKET_SIZE];
+  uint8_t s, r, q; // loop vars
+  uint8_t i, j; // indexes to scan packets
+  flag_t A_read, c_ready;
 
-  hls::stream<float> Br_stream_buf, Bi_stream_buf;
-  hls::stream<coo_meta_t> Bm_stream_buf;
+  coo_c old_c, c;
 
-  *CD = 0;
-
-  float cr, ci, c_tmp_r, c_tmp_i;
-  coo_meta_t cm, c_tmp_m;
-  cr = 0.0f;
-  ci = 0.0f;
-
-  flag_t c_ready = 0;
-
-  uint8_t i, j; // indexes to read packets A, B
   i = 0;
   j = 0;
+  A_read = 1;
+  c_ready = 0;
 
-  for (;;) {
+  old_c.data.real = 0.0f;
+  old_c.data.imag = 0.0f;
+  c.data.real = 0.0f;
+  c.data.imag = 0.0f;
 
-    float Ar_row[PACKET_SIZE], Ai_row[PACKET_SIZE], Br_col[PACKET_SIZE],
-        Bi_col[PACKET_SIZE];
-    coo_meta_t Am_row[PACKET_SIZE], Bm_col[PACKET_SIZE];
+LOOP_T:
+  for(;;) { // external loop
 
-  LOOP_T: // if need to read, read packet A (16 x stream)
-    // TODO: add check if need to read
-    for (int t = 0; t < PACKET_SIZE; t++) {
-      Ar_row[t] = Ar_stream.read();
-      Ai_row[t] = Ai_stream.read();
-      Am_row[t] = Am_stream.read();
-    }
-
-  LOOP_Q: // if need to read, read packet B -> write B back into a stream
-    // TODO: add check if need to read
-    for (int q = 0; q < PACKET_SIZE; q++) {
-      Br_col[q] = Br_stream.read();
-      Bi_col[q] = Bi_stream.read();
-      Bm_col[q] = Bm_stream.read();
-      // TODO: add check that doesn't write in B_stream_buf if last row of A
-      Br_stream_buf.write(Br_col[q]);
-      Bi_stream_buf.write(Bi_col[q]);
-      Bm_stream_buf.write(Bm_col[q]);
-    }
-
-    for (int i = 0; i < PACKET_SIZE; i++) {
-      // UNROLLED (dont write/read streams inside unrolled)
-      // c = A[i] * B*J
-      if (!(LAST_IN_ROW(Am_row[i]) && (Y(Am_row[i]) > X(Bm_col[j]))) ||
-          !(LAST_IN_ROW(Bm_col[j]) && (Y(Am_row[i]) < X(Bm_col[j])))) {
-        // update accumulator
-        c_tmp_r = Ar_row[i] * Br_col[j] - Ai_row[i] * Bi_col[j];
-        c_tmp_i = Ar_row[i] * Bi_col[j] + Ai_row[i] * Br_col[j];
-        cr += c_tmp_r;
-        ci += c_tmp_i;
-      } else {
-        c_ready = 1;
-        break;
+    if (i > PACKET_SIZE) { // if consumed all previous packet A
+    LOOP_S:
+      for (s = 0; s < PACKET_SIZE; s++) { // read packet A
+        if(A_read) {
+          A_row[s] = A_stream.read();
+          if(A_row[s].last_in_row) {
+            A_read = 0;
+          }
+        } else {
+          A_row[s] = A_stream_buf.read();
+        }
+        A_stream_buf.write(A_row[s]);
+        if (A_row[i].last_in_row) { // if last in row stop reading (don't even need to fill rest because break on l_i_r)
+          break;
+        }
       }
     }
 
-    // write result on stream C & update c to 0
-    if (c_ready && (cr != 0.0f || ci != 0.0f)) {
-      Cr_stream.write(cr);
-      Ci_stream.write(ci);
-      Cm_stream.write(cm);
-      (*CD)++;
-      c_ready = 0;
-      cr = 0.0f;
-      ci = 0.0f;
+    if (j > PACKET_SIZE) { // if consumed all previous packet B
+    LOOP_R:
+      for (r = 0; < PACKET_SIZE; r++) { // read packet B
+        B_col[r] = B_stream.read();
+        B_stream.write(B_col[r]); // TODO: check if i can read/write same stream in an unrolled loop
+      }
     }
 
-    if (LAST_IN_TENSOR(Am_row[i]) &&
-        LAST_IN_TENSOR(Bm_col[j])) { // exit if both A, B read
+  LOOP_Q:
+    for (q = 0; q < PACKET_SIZE; q++) { // for it < PACKET_SIZE: compute intersect and update c, update i, j, empty A_stream_buf if needed, 
+      if(A_row[i].y == B_col[j].x) {
+        c_tmp = Complex::mul(A_row[i].data, B_col[j].data);
+        c = Complex::add(c.data, c_tmp.data);
+      }
+
+      if (A_row[i].last_in_row && B_col[j].last_in_row) {
+        if (!(c.data.real == 0.0f && c.data.imag == 0.0f) ) {
+          c_ready = 1;
+        }
+        break;
+      }
+
+      // update i, j only if not last_in_row
+      if(A_row[i].y >= B_col[j].x) {
+        if (!B_col[j].last_in_row) {
+          j++;
+        }
+      } else {
+        if (!A_row[i].last_in_row) {
+          i++;
+        }
+      }
+
+    }
+    
+    // if B_col[j].last_in_tensor, empty A_stream_buf and set A_read to 1
+    if(B_col[j].last_in_tensor) {
+      while (!A_stream_buf.empty()) {
+        A_stream_buf.read();
+      }
+      A_read = 1;
+    }
+
+    if (c_ready) {// write c to stream if ready
+      c.x = A_row[i].x;
+      c.y = B_col[j].y;
+      if(A_row[i].last_in_tensor && B_col[j].last_in_tensor) {
+        c.last_in_tensor = 1;
+      } else {
+        c.last_in_tensor = 0;
+      }
+      if( !(old_c.data.real == 0.0f && old_c.data.imag == 0.0f) ) {
+        if(old_c.x != c.x) {
+          old_c.last_in_row = 1;
+        } else {
+          old_c.last_in_row = 0;
+        }
+        old_c.last_in_tensor = 0;
+        C_stream.write(old_c);
+        (*CD)++;
+      }
+
+      old_c = c;
+      c_ready = 0;
+      c.data.real = 0.0f;
+      c.data.imag = 0.0f;
+      // if we here both i,j point to lir, so update to next data
+      i++;
+      j++;
+
+    }
+
+    if(A_row[i].last_in_tensor && B_col[j].last_in_tensor) {
       break;
     }
   }
+
+if (!(old_c.data.real == 0.0f && old_c.data.imag == 0.0f)) {  /* update last in tensor for c */
+  old_c.last_in_row = 1;
+  old_c.last_in_tensor = 1;
+  C_stream.write(old_c);
+  (*CD)++;
 }
 
+// empty B_stream
+while(!B_stream.empty()) {
+  B_stream.read();
+}
+
+}
+
+/* -------------------------- NEW KERNEL pseudo + NEW STREAMS ------------------------- */
+//  void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
+//               hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
+//               hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
+//               hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
+//               hls::stream<coo_meta_t> &Cm_stream, dim_t *CD) {
+//  
+//    hls::stream<float> Br_stream_buf, Bi_stream_buf;
+//    hls::stream<coo_meta_t> Bm_stream_buf;
+//  
+//    *CD = 0;
+//  
+//    float cr, ci, c_tmp_r, c_tmp_i;
+//    coo_meta_t cm, c_tmp_m;
+//    cr = 0.0f;
+//    ci = 0.0f;
+//  
+//    flag_t c_ready = 0;
+//  
+//    uint8_t i, j; // indexes to read packets A, B
+//    i = 0;
+//    j = 0;
+//  
+//    for (;;) {
+//  
+//      float Ar_row[PACKET_SIZE], Ai_row[PACKET_SIZE], Br_col[PACKET_SIZE],
+//          Bi_col[PACKET_SIZE];
+//      coo_meta_t Am_row[PACKET_SIZE], Bm_col[PACKET_SIZE];
+//  
+//    LOOP_T: // if need to read, read packet A (16 x stream)
+//      // TODO: add check if need to read
+//      for (int t = 0; t < PACKET_SIZE; t++) {
+//        Ar_row[t] = Ar_stream.read();
+//        Ai_row[t] = Ai_stream.read();
+//        Am_row[t] = Am_stream.read();
+//      }
+//  
+//    LOOP_Q: // if need to read, read packet B -> write B back into a stream
+//      // TODO: add check if need to read
+//      for (int q = 0; q < PACKET_SIZE; q++) {
+//        Br_col[q] = Br_stream.read();
+//        Bi_col[q] = Bi_stream.read();
+//        Bm_col[q] = Bm_stream.read();
+//        // TODO: add check that doesn't write in B_stream_buf if last row of A
+//        Br_stream_buf.write(Br_col[q]);
+//        Bi_stream_buf.write(Bi_col[q]);
+//        Bm_stream_buf.write(Bm_col[q]);
+//      }
+//  
+//      for (int i = 0; i < PACKET_SIZE; i++) {
+//        // UNROLLED (dont write/read streams inside unrolled)
+//        // c = A[i] * B*J
+//        if (!(LAST_IN_ROW(Am_row[i]) && (Y(Am_row[i]) > X(Bm_col[j]))) ||
+//            !(LAST_IN_ROW(Bm_col[j]) && (Y(Am_row[i]) < X(Bm_col[j])))) {
+//          // update accumulator
+//          c_tmp_r = Ar_row[i] * Br_col[j] - Ai_row[i] * Bi_col[j];
+//          c_tmp_i = Ar_row[i] * Bi_col[j] + Ai_row[i] * Br_col[j];
+//          cr += c_tmp_r;
+//          ci += c_tmp_i;
+//        } else {
+//          c_ready = 1;
+//          break;
+//        }
+//      }
+//  
+//      // write result on stream C & update c to 0
+//      if (c_ready && (cr != 0.0f || ci != 0.0f)) {
+//        Cr_stream.write(cr);
+//        Ci_stream.write(ci);
+//        Cm_stream.write(cm);
+//        (*CD)++;
+//        c_ready = 0;
+//        cr = 0.0f;
+//        ci = 0.0f;
+//      }
+//  
+//      if (LAST_IN_TENSOR(Am_row[i]) &&
+//          LAST_IN_TENSOR(Bm_col[j])) { // exit if both A, B read
+//        break;
+//      }
+//    }
+//  }
+
+/* ----------------------------- OLD KERNEL + OLD STREAMS ----------------------------- */
 //  void compute(hls::stream<coo_t> &A_stream, hls::stream<coo_t> &B_stream,
 //               hls::stream<coo_t> &C_stream, const rank_t A_R, dim_t *CD) {
 //
