@@ -21,6 +21,28 @@
 //std::cout << "A_row(" << X(A_row_m[i]) << "," << Y(A_row_m[i]) << ")" <<  " l_i_t: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
 //std::cout << "B_col(" << X(B_col_m[j]) << "," << Y(B_col_m[j]) << ")" <<  " l_i_t: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
 
+
+//PRINT PACKETS
+//std::cout << "Computing c(" << X(A_row_m[i]) << "," << Y(B_col_m[j]) << ")\n" << std::flush;
+//std::cout << "Packet A_row: " << std::flush;
+//for(int a=0; a < PACKET_SIZE; a++) {
+//  std::cout << "(" << A_row_r[a] << "," << A_row_i[a] << "i) at [" << X(A_row_m[a]) << "][" << Y(A_row_m[a]) << "] -> " << std::flush;
+//  if (LAST_IN_ROW(A_row_m[a])) {
+//    std::cout << "//\n" << std::flush;
+//    break;
+//  }
+//}
+//std::cout << "Packet B_col: " << std::flush;
+//for(int b=0; b < PACKET_SIZE; b++) {
+//  std::cout << "(" << B_col_r[b] << "," << B_col_i[b] << "i) at [" << X(B_col_m[b]) << "][" << Y(B_col_m[b]) << "] -> " << std::flush;
+//  if (LAST_IN_ROW(B_col_m[b])) {
+//    std::cout << "//\n" << std::flush;
+//    break;
+//  }
+//}
+
+
+
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
                            float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
                            coo_meta_t *Cm, dim_t A_NZ, dim_t B_NZ, dim_t *CD) {
@@ -168,11 +190,10 @@ LOOP_T:
       }
     }
 
+//std::cout << "ENTERING COMPUTE LOOP\n" << std::flush;
   LOOP_Q:
     for(;i < PACKET_SIZE && j < PACKET_SIZE;) { /* compute c while both packets contain valid elements */
-//std::cout << "Computing c(" << X(A_row_m[i]) << "," << Y(B_col_m[j]) << ")\n" << std::flush;
       if (Y(A_row_m[i]) == X(B_col_m[j])) {
-  //std::cout << "PIZZA with same index\n" << std::flush;  
         cr += A_row_r[i]*B_col_r[j] - A_row_i[i]*B_col_i[j];
         ci += A_row_i[i]*B_col_r[j] + A_row_r[i]*B_col_i[j];
       }
@@ -188,12 +209,34 @@ LOOP_T:
       if (Y(A_row_m[i]) > X(B_col_m[j])) {
         if (!LAST_IN_ROW(B_col_m[j])) {
           j++;
+        } else {
+          i++;
         }
       } else {
         if (!LAST_IN_ROW(A_row_m[i])) {
           i++;
+        } else {
+          j++;
         }
       }
+
+//std::cout << "\ni: " << i << ", j: " << j << "\n" << std::flush;
+//std::cout << "Packet A_row: \n" << std::flush;
+//for(int a=0; a < PACKET_SIZE; a++) {
+//  //std::cout << "(" << A_row_r[a] << "," << A_row_i[a] << "i) at [" << X(A_row_m[a]) << "][" << Y(A_row_m[a]) << "] , lir: " << LAST_IN_ROW(A_row_m[a]) << ", lit: " << LAST_IN_TENSOR(A_row_m[a]) << "-> \n" << std::flush;
+//  //if (LAST_IN_ROW(A_row_m[a])) {
+//  //  break;
+//  //}
+//}
+//std::cout << "//\n" << std::flush;
+//std::cout << "Packet B_col: \n" << std::flush;
+//for(int b=0; b < PACKET_SIZE; b++) {
+//  std::cout << "(" << B_col_r[b] << "," << B_col_i[b] << "i) at [" << X(B_col_m[b]) << "][" << Y(B_col_m[b]) << "] , lir: " << LAST_IN_ROW(B_col_m[b]) << ", lit: " << LAST_IN_TENSOR(B_col_m[b]) << "-> \n" << std::flush;
+//  //if (LAST_IN_ROW(B_col_m[b])) {
+//  //  break;
+//  //}
+//}
+//std::cout << "//\n" << std::flush;
     }
 //std::cout << "OUT OF FOR COMPUTE LOOP\n" << std::flush;
 
@@ -201,6 +244,23 @@ LOOP_T:
       X(cm) = X(A_row_m[i]);
       Y(cm) = Y(B_col_m[j]);
 //std::cout << "Computed c(" << X(cm) << "," << Y(cm) << ") = " << cr << " + " << ci << "\n" << std::flush;
+//std::cout << "\ni: " << i << ", j: " << j << "\n" << std::flush;
+//std::cout << "Packet A_row: \n" << std::flush;
+//for(int a=0; a < PACKET_SIZE; a++) {
+//  std::cout << "(" << A_row_r[a] << "," << A_row_i[a] << "i) at [" << X(A_row_m[a]) << "][" << Y(A_row_m[a]) << "] -> \n" << std::flush;
+//  //if (LAST_IN_ROW(A_row_m[a])) {
+//  //  break;
+//  //}
+//}
+//std::cout << "//\n" << std::flush;
+//std::cout << "Packet B_col: \n" << std::flush;
+//for(int b=0; b < PACKET_SIZE; b++) {
+//  std::cout << "(" << B_col_r[b] << "," << B_col_i[b] << "i) at [" << X(B_col_m[b]) << "][" << Y(B_col_m[b]) << "] -> \n" << std::flush;
+//  //if (LAST_IN_ROW(B_col_m[b])) {
+//  //  break;
+//  //}
+//}
+//std::cout << "//\n" << std::flush;
       if( !(old_c_r == 0.0f && old_c_i == 0.0f) ) {
         if(X(old_c_m) != X(cm)) {
           LAST_IN_ROW(old_c_m) = 1;
