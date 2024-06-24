@@ -157,10 +157,10 @@ int main(int argc, char *argv[]) {
   OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, buffer_c_r));
   OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, buffer_c_i));
   OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, buffer_c_m));
-  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, in_a_size));
-  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, in_b_size));
-  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, in_a_rank));
-  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, in_b_rank));
+  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, (dim_t)in_a_size));
+  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, (dim_t)in_b_size));
+  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, (rank_t)in_a_rank));
+  OCL_CHECK(err, err = krnl_tensor_expansion.setArg(narg++, (rank_t)in_b_rank));
 
   // We then need to map our OpenCL buffers to get the pointers
   float *ptr_a_r, *ptr_a_i, *ptr_b_r, *ptr_b_i, *ptr_c_r, *ptr_c_i;
@@ -223,13 +223,13 @@ int main(int argc, char *argv[]) {
 
   // Verify the result
   CooTens predicted_out{ptr_c_r, ptr_c_i, ptr_c_m, out_c_size, left.rank * 2};
-  int match = 1;
+  int match = 0;
   if (predicted_out.size() != real_out.size()) {
     std::cout << "FAILED" << std::endl;
     std::cout << "Mismatch in sizes" << std::endl;
     std::cout << "Predicted output size: " << predicted_out.size() << std::endl;
     std::cout << "Real output size: " << real_out.size() << std::endl;
-    match = 0;
+    match = 1;
   }
   for (size_t i = 0; i < predicted_out.size(); i++) {
     if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Full Predicted output:" << std::endl;
       predicted_out.print();
       op.print();
-      match = 0;
+      match = 1;
     }
   }
 
