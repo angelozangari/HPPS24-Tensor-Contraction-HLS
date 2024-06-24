@@ -4,7 +4,7 @@
 
 #include "ap_int.h"
 #include "hls_stream.h"
-#include "types.h"
+#include "../types.h"
 
 extern "C" {
 void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
