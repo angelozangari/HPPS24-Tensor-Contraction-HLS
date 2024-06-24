@@ -1,5 +1,5 @@
 #include "krnl_tens_exp.h"
-#include "tensors.h"
+#include "../tensors.h"
 
 void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
                       float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
