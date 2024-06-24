@@ -1,9 +1,25 @@
 #include "krnl_mat_mul.h"
 #include "tensors.h"
 
+#include <fstream>
+#include <stdlib.h>
+
 #include <cstdint>
 
 #define PACKET_SIZE 16
+
+// if we here both i,j point to lir, so update to next data
+/* UPDATE i, j */
+//std::cout << "old i: " << i << " A_row[i] is lit: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
+//std::cout << "old j: " << j << " B_col[j] is lit: " << LAST_IN_TENSOR(B_col_m[j]) << "\n" << std::flush;
+//      i++;
+//      j++;      
+//std::cout << "new i: " << i << " A_row[i] is lit: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
+//std::cout << "new j: " << j << " B_col[j] is lit: " << LAST_IN_TENSOR(B_col_m[j]) << "\n" << std::flush;
+
+//std::cout << "PIZZA\n" << std::flush;
+//std::cout << "A_row(" << X(A_row_m[i]) << "," << Y(A_row_m[i]) << ")" <<  " l_i_t: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
+//std::cout << "B_col(" << X(B_col_m[j]) << "," << Y(B_col_m[j]) << ")" <<  " l_i_t: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
 
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
                            float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
@@ -96,11 +112,11 @@ void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
   float B_col_r[PACKET_SIZE], B_col_i[PACKET_SIZE];
   coo_meta_t B_col_m[PACKET_SIZE];
 
-  uint8_t s, r, q; // loop vars
+  uint32_t s, r, q; // loop vars
   
-  uint8_t i, j; // indexes to scan packets
-  i = 0;
-  j = 0;
+  uint32_t i, j; // indexes to scan packets
+  i = PACKET_SIZE;
+  j = PACKET_SIZE;
   
   flag_t A_read, c_ready;
   A_read = 1;
@@ -110,13 +126,14 @@ void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
 LOOP_T:
   for(;;) { /* external loop */
 
-    if (i > PACKET_SIZE) {  /* if consumed all previous packet A */
+    if (i >= PACKET_SIZE) { /* read packet A */
     LOOP_S:
       for (s = 0; s < PACKET_SIZE; s++) { /* read packet A */
         if(A_read) {
           A_row_r[s] = Ar_stream.read();
           A_row_i[s] = Ai_stream.read();
           A_row_m[s] = Am_stream.read();
+//std::cout << "Read element A_row(" << X(A_row_m[s]) << "," << Y(A_row_m[s]) << ") = " << A_row_r[s] << " + " << A_row_i[s] << "l_i_r: " << LAST_IN_ROW(A_row_m[s]) << ", l_i_t: " << LAST_IN_TENSOR(A_row_m[s])<< "\n" << std::flush;
           if(LAST_IN_ROW(A_row_m[s])) {
             A_read = 0;
           }
@@ -128,28 +145,34 @@ LOOP_T:
         Ar_stream_buf.write(A_row_r[s]);
         Ai_stream_buf.write(A_row_i[s]);
         Am_stream_buf.write(A_row_m[s]);
+        i = 0;
         if (LAST_IN_ROW(A_row_m[s])) {  /* if last in row stop reading (don't even need to fill rest because break on l_i_r) */
           break;
         }
       }
     }
 
-    if (j > PACKET_SIZE) { /* if consumed all previous packet B, read new one */
+    if (j >= PACKET_SIZE) { /* read packet B */
     LOOP_R:
       for (r = 0; r < PACKET_SIZE; r++) { // read packet B
         B_col_r[r] = Br_stream.read();
         B_col_i[r] = Bi_stream.read();
         B_col_m[r] = Bm_stream.read();
+//std::cout << "Read element B_col(" << X(B_col_m[r]) << "," << Y(B_col_m[r]) << ") = " << B_col_r[r] << " + " << B_col_i[r] << "l_i_r: " << LAST_IN_ROW(B_col_m[r]) << "\n" << std::flush;
+        
 // TODO: check if i can read/write same stream in an unrolled loop
         Br_stream.write(B_col_r[r]);
         Bi_stream.write(B_col_i[r]);
         Bm_stream.write(B_col_m[r]);
+        j = 0;
       }
     }
 
   LOOP_Q:
-    for (q = 0; q < PACKET_SIZE; q++) { // for it < PACKET_SIZE: compute intersect and update c, update i, j, empty A_stream_buf if needed, 
-      if(Y(A_row_m[i]) == X(B_col_m[j])) {
+    for(;i < PACKET_SIZE && j < PACKET_SIZE;) { /* compute c while both packets contain valid elements */
+//std::cout << "Computing c(" << X(A_row_m[i]) << "," << Y(B_col_m[j]) << ")\n" << std::flush;
+      if (Y(A_row_m[i]) == X(B_col_m[j])) {
+  //std::cout << "PIZZA with same index\n" << std::flush;  
         cr += A_row_r[i]*B_col_r[j] - A_row_i[i]*B_col_i[j];
         ci += A_row_i[i]*B_col_r[j] + A_row_r[i]*B_col_i[j];
       }
@@ -162,7 +185,7 @@ LOOP_T:
       }
 
       // update i, j only if not last_in_row
-      if(Y(A_row_m[i]) >= X(B_col_m[j])) {
+      if (Y(A_row_m[i]) > X(B_col_m[j])) {
         if (!LAST_IN_ROW(B_col_m[j])) {
           j++;
         }
@@ -171,28 +194,13 @@ LOOP_T:
           i++;
         }
       }
-
     }
-    
-    // if B_col[j].last_in_tensor, empty A_stream_buf and set A_read to 1
-    if(LAST_IN_TENSOR(B_col_m[j])) {
-      // TODO: check on all three?
-      while (!Ar_stream_buf.empty()) {
-        Ar_stream_buf.read();
-        Ai_stream_buf.read();
-        Am_stream_buf.read();
-      }
-      A_read = 1;
-    }
+//std::cout << "OUT OF FOR COMPUTE LOOP\n" << std::flush;
 
     if (c_ready) {  /* write c to stream if ready */
       X(cm) = X(A_row_m[i]);
       Y(cm) = Y(B_col_m[j]);
-      if(LAST_IN_TENSOR(A_row_m[i]) && LAST_IN_TENSOR(B_col_m[j])) {
-        LAST_IN_TENSOR(cm) = 1;
-      } else {
-        LAST_IN_TENSOR(cm) = 0;
-      }
+//std::cout << "Computed c(" << X(cm) << "," << Y(cm) << ") = " << cr << " + " << ci << "\n" << std::flush;
       if( !(old_c_r == 0.0f && old_c_i == 0.0f) ) {
         if(X(old_c_m) != X(cm)) {
           LAST_IN_ROW(old_c_m) = 1;
@@ -205,21 +213,32 @@ LOOP_T:
         Cm_stream.write(old_c_m);
         (*CD)++;
       }
-
       old_c_r = cr;
       old_c_i = ci;
       old_c_m = cm;
+//std::cout << "old_c(" << X(old_c_m) << "," << Y(old_c_m) << ") = " << old_c_r << " + " << old_c_i << "\n" << std::flush;
       c_ready = 0;
       cr = 0.0f;
       ci = 0.0f;
-      // if we here both i,j point to lir, so update to next data
-      i++;
-      j++;
-
     }
 
-    if(LAST_IN_TENSOR(A_row_m[i]) && LAST_IN_TENSOR(B_col_m[j]) ) {
+    if (LAST_IN_TENSOR(B_col_m[j]) && LAST_IN_ROW(A_row_m[i])) {
+      // FIXME: check on all three?
+      while (!Ar_stream_buf.empty()) {
+        Ar_stream_buf.read();
+        Ai_stream_buf.read();
+        Am_stream_buf.read();
+      }
+      A_read = 1;
+    }
+
+    if (LAST_IN_TENSOR(A_row_m[i]) && LAST_IN_TENSOR(B_col_m[j]) ) { /* if ended both A, B then exit */
       break;
+    }
+
+    if (LAST_IN_ROW(B_col_m[j]) && LAST_IN_ROW(A_row_m[i])) {  /*  if B_col[j].last_in_tensor, empty A_stream_buf and set A_read to 1 */
+      i = PACKET_SIZE;
+      j++;
     }
   }
 
@@ -232,7 +251,7 @@ LOOP_T:
     (*CD)++;
   }
 
-  // TODO check on all three ?
+  // FIXME check on all three ?
   while(!Br_stream.empty()) { /* empty B_stream */
     Br_stream.read();
     Bi_stream.read();

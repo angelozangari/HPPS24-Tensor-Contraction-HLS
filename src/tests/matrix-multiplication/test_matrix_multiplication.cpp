@@ -28,6 +28,8 @@ int main() {
     float tmp_i[max_out_size];
     coo_meta_t tmp_m[max_out_size];
 
+    //op.print();
+    
     // Call the kernel
     matrix_multiplication(left.data_r.data(), left.data_i.data(),
                           left.data_m.data(), right.data_r.data(),
@@ -41,7 +43,9 @@ int main() {
       cout << "FAILED" << endl;
       cout << "Mismatch in sizes" << endl;
       cout << "Predicted output size: " << real_size << endl;
+      //predicted_out.print();
       cout << "Real output size: " << real_out.size() << endl;
+      //real_out.print();
       return 1;
     }
 
