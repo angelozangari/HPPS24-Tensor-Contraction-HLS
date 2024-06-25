@@ -1,8 +1,6 @@
 #include "krnl_mat_mul.h"
 #include "tensors.h"
 
-#include <cstdint>
-
 #define PACKET_SIZE 16
 
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
