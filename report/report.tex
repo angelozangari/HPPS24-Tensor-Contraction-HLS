@@ -44,115 +44,148 @@
 
 \title{\textbf{Example title}}
 
-\author{Group Name\\Author 1, Author 2}
+\author{Simulation of Quantum Circuits on FPGAs\\Federico Lolli, Angelo Zangari}
 
 \date{\today}
 
 \begin{document}
 
-
 \begin{titlepage}
-	\centering
-	\clearpage
-	\maketitle
+    \centering
+    \clearpage
+    \maketitle
 	\thispagestyle{empty}
 	\vspace*{1cm}
 	\includegraphics[width=4cm]{example.jpg} % qui mettete il vostro logo, o cancellate la linea
 	\vfill
 	\centering
+    % FIXME: choose 1 of the 2 footers below
 	\includegraphics{footer.png}
 	\includegraphics{logo_polimi.png}\includegraphics{logo_NECST.png}
 \end{titlepage}
 
-
 \begin{abstract}
-Enter a short summary here. What topic do you want to investigate and why? What experiment did you perform? What were your main results and conclusion?
+%    Enter a short summary here. What topic do you want to investigate and why? What experiment did you perform? What were your main results and conclusion?
+Hi
 \end{abstract}
 
-\section{Introduction} \label{sec:intro}
-Please, be careful about paragraph separation: double backslash (\textbackslash\textbackslash) is used to break the line without spacing, and should be used only to break a single, long paragraph. Instead, to create a new paragraph two line breaks should be used.
+\section{Introduction} 
 
-This is, for example, a new, properly spaced paragraph (you can see the indentation at the beginning). Remember you can put references to external sources, in particular scientific articles or websites. To cite a source, you need to add the reference to the ``biblio.bib'' file in the Bibtex format, which lists the main information about the source. Since writing a Bibtex reference manually can be long, you can usually find the whole Bibtex reference on the internet, for example in the IEEE or ACM websites. Google is always a good source. In general, the procedure to cite a new source is:
-\begin{enumerate}
-	\item find the Bibtex reference (if any)
-	\item copy or manually write it into the ``biblio.bib'' file
-	\item give it a label you like (in this example, you can see ``vantage'' or ``sandy\_slides''), provided it is \emph{unique}
-	\item use it throughout the text, with the \textbackslash \emph{cite} directive: for example, \cite{vantage} or \cite{sandy_slides}
-\end{enumerate}
-The list of referenced sources will appear at the end of the report.
+\subsection{Objective and Scope}
+% State the purpose of your project, the objectives, and the scope. Explain why developing a quantum simulation accelerator is important.
 
-\section{Section 1} \label{sec:sec1}
-In the following, \cref{eq:exeq} shows an example of equation centered within the page.
+\subsection{Significance}
+% Discuss the significance of this work in the context of current technological advancements and potential applications.
 
-\begin{equation}\label{eq:exeq}
-%
-\mbox{maximize} \sum_{i=17}^{31} \sum_{j=i+1}^{32} [ x_{i,j} \times s_{i,j} + (1 - x_{i,j}) \times d_{i,j} ]
-%
-\end{equation}
+\subsection{Overview}
+% Provide a brief overview of the report structure.
 
-To type any mathematical expression in the text without breaking the line, you can surround it with the \$ symbol, for example to refer to $i$ and to $ \sum_{j=i+1}^{32} [ x_{i,j} \times s_{i,j} + (1 - x_{i,j}) \times d_{i,j} ] $.
 
-If you need to show code snippets, you can use the \emph{listing} environment, as in the following example. As for the other elements, you can refer to a listing through its label as in \cref{list:exlistings}. Remember to make your code well readable by indenting it and using concise pseudo-code snippets, without pasting your own code as it is (unless it is REALLY expressive and short).
+\section{Problem Explanation (Quantum Simulation)} 
 
-\begin{lstlisting}[label={list:exlistings},caption={Example of code snippet}]
-globaldata: list_head buddies[MAX_ORDER][MAX_COLORS]
+\subsection{Background}
+% Explain what quantum simulation is and why it is challenging. Include the theoretical foundations and the practical implications.
 
-procedure InsertBuddy(buddy b, order ord)
-	buddy twin
-	mcolor mcol
-	
-	mcol = Mcolor(b, ord)
-	twin = GetTwinBuddy(b,ord)	
-	if ord < MAX_ORDER-1 AND BuddyIsFree(twin)
-		RemoveFromList(buddies[ord][Mcolor(twin,ord)])
-		b = CoalesceBuddy(b, twin, ord)
-		InsertBuddy(b, ord+1)
-		return
-	else
-		InsertHead(buddies[ord][mcol],b)
-end procedure
-\end{lstlisting}
+\subsection{Current Challenges}
+% Highlight the key challenges in quantum simulation that your project aims to address.
 
-\subsection{Subsection 1} \label{sec:sub1}
-This is the way to refer to \cref{fig:example}, and similarly for \cref{sec:sec1}.
-\begin{figure}
-	\centering
-	\includegraphics[width=.7\textwidth]{example.jpg}
-	\caption{Example caption.}
-	\label{fig:example}
-\end{figure}
-You will notice \LaTeX~ freely moves elements like figures and tables around the page, and often in the pages around the current paragraph. In particular, \LaTeX~ always places these elements at the bottom or top of the page (otherwise instructed): this choice obeys to the main typesetting guidelines, and should work well most of the times. You should not force a specific position for these elements, and keep in mind that \textit{\LaTeX~ most of the time is right} (it is its job to do lay out elements, not yours). If you need to move an element, move its \LaTeX~ code up or down.
+\subsection{Motivation}
+% Explain why you chose to tackle this problem and how it relates to existing research or industry needs.
 
-\subsection{Subsection 2} \label{sec:sub2}
-\Cref{tab:example} provides an example of a table. According to many people, this table style (without vertical lines separating columns) is the most elegant and clean possible; to set this tables style, this document adds the \verb|\usepackage{booktabs}| directive at the beginning. In the \LaTeX~ code, you can notice that an ampersand (\$) separates columns and a double backslash (\verb|\\|) moves to a new line.
-\begin{table}
-	\caption{Table title (without stop!)}
-	\centering
-	\begin{tabular}{ccl}
-		\toprule
-		\textbf{label0} & \textbf{label1} & \textbf{label2} \\
-		\midrule
-		row 0, col 0 & row 0, col 1 & row 0, col 2 \\
-		row 1, col 0 & row 1, col 1 & row 1, col 2 \\ 
-		row 2, col 0 & row 2, col 1 & row 2, col 2 \\ 
-		row 3, col 0 & row 3, col 1 & row 3, col 2 \\
-		\bottomrule
-	\end{tabular}
-	\label{tab:example}
-\end{table}
 
-Since tables in \LaTeX~ are verbose, you should:
-\begin{itemize}
-\item place them in a specific file, to be included with a \verb|\input{filename}| directive
-\item for large tables, fill them on applications or websites like \url{https://www.tablesgenerator.com/}, then copy their code and paste it in the dedicated file; finally, you can customize the style from the \LaTeX~ code
-\end{itemize}
+\section{State of the Art Reference} 
 
-Here you can see the same table as before but included from an external file \textit{table.tex}: the result is the same.
-%
-\input{table}
+\subsection{Literature Review}
+% Summarize existing work in the field of quantum simulation accelerators. Discuss various approaches, technologies used, and their limitations.
 
-\printbibliography
+\subsection{Comparison}
+% Compare different methods and highlight where your ap- proach fits in the current landscape.
+
+\subsection{Gaps}
+% Identify the gaps in the current state of the art that your project aims to fill.
+
+
+
+\section{Methods} 
+
+\subsection{Design Approach}
+% Describe the overall design and methodology used to develop the quantum simulation accelerator.
+
+\subsection{Technology Stack}
+% Provide an overview of the technologies and tools used, including Vitis HLS, Rust, and OpenCL.
+
+\subsection{Development Process}
+% Outline the steps taken in the development process, from initial design to final implementation.
+
+
+\section{Frontend (Host Side) Explanation} 
+
+\subsection{Architecture}
+% Explain the architecture of the host side implemented in Rust. Include diagrams if necessary.
+
+\subsection{Implementation Details}
+% Provide detailed descriptions of the key com- ponents and their functionality.
+
+\subsection{Communication}
+% Explain how the host side communicates with the kernel using OpenCL. Detail any challenges faced and how they were overcome.
+
+\subsection{Code Examples}
+% Include snippets of important sections of your Rust code, explaining what each part does.
+
+
+
+\section{Kernel (FPGA Side) Explanation} 
+
+\subsection{Architecture}
+% Describe the FPGA kernel’s architecture and how it accelerates quantum simulations.
+
+\subsection{Implementation Details}
+% Provide detailed explanations of the implementation using Vitis HLS. Discuss any optimizations made for performance.
+
+\subsection{Integration}
+% Explain how the kernel integrates with the host side via OpenCL. Include diagrams and flowcharts to illustrate the process.
+
+\subsection{Code Examples}
+% Include HLS code snippets and explain their functionality.
+
+
+\section{Results and Discussion} 
+
+\subsection{Performance Metrics}
+% Present the performance metrics of your ac- celerator. Compare them against benchmarks or other state-of-the-art solutions.
+
+\subsection{Analysis}
+% Analyze the results, discussing any improvements or unexpected outcomes. Use charts and graphs to visualize data.
+
+\subsection{Limitations}
+% Discuss the limitations of your current implementation and any potential improvements for future work.
+
+
+\section{Conclusion} 
+
+\subsection{Summary}
+% Summarize the key findings and contributions of your project.
+
+\subsection{Future Work}
+% Suggest areas for future research or improvements that can be made to your quantum simulation accelerator.
+
+\subsection{Final Thoughts}
+% Provide any concluding remarks or reflections on the project.
+
+
+\section{References} 
+
+\subsection{Citations}
+% List all the references cited in your report in the appropriate academic format.
+
+
+\section{Appendices}
+% Include any supplementary material, such as full code listings or additional data, in the appendices.
+
+
+% Additional Tips 
+    % Figures and Charts: Ensure that all figures, charts, and diagrams are clearly labeled and referenced in the text. Use them to illustrate complex points and provide visual clarity.
+    % Clarity and Conciseness: Make sure your writing is clear and concise. Avoid unnecessary jargon and explain technical terms where needed.
+
 
 \end{document}
-
-
