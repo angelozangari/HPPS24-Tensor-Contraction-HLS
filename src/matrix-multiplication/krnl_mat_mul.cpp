@@ -1,47 +1,9 @@
 #include "krnl_mat_mul.h"
 #include "tensors.h"
 
-#include <fstream>
-#include <stdlib.h>
-
 #include <cstdint>
 
 #define PACKET_SIZE 16
-
-// if we here both i,j point to lir, so update to next data
-/* UPDATE i, j */
-//std::cout << "old i: " << i << " A_row[i] is lit: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
-//std::cout << "old j: " << j << " B_col[j] is lit: " << LAST_IN_TENSOR(B_col_m[j]) << "\n" << std::flush;
-//      i++;
-//      j++;      
-//std::cout << "new i: " << i << " A_row[i] is lit: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
-//std::cout << "new j: " << j << " B_col[j] is lit: " << LAST_IN_TENSOR(B_col_m[j]) << "\n" << std::flush;
-
-//std::cout << "PIZZA\n" << std::flush;
-//std::cout << "A_row(" << X(A_row_m[i]) << "," << Y(A_row_m[i]) << ")" <<  " l_i_t: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
-//std::cout << "B_col(" << X(B_col_m[j]) << "," << Y(B_col_m[j]) << ")" <<  " l_i_t: " << LAST_IN_TENSOR(A_row_m[i]) << "\n" << std::flush;
-
-
-//PRINT PACKETS
-//std::cout << "Computing c(" << X(A_row_m[i]) << "," << Y(B_col_m[j]) << ")\n" << std::flush;
-//std::cout << "Packet A_row: " << std::flush;
-//for(int a=0; a < PACKET_SIZE; a++) {
-//  std::cout << "(" << A_row_r[a] << "," << A_row_i[a] << "i) at [" << X(A_row_m[a]) << "][" << Y(A_row_m[a]) << "] -> " << std::flush;
-//  if (LAST_IN_ROW(A_row_m[a])) {
-//    std::cout << "//\n" << std::flush;
-//    break;
-//  }
-//}
-//std::cout << "Packet B_col: " << std::flush;
-//for(int b=0; b < PACKET_SIZE; b++) {
-//  std::cout << "(" << B_col_r[b] << "," << B_col_i[b] << "i) at [" << X(B_col_m[b]) << "][" << Y(B_col_m[b]) << "] -> " << std::flush;
-//  if (LAST_IN_ROW(B_col_m[b])) {
-//    std::cout << "//\n" << std::flush;
-//    break;
-//  }
-//}
-
-
 
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
                            float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
@@ -126,7 +88,6 @@ void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
   coo_meta_t old_c_m;
   old_c_r = 0.0f;
   old_c_i = 0.0f;
-  // TODO: need to init other fields to some val? what about cm?
 
   float A_row_r[PACKET_SIZE], A_row_i[PACKET_SIZE]; 
   coo_meta_t A_row_m[PACKET_SIZE];
@@ -155,7 +116,6 @@ LOOP_T:
           A_row_r[s] = Ar_stream.read();
           A_row_i[s] = Ai_stream.read();
           A_row_m[s] = Am_stream.read();
-//std::cout << "Read element A_row(" << X(A_row_m[s]) << "," << Y(A_row_m[s]) << ") = " << A_row_r[s] << " + " << A_row_i[s] << "l_i_r: " << LAST_IN_ROW(A_row_m[s]) << ", l_i_t: " << LAST_IN_TENSOR(A_row_m[s])<< "\n" << std::flush;
           if(LAST_IN_ROW(A_row_m[s])) {
             A_read = 0;
           }
@@ -180,8 +140,6 @@ LOOP_T:
         B_col_r[r] = Br_stream.read();
         B_col_i[r] = Bi_stream.read();
         B_col_m[r] = Bm_stream.read();
-//std::cout << "Read element B_col(" << X(B_col_m[r]) << "," << Y(B_col_m[r]) << ") = " << B_col_r[r] << " + " << B_col_i[r] << "l_i_r: " << LAST_IN_ROW(B_col_m[r]) << "\n" << std::flush;
-        
 // TODO: check if i can read/write same stream in an unrolled loop
         Br_stream.write(B_col_r[r]);
         Bi_stream.write(B_col_i[r]);
@@ -190,7 +148,6 @@ LOOP_T:
       }
     }
 
-//std::cout << "ENTERING COMPUTE LOOP\n" << std::flush;
   LOOP_Q:
     for(;i < PACKET_SIZE && j < PACKET_SIZE;) { /* compute c while both packets contain valid elements */
       if (Y(A_row_m[i]) == X(B_col_m[j])) {
@@ -220,47 +177,11 @@ LOOP_T:
         }
       }
 
-//std::cout << "\ni: " << i << ", j: " << j << "\n" << std::flush;
-//std::cout << "Packet A_row: \n" << std::flush;
-//for(int a=0; a < PACKET_SIZE; a++) {
-//  //std::cout << "(" << A_row_r[a] << "," << A_row_i[a] << "i) at [" << X(A_row_m[a]) << "][" << Y(A_row_m[a]) << "] , lir: " << LAST_IN_ROW(A_row_m[a]) << ", lit: " << LAST_IN_TENSOR(A_row_m[a]) << "-> \n" << std::flush;
-//  //if (LAST_IN_ROW(A_row_m[a])) {
-//  //  break;
-//  //}
-//}
-//std::cout << "//\n" << std::flush;
-//std::cout << "Packet B_col: \n" << std::flush;
-//for(int b=0; b < PACKET_SIZE; b++) {
-//  std::cout << "(" << B_col_r[b] << "," << B_col_i[b] << "i) at [" << X(B_col_m[b]) << "][" << Y(B_col_m[b]) << "] , lir: " << LAST_IN_ROW(B_col_m[b]) << ", lit: " << LAST_IN_TENSOR(B_col_m[b]) << "-> \n" << std::flush;
-//  //if (LAST_IN_ROW(B_col_m[b])) {
-//  //  break;
-//  //}
-//}
-//std::cout << "//\n" << std::flush;
     }
-//std::cout << "OUT OF FOR COMPUTE LOOP\n" << std::flush;
 
     if (c_ready) {  /* write c to stream if ready */
       X(cm) = X(A_row_m[i]);
       Y(cm) = Y(B_col_m[j]);
-//std::cout << "Computed c(" << X(cm) << "," << Y(cm) << ") = " << cr << " + " << ci << "\n" << std::flush;
-//std::cout << "\ni: " << i << ", j: " << j << "\n" << std::flush;
-//std::cout << "Packet A_row: \n" << std::flush;
-//for(int a=0; a < PACKET_SIZE; a++) {
-//  std::cout << "(" << A_row_r[a] << "," << A_row_i[a] << "i) at [" << X(A_row_m[a]) << "][" << Y(A_row_m[a]) << "] -> \n" << std::flush;
-//  //if (LAST_IN_ROW(A_row_m[a])) {
-//  //  break;
-//  //}
-//}
-//std::cout << "//\n" << std::flush;
-//std::cout << "Packet B_col: \n" << std::flush;
-//for(int b=0; b < PACKET_SIZE; b++) {
-//  std::cout << "(" << B_col_r[b] << "," << B_col_i[b] << "i) at [" << X(B_col_m[b]) << "][" << Y(B_col_m[b]) << "] -> \n" << std::flush;
-//  //if (LAST_IN_ROW(B_col_m[b])) {
-//  //  break;
-//  //}
-//}
-//std::cout << "//\n" << std::flush;
       if( !(old_c_r == 0.0f && old_c_i == 0.0f) ) {
         if(X(old_c_m) != X(cm)) {
           LAST_IN_ROW(old_c_m) = 1;
@@ -276,7 +197,6 @@ LOOP_T:
       old_c_r = cr;
       old_c_i = ci;
       old_c_m = cm;
-//std::cout << "old_c(" << X(old_c_m) << "," << Y(old_c_m) << ") = " << old_c_r << " + " << old_c_i << "\n" << std::flush;
       c_ready = 0;
       cr = 0.0f;
       ci = 0.0f;
