@@ -4,6 +4,9 @@
 # C/C++ object files
 *.o
 
+# PDFs
+report/*.pdf
+
 # HLS lib
 include
 build
