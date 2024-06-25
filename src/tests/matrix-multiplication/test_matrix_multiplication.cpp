@@ -13,7 +13,8 @@ int main() {
   reader.consume(true); // SET TO TRUE TO REVERSE THE RIGHT TENSOR
   auto ops = &reader.operations;
 
-  for (size_t i = 0; i < ops->size(); i++) {
+  // for (size_t i = 0; i < ops->size(); i++) {
+  for (size_t i = 14; i < 15; i++) {
     OP &op = ops->at(i);
 
     CooTens left{op.left};
