@@ -1,27 +1,33 @@
 main := report
 
-.PHONY: clean distclean
+.PHONY: remove-build remove-all
 
-LTC = pdflatex -interaction=nonstopmode -shell-escape -synctex=1
-BIB = biber
+ASSETS_DIR := assets
+BUILD_DIR := build
+LTC = TEXINPUTS=$(ASSETS_DIR): pdflatex -interaction=nonstopmode -shell-escape -synctex=1 -output-directory=$(BUILD_DIR)
+BIB = biber --input-directory $(BUILD_DIR) --output-directory $(BUILD_DIR)
 
 other_texs = $(filter-out $(main).tex, $(wildcard *.tex))
 
 all: $(main).pdf
 
-$(main).pdf: $(main).tex $(other_texs)
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+$(main).pdf: $(BUILD_DIR)/$(main).pdf
+	cp $(BUILD_DIR)/$(main).pdf .
+
+$(BUILD_DIR)/$(main).pdf: $(main).tex $(other_texs) $(ASSETS_DIR)/biblio.bib | $(BUILD_DIR)
 	$(LTC) $(main).tex
-ifeq (,$(wildcard ./*.bib))
+ifeq (,$(wildcard $(ASSETS_DIR)/*.bib))
 	$(BIB) $(main)
 endif
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
 
-clean:
-	@rm -f *.aux *.bbl $(main).blg $(main).dvi $(main).log $(main).out \
-	$(main).ps $(main).synctex.gz *.blg *.xml *-blx.bib *.bcf &> /dev/null || true
+remove-build:
+	@rm -rf $(BUILD_DIR)
 
-distclean: clean
-	@rm $(main).pdf &> /dev/null || true
-
+remove-all: remove-build
+	@rm -f $(main).pdf
