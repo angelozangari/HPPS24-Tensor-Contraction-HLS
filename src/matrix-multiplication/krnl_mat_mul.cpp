@@ -27,7 +27,6 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
 #pragma HLS INTERFACE s_axilite port=Cr bundle=control
 #pragma HLS INTERFACE s_axilite port=Ci bundle=control
 #pragma HLS INTERFACE s_axilite port=Cm bundle=control
-#pragma HLS INTERFACE s_axilite port=A_R bundle=control
 #pragma HLS INTERFACE s_axilite port=A_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=B_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=CD bundle=control
