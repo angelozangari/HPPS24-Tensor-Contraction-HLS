@@ -97,5 +97,8 @@
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/include",
         "${workspaceFolder}/src"
-    ]
+    ],
+    "[latex]": {
+        "editor.wordWrap": "on"
+    }
 }
