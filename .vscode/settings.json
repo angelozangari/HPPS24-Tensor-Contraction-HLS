@@ -2,6 +2,7 @@
     "cSpell.words": [
         "axilite",
         "gmem",
+        "matmul",
         "qubit"
     ],
     "files.associations": {
@@ -89,7 +90,9 @@
         "unordered_set": "cpp",
         "cfenv": "cpp",
         "codecvt": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "any": "cpp",
+        "semaphore": "cpp"
     },
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/include",

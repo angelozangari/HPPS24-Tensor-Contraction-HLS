@@ -10,7 +10,7 @@ using namespace std;
 
 int main() {
   GoldenReader reader("golden-vectors.dat");
-  reader.consume(true); // SET TO TRUE TO REVERSE THE RIGHT TENSOR
+  reader.consume();
   auto ops = &reader.operations;
 
   for (size_t i = 0; i < ops->size(); i++) {

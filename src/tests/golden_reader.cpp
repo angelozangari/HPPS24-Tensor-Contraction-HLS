@@ -26,6 +26,15 @@ template <typename T> T read_from_stream(std::istream &inp) {
   return val;
 }
 
+OpKind parse_op_kind(istream &inp) {
+  uint32_t kind = read_from_stream<uint32_t>(inp);
+  if (kind == 0) {
+    return OpKind::TensExp;
+  } else {
+    return OpKind::MatMul;
+  }
+}
+
 Tens::Tens(istream &inp, bool reversed) : reversed(reversed) {
   // read size_t bytes and encode as size_t
   size_t size = read_from_stream<size_t>(inp);
@@ -43,11 +52,9 @@ void Tens::print() const {
   for (int i = 0; i < 1 << rank; i++) {
     for (int j = 0; j < 1 << rank; j++) {
       if (reversed) {
-        printf("(%f + %fi) ", data_r[j * (1 << rank) + i],
-               data_i[j * (1 << rank) + i]);
+        printf("(%f + %fi) ", data_r[j * (1 << rank) + i], data_i[j * (1 << rank) + i]);
       } else {
-        printf("(%f + %fi) ", data_r[i * (1 << rank) + j],
-               data_i[i * (1 << rank) + j]);
+        printf("(%f + %fi) ", data_r[i * (1 << rank) + j], data_i[i * (1 << rank) + j]);
       }
     }
     printf("\n");
@@ -94,12 +101,11 @@ CooTens::CooTens(Tens &tens) : rank(tens.rank) {
   }
 }
 
-CooTens::CooTens(vector<float> tens_r, vector<float> tens_i,
-                 vector<coo_meta_t> tens_m, int rank)
+CooTens::CooTens(vector<float> tens_r, vector<float> tens_i, vector<coo_meta_t> tens_m,
+                 int rank)
     : data_r(tens_r), data_i(tens_i), data_m(tens_m), rank(rank) {}
 
-CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size,
-                 int rank)
+CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, int rank)
     : rank(rank) {
   for (size_t i = 0; i < size; i++) {
     data_r.push_back(tens_r[i]);
@@ -110,13 +116,13 @@ CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size,
 
 void CooTens::print() const {
   for (size_t i = 0; i < size(); i++) {
-    printf("(%f + %fi) at (%lu, %lu)\n", data_r[i], data_i[i],
-           X(data_m[i]).to_long(), Y(data_m[i]).to_long());
+    printf("(%f + %fi) at (%lu, %lu)\n", data_r[i], data_i[i], X(data_m[i]).to_long(),
+           Y(data_m[i]).to_long());
   }
 }
 
-OP::OP(istream &inp, bool right_reversed)
-    : left(inp), right(inp, right_reversed), out(inp) {}
+OP::OP(istream &inp)
+    : kind(parse_op_kind(inp)), left(inp), right(inp, kind == OpKind::MatMul), out(inp) {}
 
 void OP::print() const {
   cout << "Left tensor:" << endl;
@@ -131,8 +137,8 @@ GoldenReader::GoldenReader(const string &filename) {
   inp = make_unique<ifstream>(filename, ios::binary);
 }
 
-void GoldenReader::consume(bool right_reversed) {
+void GoldenReader::consume() {
   while (inp->peek() != EOF) {
-    operations.emplace_back(*inp, right_reversed);
+    operations.emplace_back(*inp);
   }
 }
