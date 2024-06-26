@@ -10,3 +10,6 @@ report/*.pdf
 # HLS lib
 include
 build
+
+# scratch notes / ideas .tex
+report/scratch.tex
