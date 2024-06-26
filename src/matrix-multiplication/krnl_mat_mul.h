@@ -2,14 +2,14 @@
 
 #include <cstdint>
 
+#include "../types.h"
 #include "ap_int.h"
 #include "hls_stream.h"
-#include "types.h"
 
 extern "C" {
-void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
-                           float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
-                           coo_meta_t *Cm, dim_t A_NZ, dim_t B_NZ, dim_t *CD);
+void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi,
+                           coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm,
+                           dim_t A_NZ, dim_t B_NZ, dim_t *CD);
 }
 
 namespace Matrix {

@@ -1,10 +1,9 @@
 #include "krnl_tens_exp.h"
-#include "../tensors.h"
+#include "../tensors.hpp"
 
-void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
-                      float *Bi, coo_meta_t *Bm, float *Cr, float *Ci,
-                      coo_meta_t *Cm, dim_t A_NZ, dim_t B_NZ, rank_t A_R,
-                      rank_t B_R) {
+void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi,
+                      coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm, dim_t A_NZ,
+                      dim_t B_NZ, rank_t A_R, rank_t B_R) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 //depth=1024
 #pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 //depth=1024
@@ -32,8 +31,7 @@ void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
   // clang-format on
 
   dim_t C_NZ = A_NZ * B_NZ;
-  hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream,
-      Ci_stream;
+  hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream, Ci_stream;
   // clang-format off
 #pragma HLS STREAM variable=Ar_stream depth=32
 #pragma HLS STREAM variable=Ai_stream depth=32
@@ -53,9 +51,8 @@ void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br,
 #pragma HLS dataflow
   Tensor::load(Ar, Ai, Am, Ar_stream, Ai_stream, Am_stream, A_NZ);
   Tensor::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
-  Tensor::Expansion::compute(Ar_stream, Ai_stream, Am_stream, Br_stream,
-                             Bi_stream, Bm_stream, Cr_stream, Ci_stream,
-                             Cm_stream, B_R);
+  Tensor::Expansion::compute(Ar_stream, Ai_stream, Am_stream, Br_stream, Bi_stream,
+                             Bm_stream, Cr_stream, Ci_stream, Cm_stream, B_R);
   Tensor::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, C_NZ);
 }
 
