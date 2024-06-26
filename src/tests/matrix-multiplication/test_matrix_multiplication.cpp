@@ -28,13 +28,12 @@ int main() {
     float tmp_i[max_out_size];
     coo_meta_t tmp_m[max_out_size];
 
-    //op.print();
-    
+    // op.print();
+
     // Call the kernel
-    matrix_multiplication(left.data_r.data(), left.data_i.data(),
-                          left.data_m.data(), right.data_r.data(),
-                          right.data_i.data(), right.data_m.data(), tmp_r,
-                          tmp_i, tmp_m, left.size(), right.size(), &real_size);
+    matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
+                          right.data_r.data(), right.data_i.data(), right.data_m.data(),
+                          tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size);
 
     // Compare the output
     CooTens predicted_out{tmp_r, tmp_i, tmp_m, real_size, left.rank};
@@ -43,9 +42,9 @@ int main() {
       cout << "FAILED" << endl;
       cout << "Mismatch in sizes" << endl;
       cout << "Predicted output size: " << real_size << endl;
-      //predicted_out.print();
+      // predicted_out.print();
       cout << "Real output size: " << real_out.size() << endl;
-      //real_out.print();
+      // real_out.print();
       return 1;
     }
 
@@ -56,13 +55,13 @@ int main() {
         cout << "FAILED" << endl;
         cout << "Mismatch in data" << endl;
         // print_op_matrices(op);
-        cout << "Predicted output:" << "(" << predicted_out.data_r[i] << " + "
-             << predicted_out.data_i[i] << "i) at ("
-             << X(predicted_out.data_m[i]) << ", " << Y(predicted_out.data_m[i])
-             << ")" << endl;
-        cout << "Real output:" << "(" << real_out.data_r[i] << " + "
-             << real_out.data_i[i] << "i) at (" << X(real_out.data_m[i]) << ", "
-             << Y(real_out.data_m[i]) << ")" << endl;
+        cout << "Predicted output:"
+             << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+             << "i) at (" << X(predicted_out.data_m[i]) << ", "
+             << Y(predicted_out.data_m[i]) << ")" << endl;
+        cout << "Real output:"
+             << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+             << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
         cout << "Full Real output:" << endl;
         real_out.print();
         cout << "Full Predicted output:" << endl;
