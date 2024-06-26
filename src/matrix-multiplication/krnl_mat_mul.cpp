@@ -1,5 +1,5 @@
 #include "krnl_mat_mul.h"
-#include "../tensors.hpp"
+#include "../tensors.h"
 
 #define PACKET_SIZE 16
 
