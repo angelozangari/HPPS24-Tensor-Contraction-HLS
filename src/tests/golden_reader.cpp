@@ -27,12 +27,17 @@ template <typename T> T read_from_stream(std::istream &inp) {
 }
 
 OpKind parse_op_kind(istream &inp) {
-  uint32_t kind = read_from_stream<uint32_t>(inp);
-  if (kind == 0) {
+  uint8_t kind = read_from_stream<uint8_t>(inp);
+  if (kind == 0x00) {
     return OpKind::TensExp;
   } else {
     return OpKind::MatMul;
   }
+}
+
+bool parse_reversed(istream &inp) {
+  uint8_t rev = read_from_stream<uint8_t>(inp);
+  return rev == 0xff;
 }
 
 Tens::Tens(istream &inp, bool reversed) : reversed(reversed) {
@@ -121,8 +126,13 @@ void CooTens::print() const {
   }
 }
 
-OP::OP(istream &inp)
-    : kind(parse_op_kind(inp)), left(inp), right(inp, kind == OpKind::MatMul), out(inp) {}
+OP::OP(istream &inp) {
+  kind = parse_op_kind(inp);
+  reversed = parse_reversed(inp);
+  left = Tens{inp, reversed};
+  right = Tens{inp, reversed || (kind == OpKind::MatMul)};
+  out = Tens{inp, reversed};
+}
 
 void OP::print() const {
   cout << "Left tensor:" << endl;

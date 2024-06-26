@@ -10,9 +10,11 @@
 enum class OpKind { MatMul, TensExp };
 
 OpKind parse_op_kind(std::istream &inp);
+bool parse_reversed(std::istream &inp);
 
 class Tens {
 public:
+  Tens() = default;
   explicit Tens(std::istream &inp, bool reversed = false);
 
   void print() const;
@@ -26,6 +28,7 @@ public:
 
 class CooTens {
 public:
+  CooTens() = default;
   CooTens(Tens &tens);
   CooTens(std::vector<float> tens_r, std::vector<float> tens_i,
           std::vector<coo_meta_t> tens_m, int rank);
@@ -45,6 +48,7 @@ public:
   explicit OP(std::istream &inp);
   void print() const;
 
+  bool reversed;
   OpKind kind;
   Tens left, right, out;
 };

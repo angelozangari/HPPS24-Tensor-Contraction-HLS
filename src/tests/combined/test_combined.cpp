@@ -40,6 +40,8 @@ CooTens compute_matmul(CooTens &left, CooTens &right) {
 }
 
 int main() {
+  CooTens left, right;
+
   GoldenReader reader("golden-vectors.dat");
   reader.consume();
   auto ops = &reader.operations;
@@ -48,8 +50,8 @@ int main() {
   OP right_te = ops->at(1);
   OP out_matmul = ops->at(2);
 
-  CooTens left{left_te.left};
-  CooTens right{left_te.right};
+  left = {left_te.left};
+  right = {left_te.right};
   auto out_left_te = compute_te(left, right);
 
   left = {right_te.left};
@@ -64,13 +66,13 @@ int main() {
   auto real_out = CooTens{out_matmul.out};
   auto predicted_out = computed_matmul;
 
-  // if (predicted_out.size() != real_out.size()) {
-  //   std::cout << "FAILED" << endl;
-  //   std::cout << "Mismatch in sizes" << endl;
-  //   std::cout << "Predicted output size: " << predicted_out.size() << endl;
-  //   std::cout << "Real output size: " << real_out.size() << endl;
-  //   return 1;
-  // }
+  if (predicted_out.size() != real_out.size()) {
+    std::cout << "FAILED" << endl;
+    std::cout << "Mismatch in sizes" << endl;
+    std::cout << "Predicted output size: " << predicted_out.size() << endl;
+    std::cout << "Real output size: " << real_out.size() << endl;
+    return 1;
+  }
 
   for (size_t i = 0; i < predicted_out.size(); i++) {
     if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
@@ -79,13 +81,12 @@ int main() {
       std::cout << "FAILED" << endl;
       std::cout << "Mismatch in data" << endl;
       // print_op_matrices(op);
-      std::cout << "Predicted output:"
-                << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-                << "i) at (" << X(predicted_out.data_m[i]) << ", "
-                << Y(predicted_out.data_m[i]) << ")" << endl;
-      std::cout << "Real output:"
-                << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-                << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+      std::cout << "Predicted output:" << "(" << predicted_out.data_r[i] << " + "
+                << predicted_out.data_i[i] << "i) at (" << X(predicted_out.data_m[i])
+                << ", " << Y(predicted_out.data_m[i]) << ")" << endl;
+      std::cout << "Real output:" << "(" << real_out.data_r[i] << " + "
+                << real_out.data_i[i] << "i) at (" << X(real_out.data_m[i]) << ", "
+                << Y(real_out.data_m[i]) << ")" << endl;
       std::cout << "Full Real output:" << endl;
       real_out.print();
       std::cout << "Full Predicted output:" << endl;
