@@ -13,7 +13,11 @@ int main() {
   reader.consume();
   auto ops = &reader.operations;
 
+#ifdef TEST_ALL
   for (size_t i = 0; i < ops->size(); i++) {
+#else
+  for (size_t i = 10; i < 11; i++) {
+#endif
     OP &op = ops->at(i);
 
     CooTens left{op.left};

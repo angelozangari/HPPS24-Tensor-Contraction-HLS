@@ -13,15 +13,18 @@ target_include_directories(qcslib PUBLIC include src)
 # test executable
 # expansion
 add_executable(test-tensor-expansion src/tests/tensor-expansion/test_tensor_expansion.cpp)
+target_compile_definitions(test-tensor-expansion PRIVATE TEST_ALL)
 target_include_directories(test-tensor-expansion PUBLIC include)
 target_link_libraries(test-tensor-expansion PUBLIC qcslib)
 
 # matmul
 add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)
+target_compile_definitions(test-matrix-multiplication PRIVATE TEST_ALL)
 target_include_directories(test-matrix-multiplication PUBLIC include)
 target_link_libraries(test-matrix-multiplication PUBLIC qcslib)
 
 # combined
 add_executable(test-combined src/tests/combined/test_combined.cpp)
+target_compile_definitions(test-combined PRIVATE TEST_ALL)
 target_include_directories(test-combined PUBLIC include)
 target_link_libraries(test-combined PUBLIC qcslib)

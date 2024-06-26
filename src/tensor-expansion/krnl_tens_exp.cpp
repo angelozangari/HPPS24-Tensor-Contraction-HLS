@@ -5,15 +5,15 @@ void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi
                       coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm, dim_t A_NZ,
                       dim_t B_NZ, rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 //depth=1024
-#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 //depth=1024
-#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 //depth=1024
-#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 //depth=1024
-#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 //depth=1024
-#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 //depth=1024
-#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 //depth=1024
-#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 //depth=1024
-#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 //depth=1024
+#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=32
+#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=32
+#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 depth=8 max_read_burst_length=32
+#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 depth=4 max_read_burst_length=32
+#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 depth=4 max_read_burst_length=32
+#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 depth=4 max_read_burst_length=32
+#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 depth=32 max_write_burst_length=32
+#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 depth=32 max_write_burst_length=32
+#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 depth=32 max_write_burst_length=32
 #pragma HLS INTERFACE s_axilite port=Ar bundle=control
 #pragma HLS INTERFACE s_axilite port=Ai bundle=control
 #pragma HLS INTERFACE s_axilite port=Am bundle=control
