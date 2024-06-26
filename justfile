@@ -24,5 +24,11 @@ test-matrix-multiplication: build-ninja
     cd src/tests/matrix-multiplication
     ../../../build/test-matrix-multiplication
 
+test-combined: build-ninja
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd src/tests/combined
+    ../../../build/test-combined
+
 clean:
     rm -rf ./build

@@ -20,3 +20,8 @@ target_link_libraries(test-tensor-expansion PUBLIC qcslib)
 add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)
 target_include_directories(test-matrix-multiplication PUBLIC include)
 target_link_libraries(test-matrix-multiplication PUBLIC qcslib)
+
+# combined
+add_executable(test-combined src/tests/combined/test_combined.cpp)
+target_include_directories(test-combined PUBLIC include)
+target_link_libraries(test-combined PUBLIC qcslib)
