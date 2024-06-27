@@ -77,13 +77,21 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 \section{Introduction} 
 
 \subsection{Objective and Scope}
-% State the purpose of your project, the objectives, and the scope.
-develop simulation toolchain for quantum circuits on hw, in particular fpgas. 
-
+% State the purpose/objectives of your project, and the scope.
+objectives: develop simulation toolchain for quantum circuits on hw, in particular fpgas. 
+scope: simulation OR verification fo quantum circuits, 
 
 \subsection{Significance}
 % Discuss the significance of this work in the context of current technological advancements and potential applications. Explain why developing a quantum simulation accelerator is important.
-needs for simulation and verification of quantum circuits on classical computers for N reasons
+importance of classical simulation and classical verificatino for Random Circuit Sampling (RCS) experiments.
+simulation -> sampling bitstring with bounded LXEB values -> quantifies distance between classical and quantum computing for a specific tasks
+verification -> computing the exact amplitudes of bitstrings sampled in RCS experiments, in order to
+\begin{enumerate}
+	\item validate outputs of RCS experiments
+	\item sampling-based quantum algorithms, with applications: (solving subgraph problems, generate rand nummbers)
+\end{enumerate}
+	
+
 
 \subsection{Overview}
 % Provide a brief overview of the report structure.
@@ -105,6 +113,12 @@ The report is organized according to the following structure:
 
 \subsection{Background}
 % Explain what quantum simulation is and why it is challenging. Include the theoretical foundations and the practical implications.
+- what is quantum computing 
+- what is a quantum gate
+- measurement
+- sampling and evaluating quality of obtained sample with LXEB
+
+// FIXME: maybe move to challenges?
 different approaches with different limitations, plus common ones:
 - ap precision
 - high sparsity
@@ -112,7 +126,16 @@ different approaches with different limitations, plus common ones:
 
 \subsection{Current Challenges}
 % Highlight the key challenges in quantum simulation that your project aims to address.
-limitations of current traditional methods (state vector), computational complexity of newer methods (tensor network on sota gpus with hundreds of thousands of dollars worth of equipment)
+limitations of current traditional methods (state vector) -> solved by using tensor network approach
+
+
+
+main problems of tensor network based methods:
+\begin{itemize}
+	\item contraction path findings.
+	\item efficient implementation on hw: computational complexity of newer methods (tensor network on sota gpus with hundreds of thousands of dollars worth of equipment). 
+\end{itemize}
+
 in particular, decomposing problem in such a way that an fpga can compete with gpus on ops/(power+computational capacity) which can directly be translated in ops/dollar
 
 \subsection{Motivation}
@@ -125,12 +148,17 @@ overcome challenges of previous methods and analyze potential benefits of using 
 
 \subsection{Literature Review}
 % Summarize existing work in the field of quantum simulation accelerators. Discuss various approaches, technologies used, and their limitations.
-- state vector
-- tensors (3 approaches, see appendix quantum tensor gpu paper)
+Classical simulation and verification approached with different methods:
+\begin{itemize}
+	\item state vector based methods : traditional way, severely limited due to ...
+	\item tensor network based methods :
+\end{itemize}
+
 - gpu based accelerators (papers survey gpu and main gpu nvidia - 8xA100s with support board)
 
 \subsection{Comparison}
 % Compare different methods and highlight where your approach fits in the current landscape.
+AS PAPER, COMPARISON WITH 3 METHODS
 - us w.r.t. other 3 approaches on tensor contraction
 - tensor network expression obtained by compiler VS simulated annealing VS other heuristics
 - tensor cores ops VS streams of complex in coo with ap/floats
@@ -148,6 +176,7 @@ overcome challenges of previous methods and analyze potential benefits of using 
 
 \subsection{Design Approach}
 % Describe the overall design and methodology used to develop the quantum simulation accelerator.
+Simulation algorithm:
 - we have circuit
 - build a graph with connections representing possible expansions and contractions
 - build a contraction tree and find expression
