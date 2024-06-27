@@ -9,6 +9,18 @@
 \usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{listings}
+\lstdefinestyle{qasm}{
+    belowcaptionskip=1\baselineskip,
+    frame=top,frame=bottom,
+    frameround=tttt,
+    xleftmargin=\parindent,
+    basicstyle=\footnotesize\ttfamily,
+    tabsize=2,
+    numbers=left,
+    numbersep=5pt,
+    stepnumber=1,
+    columns=fullflexible,
+}
 \lstset{
 	frame=top,frame=bottom,
 	language=C,
@@ -19,7 +31,6 @@
 	%  identifierstyle=\color{blue},
 	%  stringstyle=\color{orange},
 	morekeywords={in, globaldata, procedure, input, output, behavior, end, XOR, NOT, AND}, % keyword to highlight
-	%  captionpos=t,
 	tabsize=2,
 	numbers=left,
 	stepnumber=1,                   % the step between two line-numbers.
@@ -66,12 +77,12 @@
 
 \begin{abstract}
 %    Enter a short summary here. What topic do you want to investigate and why? What experiment did you perform? What were your main results and conclusion?
-% DESCR intro + problem description
 In the modern era of quantum computing, the need for simulation of quantum circuits on classical computers has become of paramount importance. When talking about classical computers running quantum circuits, mainly we are referring to two tasks: simulation and verification. Both of these techniques used to rely on a state vector based representation. The limitation of this approach is that the state vector dimension grows exponentially with respect to the circuit size, which renders this method spatially infeasible for larger circuits. To solve this issue we can resort to tensor network based algorithms, which map all components of the quantum circuit to appropriate tensors, forming a tensor network that can then be contracted to obtain the final state bitstrings amplitudes.
-
 \end{abstract}
 
+\tableofcontents
 
+\newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
 \section{Introduction}
@@ -194,24 +205,133 @@ Simulation algorithm:
 % FIXME - how does it relate to section 4 Methods/Design_Approach ?
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 5
 
 \section{Frontend (Host Side) Explanation}
 
-\subsection{Architecture}
-% Explain the architecture of the host side implemented in Rust. Include diagrams if necessary.
+The Frontend is a fundamental component in the quantum circuit simulation process, serving as the interface between high-level quantum circuit descriptions and low-level computational backends. By reducing the quantum circuit to a tensor network and optimizing the contraction tree, the frontend prepares the circuit for efficient simulation with minimum number of operations. Without this crucial step, the computational backends would be unable to efficiently simulate quantum circuits, leading to significant performance degradation and resource wastage.
+
+All the code employed in the frontend is hosted on GitHub at the following \href{https://github.com/federico123579/HPPS24-Quantum-Simulation}{repository}.
+
+This section presents the architecture, functionality, and implementation details of the frontend, presenting at the end a compilation example to illustrate the process.
+
+\subsection{Architectural Overview and Core Functionality}
+
+The principal objective of the frontend is to transform a high-level quantum circuit description into an optimized sequence of instructions for efficient simulation. This process involves several key stages, each explained more in detail forward:
+
+\begin{enumerate}
+    \item \textbf{Parsing} of a high-level quantum circuit description language (QASM) into an internal representation
+    \item \textbf{Conversion} of the quantum circuit into a \textbf{Tensor Network}, highlighting available tensor contractions
+    \item \textbf{Generation} of an optimized contraction tree, packed in a \textbf{Contraction Plan} (\textbf{CP}) structure
+    \item \textbf{Compilation} of the contraction plan to an optimal sequence of instructions, based on a backend-specific \textbf{Instruction Set Architecture} (\textbf{ISA})
+    \item \textbf{Scheduling} of instructions for optimal execution, exploiting independency between leaves of the contraction tree and maximizing instruction-level parallelism
+\end{enumerate}
+
+\subsection{Circuit Parsing and Representation}
+
+The initial phase of the frontend's operation involves parsing a QASM 3.0\cite{cross2017openquantumassemblylanguage} file. Our parser implementation supports a subset of the QASM 3.0 specification, focusing on the essential elements required to parse QisKit\cite{qiskit2024} randomly generated circuits. Specifically, it supports all standard gates included in the \href{https://github.com/Qiskit/qiskit/blob/main/qiskit/qasm/libs/stdgates.inc}{\texttt{stdgates.inc}} library, custom gate definitions within the QASM file, while excluding certain advanced features such as measurement operations and classical control structures.
+
+Following the parsing phase, the frontend constructs an internal representation of the quantum circuit. This internal model serves as the foundation for subsequent compilation stages.
+
+\subsection{Tensor Network Conversion}
+
+The next crucial stage involves the transformation of the quantum circuit into a tensor network. This process comply with the following rules:
+
+\begin{itemize}
+    \item Each quantum gate is mapped to a corresponding tensor, preserving its quantum operational semantics.
+    \item Connections between gates are represented as tensor contractions, reflecting the flow of quantum information through the circuit.
+\end{itemize}
+
+The resulting structure is a graph where edges represent tensors and nodes represent tensor contractions.
+
+The rules for drawing contraction arcs in the tensor network follow established conventions in quantum tensor network theory \cite{biamonte2017tensornetworksnutshell}. These rules ensure that the tensor network accurately represents the quantum circuit's operations and qubit interactions.
+
+\subsection{Contraction Tree Generation}
+
+From the tensor network representation, the frontend generates a contraction tree using a custom algorithm. This binary tree structure represents the optimal order of tensor contractions:
+
+\begin{itemize}
+    \item Leaf nodes represent individual tensors, corresponding to quantum gates in the original circuit.
+    \item Internal nodes represent contraction operations between tensors.
+    \item The tree structure is optimized to minimize the total number of operations required to compute the final quantum state.
+\end{itemize}
+
+Our custom algorithm for generating the contraction tree is based on a heuristic approach that balances computational efficiency with contraction order optimization. While the detailed description of this algorithm is beyond the scope of this section, it can be summarized as a recursive process that identifies the most efficient contraction order based on tensor dimensions and connectivity.
+
+Once the contraction tree is constructed, it is encapsulated in a Contraction Plan (CP) structure, which serves as the blueprint for subsequent compilation stages.
+
+\subsection{ISA Compilation and Instruction Scheduling}
+
+The contraction plan is subsequently converted to a set of instructions based on a backend-specific Instruction Set Architecture (ISA). This ISA is composed of two fundamental operations:
+
+\begin{enumerate}
+    \item \textbf{Tensor Expansion (TE):} Implements the Kronecker product to expand tensors for subsequent contractions. This operation is crucial for aligning tensor dimensions prior to multiplication.
+    \item \textbf{Matrix Multiplication (MM):} Performs the actual tensor contraction through optimized matrix multiplication operations.
+\end{enumerate}
+
+Both operations utilize sparse matrix representations in Coordinate (COO) format to optimize computations, particularly for FPGA backends. This format allows for efficient storage and manipulation of the typically sparse quantum operators.
+
+A scheduler is employed to optimize the order of instructions in the set derived from the contraction plan, maximizing instruction-level parallelism and minimizing computational overhead. This scheduling process controls the execution flow of the quantum circuit simulation, in a dynamic and adaptive manner by employing a dependency graph constructed from the contraction plan. The scheduler uses and updates this graph to determine the optimal instruction sequence.
+
+\subsection{Backend Interface}
+
+The frontend is architected to support multiple computational backends, while currently supporting only the CPU backend, FPGA and GPU backends are complete and lack only the OpenCL communication layer with the frontend.
+
+The final ISA instructions are transmitted to the chosen backend for execution, controlled by the scheduler and optimized for the specific hardware architecture.
+
+The communication between the Rust-based frontend and the FPGA backend is planned to be implemented using OpenCL Rust bindings. This communication layer is currently under development, while the link between the host and the FPGA is based on a custom binary file format read once and executed in order (without dynamic scheduling).
 
 \subsection{Implementation Details}
-% Provide detailed descriptions of the key components and their functionality.
 
-\subsection{Communication}
-% Explain how the host side communicates with the kernel using OpenCL. Detail any challenges faced and how they were overcome.
+The entire frontend is implemented in Rust, taking advantage of the robust type system and memory safety features the language offers. This choice offers several significant advantages:
 
-\subsection{Code Examples}
-% Include snippets of important sections of your Rust code, explaining what each part does.
+\begin{itemize}
+    \item Enhanced reliability through compile-time error checking, reducing the likelihood of runtime errors.
+    \item Improved maintainability and extensibility of the codebase, facilitated by Rust's modern language features and clear ownership model.
+    \item Efficient parallelization for the CPU backend using the \href{https://github.com/rayon-rs/rayon}{\texttt{rayon}} parallel computing library.
+\end{itemize}
 
+Rust's strong typing and borrow checker have been particularly beneficial in implementing the tensor network operations, ensuring memory safety in complex data transformations without sacrificing performance and boosting productivity, thanks to many errors avoided at compile time.
 
+\subsection{Compilation Example}
+
+Let us take the Quantum Fourier Transform (QFT)\cite{coppersmith2002approximatefouriertransformuseful} circuit as an example. The QFT circuit is a fundamental quantum algorithm that transforms a quantum state into its Fourier representation. The QFT circuit is represented in QASM as follows:
+
+\begin{lstlisting}[style=qasm, caption={QFT Circuit in QASM}]
+	qubit[4] q;
+	x q[0];
+	x q[2];
+	barrier q;
+	h q[0];
+	cphase(pi / 2) q[1], q[0];
+	h q[1];
+	cphase(pi / 4) q[2], q[0];
+	cphase(pi / 2) q[2], q[1];
+	h q[2];
+	cphase(pi / 8) q[3], q[0];
+	cphase(pi / 4) q[3], q[1];
+	cphase(pi / 2) q[3], q[2];
+	h q[3];
+\end{lstlisting}
+
+% TODO add diagram of the tensor network
+% TODO add diagram of the contraction tree
+% TODO add sequence of instructions
+
+\subsection{Future Work and Optimizations}
+
+While the current implementation provides a robust foundation, several areas for future improvement have been identified:
+
+\begin{itemize}
+    \item Extending QASM support to full specification compliance
+    \item Optimizing the contraction tree generation algorithm employing advanced graph based techniques \cite{PhysRevE.90.033315}
+    \item Implementing and optimizing the OpenCL communication layer for FPGA and GPU backends
+    \item Exploring advanced scheduling techniques for improved instruction-level parallelism
+\end{itemize}
+
+Potential optimization strategies include the implementation of a hybrid CPU-FPGA approach for dynamic workload distribution and the exploration of quantum-inspired classical algorithms for improved tensor network contraction.
+
+By continually refining and expanding the frontend's capabilities, we aim to create a versatile and efficient quantum circuit simulation framework that can leverage various backend architectures and implementations.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 6
@@ -271,11 +391,7 @@ Simulation algorithm:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 9
 
-\section{References}
-
-\subsection{Citations}
-% List all the references cited in your report in the appropriate academic format.
-\printbibliography
+\printbibliography[title={\section{References}}]
 
 
 
