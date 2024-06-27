@@ -16,8 +16,8 @@ static const std::string error_message = "Error: Result mismatch:\n"
                                          "i = %d CPU result = %d Device result = %d\n";
 
 CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
-                                 cl::Kernel krnl, cl::CommandQueue q,
-                                 cl::Context context) {
+                                 cl::Kernel &krnl, cl::CommandQueue &q,
+                                 cl::Context &context) {
   cl_int err;
 
   // initialize parameters
@@ -151,8 +151,8 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
 }
 
 CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
-                                      cl::Kernel krnl, cl::CommandQueue q,
-                                      cl::Context context) {
+                                      cl::Kernel &krnl, cl::CommandQueue &q,
+                                      cl::Context &context) {
   cl_int err;
 
   // initialize parameters
@@ -367,6 +367,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Device[" << i << "]: program successful!\n";
       OCL_CHECK(err,
                 krnl_tensor_expansion = cl::Kernel(program, "tensor_expansion", &err));
+      OCL_CHECK(err, krnl_matrix_multiplication =
+                         cl::Kernel(program, "matrix_multiplication", &err));
       valid_device = true;
       break; // we break because we found a valid device
     }
