@@ -80,8 +80,8 @@
 In the modern era of quantum computing, the need for simulation of quantum circuits on classical computers has become of paramount importance. When talking about classical computers running quantum circuits, mainly we are referring to two tasks: simulation and verification. Both of these techniques used to rely on a state vector based representation. The limitation of this approach is that the state vector dimension grows exponentially with respect to the circuit size, which renders this method spatially infeasible for larger circuits. To solve this issue we can resort to tensor network based algorithms, which map all components of the quantum circuit to appropriate tensors, forming a tensor network that can then be contracted to obtain the final state bitstrings amplitudes.
 \end{abstract}
 
+% FIXME choose weather to include or not the table of contents
 \tableofcontents
-
 \newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
@@ -94,12 +94,12 @@ scope: simulation OR verification fo quantum circuits,
 
 \subsection{Significance}
 % Discuss the significance of this work in the context of current technological advancements and potential applications. Explain why developing a quantum simulation accelerator is important.
-importance of classical simulation and classical verificatino for Random Circuit Sampling (RCS) experiments.
+importance of classical simulation and classical verification for Random Circuit Sampling (RCS) experiments.
 simulation -> sampling bitstring with bounded LXEB values -> quantifies distance between classical and quantum computing for a specific tasks
 verification -> computing the exact amplitudes of bitstrings sampled in RCS experiments, in order to
 \begin{enumerate}
 	\item validate outputs of RCS experiments
-	\item sampling-based quantum algorithms, with applications: (solving subgraph problems, generate rand nummbers)
+	\item sampling-based quantum algorithms, with applications: (solving subgraph problems, generate rand numbers)
 \end{enumerate}
 
 
@@ -107,7 +107,7 @@ verification -> computing the exact amplitudes of bitstrings sampled in RCS expe
 \subsection{Overview}
 % Provide a brief overview of the report structure.
 The report is organized according to the following structure:
-- section 2 : a brief and exaustive explanation of the problem, backround, current challenges and motivations
+- section 2 : a brief and exhaustive explanation of the problem, background, current challenges and motivations
 - section 3 : sota reference, different methods to tackle the problem and how we relate to them
 - section 4 : methods, our approach
 - section 5 : FE
@@ -129,7 +129,7 @@ The report is organized according to the following structure:
 - measurement
 - sampling and evaluating quality of obtained sample with LXEB
 
-// FIXME: maybe move to challenges?
+% FIXME: maybe move to challenges?
 different approaches with different limitations, plus common ones:
 - ap precision
 - high sparsity
@@ -208,6 +208,8 @@ Simulation algorithm:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 5
 
 \section{Frontend (Host Side) Explanation}
+
+% TODO highlight the implementation of x86 ISA
 
 The Frontend is a fundamental component in the quantum circuit simulation process, serving as the interface between high-level quantum circuit descriptions and low-level computational backends. By reducing the quantum circuit to a tensor network and optimizing the contraction tree, the frontend prepares the circuit for efficient simulation with minimum number of operations. Without this crucial step, the computational backends would be unable to efficiently simulate quantum circuits, leading to significant performance degradation and resource wastage.
 
@@ -337,6 +339,8 @@ By continually refining and expanding the frontend's capabilities, we aim to cre
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 6
 
 \section{Kernel (FPGA Side) Explanation}
+
+% TODO highlight the implementation of the FPGA kernel from scratch
 
 \subsection{Architecture}
 % Describe the FPGA kernel’s architecture and how it accelerates quantum simulations.
