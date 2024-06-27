@@ -22,7 +22,7 @@
 	%  captionpos=t,
 	tabsize=2,
 	numbers=left,
-	stepnumber=1,                   % the step between two line-numbers.        
+	stepnumber=1,                   % the step between two line-numbers.
 	numbersep=5pt,
 	framexleftmargin=10pt,
 	title=\lstname,
@@ -74,12 +74,12 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
-\section{Introduction} 
+\section{Introduction}
 
 \subsection{Objective and Scope}
 % State the purpose/objectives of your project, and the scope.
-objectives: develop simulation toolchain for quantum circuits on hw, in particular fpgas. 
-scope: simulation OR verification fo quantum circuits, 
+objectives: develop simulation toolchain for quantum circuits on hw, in particular fpgas.
+scope: simulation OR verification fo quantum circuits,
 
 \subsection{Significance}
 % Discuss the significance of this work in the context of current technological advancements and potential applications. Explain why developing a quantum simulation accelerator is important.
@@ -90,7 +90,7 @@ verification -> computing the exact amplitudes of bitstrings sampled in RCS expe
 	\item validate outputs of RCS experiments
 	\item sampling-based quantum algorithms, with applications: (solving subgraph problems, generate rand nummbers)
 \end{enumerate}
-	
+
 
 
 \subsection{Overview}
@@ -109,11 +109,11 @@ The report is organized according to the following structure:
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 2
-\section{Problem Explanation (Quantum Simulation)} 
+\section{Problem Explanation (Quantum Simulation)}
 
 \subsection{Background}
 % Explain what quantum simulation is and why it is challenging. Include the theoretical foundations and the practical implications.
-- what is quantum computing 
+- what is quantum computing
 - what is a quantum gate
 - measurement
 - sampling and evaluating quality of obtained sample with LXEB
@@ -133,7 +133,7 @@ limitations of current traditional methods (state vector) -> solved by using ten
 main problems of tensor network based methods:
 \begin{itemize}
 	\item contraction path findings.
-	\item efficient implementation on hw: computational complexity of newer methods (tensor network on sota gpus with hundreds of thousands of dollars worth of equipment). 
+	\item efficient implementation on hw: computational complexity of newer methods (tensor network on sota gpus with hundreds of thousands of dollars worth of equipment).
 \end{itemize}
 
 in particular, decomposing problem in such a way that an fpga can compete with gpus on ops/(power+computational capacity) which can directly be translated in ops/dollar
@@ -144,7 +144,7 @@ overcome challenges of previous methods and analyze potential benefits of using 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 3
-\section{State of the Art Reference} 
+\section{State of the Art Reference}
 
 \subsection{Literature Review}
 % Summarize existing work in the field of quantum simulation accelerators. Discuss various approaches, technologies used, and their limitations.
@@ -172,7 +172,7 @@ AS PAPER, COMPARISON WITH 3 METHODS
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 4
-\section{Methods} 
+\section{Methods}
 
 \subsection{Design Approach}
 % Describe the overall design and methodology used to develop the quantum simulation accelerator.
@@ -197,7 +197,7 @@ Simulation algorithm:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 5
 
-\section{Frontend (Host Side) Explanation} 
+\section{Frontend (Host Side) Explanation}
 
 \subsection{Architecture}
 % Explain the architecture of the host side implemented in Rust. Include diagrams if necessary.
@@ -216,7 +216,7 @@ Simulation algorithm:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 6
 
-\section{Kernel (FPGA Side) Explanation} 
+\section{Kernel (FPGA Side) Explanation}
 
 \subsection{Architecture}
 % Describe the FPGA kernel’s architecture and how it accelerates quantum simulations.
@@ -235,10 +235,10 @@ Simulation algorithm:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 7
 
-\section{Results and Discussion} 
+\section{Results and Discussion}
 
 \subsection{Performance Metrics}
-% Present the performance metrics of your ac- celerator. Compare them against benchmarks or other state-of-the-art solutions.
+% Present the performance metrics of your accelerator. Compare them against benchmarks or other state-of-the-art solutions.
 
 \subsection{Analysis}
 % Analyze the results, discussing any improvements or unexpected outcomes. Use charts and graphs to visualize data.
@@ -251,7 +251,7 @@ Simulation algorithm:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 8
 
-\section{Conclusion} 
+\section{Conclusion}
 
 \subsection{Summary}
 % Summarize the key findings and contributions of your project.
@@ -271,7 +271,7 @@ Simulation algorithm:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 9
 
-\section{References} 
+\section{References}
 
 \subsection{Citations}
 % List all the references cited in your report in the appropriate academic format.
@@ -286,16 +286,16 @@ Simulation algorithm:
 An explanation of some technical terms used in the report.
 - bitstring : in quantum computing, it refers to
 - gate : in a quantum circuit,
-- lane : 
+- lane :
 - sota : state of the art
-- state vector : in a quantum circuit, 
+- state vector : in a quantum circuit,
 - tensor : math object that
 - tensor expansion : math operation that
 
 Brief explanation of quantum computing concepts
 
 
-% Additional Tips 
+% Additional Tips
     % Figures and Charts: Ensure that all figures, charts, and diagrams are clearly labeled and referenced in the text. Use them to illustrate complex points and provide visual clarity.
     % Clarity and Conciseness: Make sure your writing is clear and concise. Avoid unnecessary jargon and explain technical terms where needed.
 
