@@ -6,7 +6,7 @@
     exit(EXIT_FAILURE);                                                                  \
   }
 
-#include "tensor_expansion_test.h"
+#include "host-combined.h"
 #include "tests/golden_reader.h"
 #include <fstream>
 #include <iostream>
