@@ -19,9 +19,9 @@ $(main).pdf: $(BUILD_DIR)/$(main).pdf
 
 $(BUILD_DIR)/$(main).pdf: $(main).tex $(other_texs) $(ASSETS_DIR)/biblio.bib | $(BUILD_DIR)
 	$(LTC) $(main).tex
-ifeq (,$(wildcard $(ASSETS_DIR)/*.bib))
+# ifeq (,$(wildcard $(ASSETS_DIR)/*.bib))
 	$(BIB) $(main)
-endif
+# endif
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
