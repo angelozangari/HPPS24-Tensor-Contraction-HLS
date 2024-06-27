@@ -413,7 +413,113 @@ By continually refining and expanding the frontend's capabilities, we aim to cre
 \subsection{Code Examples}
 % Include HLS code snippets and explain their functionality.
 
+\section{Kernel (FPGA Side) Explanation}
 
+The FPGA kernel represents the core computational engine of our quantum circuit simulation framework. This section elucidates the architecture, implementation details, and integration of the FPGA kernels, highlighting their role in accelerating tensor network contractions for quantum circuit simulation.
+
+\subsection{Architectural Overview}
+
+Our FPGA-based acceleration solution comprises two primary kernels, each tailored for a specific operation in the tensor network contraction process:
+
+\begin{enumerate}
+    \item \textbf{Tensor Expansion Kernel}: Implements the Kronecker product operation.
+    \item \textbf{Matrix Multiplication Kernel}: Performs sparse matrix multiplication for tensor contractions.
+\end{enumerate}
+
+Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, optimizing memory usage and computational efficiency for the typically sparse quantum operators.
+
+\subsection{Implementation Details}
+
+The kernels have been implemented from scratch using Vitis High-Level Synthesis (HLS), without relying on external libraries beyond the standard Vitis HLS includes. This approach allows for fine-grained control over the hardware implementation and optimization strategies.
+
+\subsubsection{Tensor Expansion Kernel}
+
+The Tensor Expansion kernel implements the Kronecker product of two arbitrarily large matrices. This operation is fundamental to the tensor product operations in quantum circuit simulation.
+
+Key features of the Tensor Expansion kernel include:
+
+\begin{itemize}
+    \item Support for arbitrary matrix dimensions, accommodating various quantum gate configurations.
+    \item Efficient handling of sparse matrices in COO format, minimizing memory bandwidth requirements.
+    \item Utilization of the dataflow pragma for enhanced pipelining and parallelism.
+\end{itemize}
+
+\subsubsection{Matrix Multiplication Kernel}
+
+The Matrix Multiplication kernel performs the multiplication of two sparse matrices in COO format, which is essential for tensor contraction operations in the quantum circuit simulation process.
+
+Notable aspects of the Matrix Multiplication kernel include:
+
+\begin{itemize}
+    \item Implementation of a packet-based approach to efficiently handle sparse matrix multiplication.
+    \item Optimization for the inherently imperfect loop structures resulting from the COO format.
+    \item Extensive use of the producer-consumer pattern to enhance data flow and reduce latency.
+\end{itemize}
+
+\subsection{Optimization Strategies}
+
+Several optimization techniques have been employed to maximize the performance of our FPGA kernels:
+
+\begin{enumerate}
+    \item \textbf{Dataflow Optimization}: Extensive use of the dataflow pragma enables pipelining and parallelism, significantly improving throughput.
+
+    \item \textbf{Memory Access Optimization}: The COO sparse matrix format reduces memory bandwidth requirements, crucial for handling large quantum circuits.
+
+    \item \textbf{Packet-Based Processing}: Implemented in the Matrix Multiplication kernel to efficiently handle sparse data structures and improve computational density.
+
+    \item \textbf{Producer-Consumer Pattern}: This design pattern enhances data flow between different stages of the computation, reducing overall latency.
+\end{enumerate}
+
+\subsection{Integration and Data Flow}
+
+The integration of the FPGA kernels with the host side is facilitated through OpenCL, enabling efficient communication and data transfer between the host CPU and the FPGA device.
+
+\begin{figure}[h]
+    \centering
+    % Replace with actual path to your diagram
+    \includegraphics[width=0.8\textwidth]{path_to_your_diagram}
+    \caption{Data flow between Host and FPGA Kernels}
+    \label{fig:dataflow}
+\end{figure}
+
+The data flow process can be summarized as follows:
+
+\begin{enumerate}
+    \item The host prepares input data in a custom binary format, encoding the operations to be performed.
+    \item This data is transferred to the FPGA device memory via OpenCL.
+    \item The appropriate kernel (Tensor Expansion or Matrix Multiplication) is invoked to process the data.
+    \item Results are transferred back to the host for further processing or final output.
+\end{enumerate}
+
+\subsection{Code Example: Tensor Expansion Kernel}
+
+To illustrate the implementation details, consider the following simplified code snippet from the Tensor Expansion kernel:
+
+This snippet demonstrates the use of HLS pragmas for interface specification and dataflow optimization, as well as the division of the kernel into separate read and compute stages for improved pipeline efficiency.
+
+\subsection{Performance Considerations}
+
+The performance of our FPGA-based solution is influenced by several factors:
+
+\begin{itemize}
+    \item \textbf{Memory Bandwidth}: The efficiency of data transfer between off-chip memory and on-chip processing elements.
+    \item \textbf{Computational Density}: The ratio of compute operations to memory operations, which is optimized through our packet-based approach.
+    \item \textbf{Parallelism}: The degree of concurrent execution achieved through our dataflow design and kernel architecture.
+    \item \textbf{Precision}: The use of fixed-point arithmetic (ap_fixed<16,8>) balances computational accuracy with hardware resource utilization.
+\end{itemize}
+
+\subsection{Future Work and Optimizations}
+
+While the current implementation provides a solid foundation for FPGA-accelerated quantum circuit simulation, several areas for future enhancement have been identified:
+
+\begin{enumerate}
+    \item Implementation of multiple Processing Elements (PEs) for the sparse matrix multiplication kernel to further increase parallelism.
+    \item Exploration of dynamic indexing schemes for the Tensor Expansion kernel to improve flexibility and efficiency for varying input sizes.
+    \item Investigation of mixed-precision arithmetic to optimize the trade-off between accuracy and performance.
+    \item Development of a more sophisticated OpenCL-based communication layer to enable dynamic scheduling and workload distribution between the host and FPGA.
+\end{enumerate}
+
+By continuing to refine and optimize our FPGA kernel implementations, we aim to push the boundaries of what's possible in hardware-accelerated quantum circuit simulation, providing a powerful tool for researchers and practitioners in the field of quantum computing.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 7
