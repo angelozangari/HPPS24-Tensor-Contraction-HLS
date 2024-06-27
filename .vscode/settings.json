@@ -1,9 +1,29 @@
 {
     "cSpell.words": [
         "axilite",
+        "bitstring",
+        "bitstrings",
+        "captionpos",
+        "framexleftmargin",
+        "globaldata",
         "gmem",
         "matmul",
-        "qubit"
+        "qubit",
+        "labelfont",
+        "labelsep",
+        "lstlisting",
+        "LXEB",
+        "numbersep",
+        "QASM",
+        "qubit",
+        "showspaces",
+        "singlelinecheck",
+        "sota",
+        "stepnumber",
+        "stringstyle",
+        "tabsize",
+        "cphase",
+        "Vitis"
     ],
     "files.associations": {
         "__bit_reference": "cpp",
@@ -100,5 +120,6 @@
     ],
     "[latex]": {
         "editor.wordWrap": "on"
-    }
+    },
+    "todo-tree.regex.regex": "(//|#|<!--|;|%|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)"
 }
