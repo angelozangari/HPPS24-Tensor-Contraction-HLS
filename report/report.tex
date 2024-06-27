@@ -71,54 +71,102 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 
 \end{abstract}
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
 \section{Introduction} 
 
 \subsection{Objective and Scope}
-% State the purpose of your project, the objectives, and the scope. Explain why developing a quantum simulation accelerator is important.
+% State the purpose of your project, the objectives, and the scope.
+develop simulation toolchain for quantum circuits on hw, in particular fpgas. 
+
 
 \subsection{Significance}
-% Discuss the significance of this work in the context of current technological advancements and potential applications.
+% Discuss the significance of this work in the context of current technological advancements and potential applications. Explain why developing a quantum simulation accelerator is important.
+needs for simulation and verification of quantum circuits on classical computers for N reasons
 
 \subsection{Overview}
 % Provide a brief overview of the report structure.
+The report is organized according to the following structure:
+- section 2 : a brief and exaustive explanation of the problem, backround, current challenges and motivations
+- section 3 : sota reference, different methods to tackle the problem and how we relate to them
+- section 4 : methods, our approach
+- section 5 : FE
+- section 6 : BE
+- section 7 : results and discussions
+- section 8 : conclusions
+- section 9 : references to other material
+- section 10 : the appendix contains both acronyms used in the report and, most importantly, a slightly more detailed explanation w.r.t. section 2 of the essential concepts necessary to understand the problem
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 2
 \section{Problem Explanation (Quantum Simulation)} 
 
 \subsection{Background}
 % Explain what quantum simulation is and why it is challenging. Include the theoretical foundations and the practical implications.
+different approaches with different limitations, plus common ones:
+- ap precision
+- high sparsity
+- cancellation of very small values which greatly affects total result
 
 \subsection{Current Challenges}
 % Highlight the key challenges in quantum simulation that your project aims to address.
+limitations of current traditional methods (state vector), computational complexity of newer methods (tensor network on sota gpus with hundreds of thousands of dollars worth of equipment)
+in particular, decomposing problem in such a way that an fpga can compete with gpus on ops/(power+computational capacity) which can directly be translated in ops/dollar
 
 \subsection{Motivation}
-% Explain why you chose to tackle this problem and how it relates to existing research or industry needs.
+% Explain why you chose to tackle this problem and how it relates to existing research.
+overcome challenges of previous methods and analyze potential benefits of using FPGAs to tackle this problem, which hasn't been done so far. previous work was discovered, but was much more of a porting of specific methods on fpga, while this project aims to develop a full fledged alternative on fpga to sota gpu methods.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 3
 \section{State of the Art Reference} 
 
 \subsection{Literature Review}
 % Summarize existing work in the field of quantum simulation accelerators. Discuss various approaches, technologies used, and their limitations.
+- state vector
+- tensors (3 approaches, see appendix quantum tensor gpu paper)
+- gpu based accelerators (papers survey gpu and main gpu nvidia - 8xA100s with support board)
 
 \subsection{Comparison}
-% Compare different methods and highlight where your ap- proach fits in the current landscape.
+% Compare different methods and highlight where your approach fits in the current landscape.
+- us w.r.t. other 3 approaches on tensor contraction
+- tensor network expression obtained by compiler VS simulated annealing VS other heuristics
+- tensor cores ops VS streams of complex in coo with ap/floats
 
 \subsection{Gaps}
 % Identify the gaps in the current state of the art that your project aims to fill.
+- decomposing operations (tens exp, mult) in simpler operations (products and sums) on packets of fixed dimension, and then composing the intermediate results
 
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 4
 \section{Methods} 
 
 \subsection{Design Approach}
 % Describe the overall design and methodology used to develop the quantum simulation accelerator.
+- we have circuit
+- build a graph with connections representing possible expansions and contractions
+- build a contraction tree and find expression
+- send data to fpgas for computational
+- receive results , and sample bitstring of quantum vector
 
 \subsection{Technology Stack}
 % Provide an overview of the technologies and tools used, including Vitis HLS, Rust, and OpenCL.
+- for frontend, quantum circuit compiler and tensor network optimization, Rust
+- for developing both fpga kernels, vitis hsl
+- for hostcode, be integration and rtl export vitis + opencl
 
 \subsection{Development Process}
 % Outline the steps taken in the development process, from initial design to final implementation.
+% FIXME - how does it relate to section 4 Methods/Design_Approach ?
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 5
 
 \section{Frontend (Host Side) Explanation} 
 
@@ -126,7 +174,7 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 % Explain the architecture of the host side implemented in Rust. Include diagrams if necessary.
 
 \subsection{Implementation Details}
-% Provide detailed descriptions of the key com- ponents and their functionality.
+% Provide detailed descriptions of the key components and their functionality.
 
 \subsection{Communication}
 % Explain how the host side communicates with the kernel using OpenCL. Detail any challenges faced and how they were overcome.
@@ -135,6 +183,9 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 % Include snippets of important sections of your Rust code, explaining what each part does.
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 6
 
 \section{Kernel (FPGA Side) Explanation} 
 
@@ -151,6 +202,10 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 % Include HLS code snippets and explain their functionality.
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 7
+
 \section{Results and Discussion} 
 
 \subsection{Performance Metrics}
@@ -163,6 +218,10 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 % Discuss the limitations of your current implementation and any potential improvements for future work.
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 8
+
 \section{Conclusion} 
 
 \subsection{Summary}
@@ -170,10 +229,18 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 
 \subsection{Future Work}
 % Suggest areas for future research or improvements that can be made to your quantum simulation accelerator.
+- since network contraction is NP hard, find better methods (currently sota are heuristics, such as simulated annealing)
+- multiple PEs for spMM in coo format
+- dynamic indexes for tensor expansion
 
 \subsection{Final Thoughts}
 % Provide any concluding remarks or reflections on the project.
+- deeply challenging, on many aspects, both theoretical (quantum computing) and practical (hsl, open cl). vastness of work that has been done (cover all theoretical work to find reasonable fpga advantages to solve the problem), quantum circuit compiler to get final expression to be computed, two kernels from scratch and managing their usage.
 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 9
 
 \section{References} 
 
@@ -181,8 +248,22 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 % List all the references cited in your report in the appropriate academic format.
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 10
+
 \section{Appendices}
 % Include any supplementary material, such as full code listings or additional data, in the appendices.
+An explanation of some technical terms used in the report.
+- bitstring : in quantum computing, it refers to
+- gate : in a quantum circuit,
+- lane : 
+- sota : state of the art
+- state vector : in a quantum circuit, 
+- tensor : math object that
+- tensor expansion : math operation that
+
+Brief explanation of quantum computing concepts
 
 
 % Additional Tips 
