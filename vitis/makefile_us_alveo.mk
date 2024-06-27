@@ -89,13 +89,13 @@ build: check-vitis check-device $(BUILD_DIR)/krnl_qcs.xclbin
 xclbin: build
 
 ############################## Setting Rules for Binary Containers (Building Kernels) ##############################
-$(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/tensor-expansion/krnl_tens_exp.cpp $(XF_PROJ_ROOT)/src/tensors.cpp
+$(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/tensor-expansion/krnl_tens_exp.cpp
 	mkdir -p $(TEMP_DIR)
-	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k tensor_expansion --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<' $(XF_PROJ_ROOT)/src/tensors.cpp
+	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k tensor_expansion --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
-$(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/matrix-multiplication/krnl_mat_mul.cpp $(XF_PROJ_ROOT)/src/tensors.cpp
+$(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/matrix-multiplication/krnl_mat_mul.cpp
 	mkdir -p $(TEMP_DIR)
-	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k matrix_multiplication --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<' $(XF_PROJ_ROOT)/src/tensors.cpp
+	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k matrix_multiplication --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
 
 $(BUILD_DIR)/krnl_qcs.xclbin: $(TEMP_DIR)/krnl_tens_exp.xo $(TEMP_DIR)/krnl_mat_mul.xo

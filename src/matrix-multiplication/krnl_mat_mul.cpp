@@ -1,5 +1,4 @@
 #include "krnl_mat_mul.h"
-#include "../tensors.h"
 
 #define PACKET_SIZE 16
 
@@ -50,18 +49,46 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
   // clang-format on
 
   // Load matrices A, B
-  Tensor::load(Ar, Ai, Am, Ar_stream, Ai_stream, Am_stream, A_NZ);
-  Tensor::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
+  Matrix::Multiplication::load(Ar, Ai, Am, Ar_stream, Ai_stream, Am_stream, A_NZ);
+  Matrix::Multiplication::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
   // Compute matrix multiplication
   Matrix::Multiplication::compute(Ar_stream, Ai_stream, Am_stream, Br_stream, Bi_stream,
                                   Bm_stream, Cr_stream, Ci_stream, Cm_stream, CD);
   // Store result
   // FIXME how to pass dimension of c stream
-  Tensor::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, *CD);
+  Matrix::Multiplication::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, *CD);
 }
 
 namespace Matrix {
 namespace Multiplication {
+
+void load(float *Ar, float *Ai, coo_meta_t *Am, hls::stream<float> &Ar_stream,
+          hls::stream<float> &Ai_stream, hls::stream<coo_meta_t> &Am_stream,
+          dim_t A_size) {
+LOAD_LOOP:
+  for (int i = 0; i < A_size; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
+    Ar_stream.write(Ar[i]);
+    Ai_stream.write(Ai[i]);
+    Am_stream.write(Am[i]);
+  }
+}
+
+void store(hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
+           hls::stream<coo_meta_t> &Cm_stream, float *Cr, float *Ci, coo_meta_t *Cm,
+           dim_t C_size) {
+STORE_LOOP:
+  for (int i = 0; i < C_size; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
+    Cr[i] = Cr_stream.read();
+    Ci[i] = Ci_stream.read();
+    Cm[i] = Cm_stream.read();
+  }
+}
 
 void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
              hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
