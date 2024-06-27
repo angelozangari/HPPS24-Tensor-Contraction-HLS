@@ -342,6 +342,24 @@ By continually refining and expanding the frontend's capabilities, we aim to cre
 
 % TODO highlight the implementation of the FPGA kernel from scratch
 
+% - kernel implemented from scratch
+% - two kernels, one for tensor expansion and one for matrix multiplication
+% - both kernels make use of COO sparse matrix representation
+% - no external libraries used, only Vitis HLS includes
+% - extensive use of producer-consumer pattern in kernel design
+% - use of dataflow pragma for pipelining and parallelism
+% - imperfect loop due to the nature of the problem (employing COO format)
+% - tensor expansion kernel
+% 	- kronecker product of an arbitrary large matrix with another large arbitrary matrix
+% 	- employed for the tensor product operation in the tensor network contraction
+% - use of a customized binary data format to read operations from a file and feed them to the kernel
+% - matrix multiplication kernel
+% 	- multiplication of two sparse matrices in COO format
+% 	- employed for the tensor contraction operation in the tensor network contraction
+%   - use of packet based approach to handle the sparse matrix multiplication
+% - use of vitis as the main tool for kernel development
+% - use of OpenCL for communication between the host and the FPGA
+
 \subsection{Architecture}
 % Describe the FPGA kernel’s architecture and how it accelerates quantum simulations.
 
