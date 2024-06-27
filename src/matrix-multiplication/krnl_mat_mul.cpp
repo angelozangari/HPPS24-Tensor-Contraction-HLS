@@ -28,7 +28,7 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
 #pragma HLS INTERFACE s_axilite port=A_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=B_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=CD bundle=control
-#pragma HLS INTERFACE s_axilite port=return
+#pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
 
   // hls-streams for matrices
