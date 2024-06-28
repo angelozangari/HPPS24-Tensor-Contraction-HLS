@@ -1,0 +1,587 @@
+\documentclass[12pt,oneside,a4paper]{article}
+
+\usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage{xcolor}
+\usepackage{todonotes}
+\usepackage{amsmath}
+\usepackage{multicol}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{listings}
+\lstdefinestyle{qasm}{
+    belowcaptionskip=1\baselineskip,
+    frame=top,frame=bottom,
+    frameround=tttt,
+    xleftmargin=\parindent,
+    basicstyle=\footnotesize\ttfamily,
+    tabsize=2,
+    numbers=left,
+    numbersep=5pt,
+    stepnumber=1,
+    columns=fullflexible,
+}
+\lstset{
+	frame=top,frame=bottom,
+	language=C,
+	basicstyle=\small\normalfont,
+	xleftmargin=\parindent,
+	keywordstyle=\color{green!40!black},
+	%  commentstyle=\itshape\color{purple!40!black},
+	%  identifierstyle=\color{blue},
+	%  stringstyle=\color{orange},
+	morekeywords={in, globaldata, procedure, input, output, behavior, end, XOR, NOT, AND}, % keyword to highlight
+	tabsize=2,
+	numbers=left,
+	stepnumber=1,                   % the step between two line-numbers.
+	numbersep=5pt,
+	framexleftmargin=10pt,
+	title=\lstname,
+	captionpos=t,
+	showspaces=false,
+}
+\DeclareCaptionFormat{listing}{\rule{\dimexpr\textwidth\relax}{0.4pt}\par\vskip1pt#1#2#3}
+\captionsetup[lstlisting]{format=listing,singlelinecheck=false, margin=0pt,labelsep=space,labelfont=bf}
+
+\usepackage{booktabs}
+\usepackage[noabbrev,capitalise]{cleveref}
+\crefname{listing}{algorithm}{algorithms}
+\Crefname{listing}{Algorithm}{Algorithms}
+\renewcommand\lstlistingname{Algorithm}
+\def\lstlistingcrefname{Algorithm}
+\usepackage{url}
+
+\addbibresource{assets/biblio.bib}
+
+\title{\textbf{Quantum Circuit Simulation through Tensor Network Contractions \\ on FPGAs}}
+
+\author{Federico Lolli, Angelo Zangari}
+
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \clearpage
+    \maketitle
+	\thispagestyle{empty}
+	\vspace*{1cm}
+	% \includegraphics[width=4cm]{example.jpg} % qui mettete il vostro logo, o cancellate la linea
+	\vfill
+	\centering
+    % FIXME: choose 1 of the 2 footers below
+	% \includegraphics{footer.png}
+	\includegraphics{logo_polimi.png}\includegraphics{logo_NECST.png}
+\end{titlepage}
+
+\begin{abstract}
+%    Enter a short summary here. What topic do you want to investigate and why? What experiment did you perform? What were your main results and conclusion?
+
+% OLD ABSTRACT %In the modern era of quantum computing, the need for simulation of quantum circuits on classical computers has become of paramount importance. When talking about classical computers running quantum circuits, mainly we are referring to two tasks: simulation and verification. Both of these techniques used to rely on a state vector based representation. The limitation of this approach is that the state vector dimension grows exponentially with respect to the circuit size, which renders this method spatially infeasible for larger circuits. To solve this issue we can resort to tensor network based algorithms, which map all components of the quantum circuit to appropriate tensors, forming a tensor network that can then be contracted to obtain the final state bitstrings amplitudes.
+
+In the rapidly evolving field of quantum computing, the simulation of quantum circuits on classical computers has become increasingly crucial. This project focuses on developing an efficient simulation toolchain for quantum circuits, with particular emphasis on Field-Programmable Gate Array (FPGA) implementation. Our approach centers on two key innovations: First, we develop a general x86 Instruction Set Architecture (ISA) that decomposes quantum circuits into a series of schedulable instructions, utilizing two fundamental mathematical operators: tensor expansions and matrix multiplications. This abstraction allows for flexible and efficient representation of quantum operations. Second, we implement this ISA on FPGAs to perform quantum circuit simulations. Our implementation features two custom-designed kernels, developed from scratch, specifically optimized for tensor expansion and matrix multiplication operations. This tailored approach enables us to leverage the  processing capabilities of FPGAs, potentially offering significant performance improvements over traditional simulation methods. By focusing on these aspects, our work aims to advance the field of quantum circuit simulation, providing a powerful tool for researchers and developers in quantum computing.
+
+\end{abstract}
+
+% FIXME choose weather to include or not the table of contents
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
+\section{Introduction}
+
+\subsection{Objective and Scope}
+% State the purpose/objectives of your project, and the scope.
+This project aims to develop an efficient simulation toolchain for quantum circuits, with a particular focus on implementation on Field-Programmable Gate Arrays (FPGAs). Our primary objective is to create a versatile and high-performance system capable of both simulating and verifying quantum circuits.
+The scope of this work encompasses:
+
+Development of a comprehensive toolchain for quantum circuit simulation.
+Implementation of this toolchain on FPGA hardware, leveraging its parallel processing capabilities.
+Focus on both simulation and verification aspects of quantum circuits, particularly for Random Circuit Sampling (RCS) experiments.
+
+\subsection{Significance}
+% Discuss the significance of this work in the context of current technological advancements and potential applications. Explain why developing a quantum simulation accelerator is important.
+The significance of this work lies in its potential to bridge the gap between quantum and classical computing, particularly in the context of current technological advancements in quantum hardware.
+Classical simulation and verification of quantum circuits, especially for RCS experiments, are crucial for several reasons:
+
+Simulation: By sampling bitstrings with bounded Linear Cross-Entropy Benchmark (LXEB) values, we can quantify the distance between classical and quantum computing for specific tasks. This helps in understanding the computational advantages of quantum systems and validating claims of quantum supremacy.
+Verification: Computing the exact amplitudes of bitstrings sampled in RCS experiments serves two primary objectives:
+\begin{enumerate}
+	\item It validates the authentic outputs of RCS experiments, ensuring the reliability of experimental results from quantum hardware.
+	\item It enables the realization of numerous potential applications of sampling-based quantum algorithms, such as solving subgraph problems and generating random numbers with certified randomness.
+\end{enumerate}
+
+Developing an efficient quantum simulation accelerator on FPGAs is particularly important because:
+
+It provides a cost-effective and flexible platform for simulating and verifying quantum circuits, making quantum research more accessible.
+It allows for the exploration of quantum algorithms and their classical counterparts, contributing to our understanding of quantum computational advantages.
+It supports the development and testing of quantum algorithms before implementation on actual quantum hardware, accelerating the progress in quantum computing research.
+
+By focusing on FPGA implementation, this project aims to leverage the parallel processing capabilities of these devices, potentially offering performance improvements over traditional CPU-based simulations. This could lead to faster and more efficient verification of quantum experiments, ultimately contributing to the advancement of quantum computing technology.
+
+
+\subsection{Overview}
+% Provide a brief overview of the report structure.
+The report is organized according to the following structure:
+\begin{itemize}
+	\item section 2 : a brief and exhaustive explanation of the problem, background, current challenges and motivations
+	\item section 3 : sota reference, different methods to tackle the problem and how we relate to them
+	\item section 4 : methods, our approach
+	\item section 5 : FE
+	\item section 6 : BE
+	\item section 7 : results and discussions
+	\item section 8 : conclusions
+	\item section 9 : references to other material
+	\item section 10 : the appendix contains both acronyms used in the report and, most importantly, a slightly more detailed explanation w.r.t. section 2 of the essential concepts necessary to understand the problem
+\end{itemize}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 2
+\section{Problem Explanation (Quantum Simulation)}
+
+\subsection{Background}
+% Explain what quantum simulation is and why it is challenging. Include the theoretical foundations and the practical implications.
+
+\subsubsection{What is quantum computing}
+Quantum computing represents a paradigm shift from classical computing, leveraging the principles of quantum mechanics to process information. At its core, quantum computing utilizes quantum bits, or qubits, which can exist in superposition, encoding multiple classical states simultaneously. This fundamental difference allows quantum computers to potentially solve certain problems exponentially faster than their classical counterparts.
+
+\subsubsection{What is a quantum gate}
+Central to quantum computing are quantum gates, which are unitary operations that manipulate quantum states. These gates serve as the building blocks of quantum circuits, analogous to logic gates in classical circuits. However, unlike classical gates that operate on definite binary states, quantum gates act on superpositions of states, enabling complex quantum operations.
+
+\subsubsection{Measurement}
+The process of extracting information from a quantum system involves measurement. When a measurement is performed, the quantum state collapses to a classical state, yielding a binary string (bitstring) in the measurement basis. This collapse is probabilistic and irreversible, necessitating multiple experiment repetitions to gain comprehensive information about the quantum state.
+
+\subsubsection{Sampling and evaluating quality of obtained sample with LXEB}
+To evaluate the quality of quantum computations, particularly in Random Circuit Sampling (RCS) experiments, researchers use the Linear Cross-Entropy Benchmark (LXEB). The LXEB serves as a proxy for fidelity in large quantum circuits where direct fidelity calculation is impractical. It compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations.
+
+Quantum simulation on classical computers faces significant challenges due to the exponential growth of the quantum state space with the number of qubits. For instance, storing the full quantum state vector becomes infeasible for systems with more than 50 qubits. To address this, tensor network methods have emerged as a powerful tool for simulating quantum circuits. These methods represent quantum gates and states as tensors, mapping the circuit to a network of interconnected tensors. By contracting this network, one can compute amplitudes for specific bitstrings without storing the entire state vector, enabling simulation of larger quantum systems within the limitations of classical hardware.
+
+
+\subsection{Current Challenges}
+% Highlight the key challenges in quantum simulation that your project aims to address.
+limitations of current traditional methods (state vector) -> solved by using tensor network approach
+
+% FIXME: maybe move to challenges?
+different approaches with different limitations, plus common ones:
+- ap precision
+- high sparsity
+- cancellation of very small values which greatly affects total result
+
+
+main problems of tensor network based methods:
+\begin{itemize}
+	\item contraction path findings.
+	\item efficient implementation on hw: computational complexity of newer methods (tensor network on sota gpus with hundreds of thousands of dollars worth of equipment).
+\end{itemize}
+
+in particular, decomposing problem in such a way that an fpga can compete with gpus on ops/(power+computational capacity) which can directly be translated in ops/dollar
+
+\subsection{Motivation}
+% Explain why you chose to tackle this problem and how it relates to existing research.
+overcome challenges of previous methods and analyze potential benefits of using FPGAs to tackle this problem, which hasn't been done so far. previous work was discovered, but was much more of a porting of specific methods on fpga, while this project aims to develop a full fledged alternative on fpga to sota gpu methods.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 3
+\section{State of the Art Reference}
+
+\subsection{Literature Review}
+% Summarize existing work in the field of quantum simulation accelerators. Discuss various approaches, technologies used, and their limitations.
+Classical simulation and verification of quantum algorithms have evolved significantly over time, with two primary approaches emerging:
+\begin{itemize}
+	\item \textbf{State Vector-Based Methods:} These traditional approaches store and manipulate the entire quantum state vector or density matrix. While effective for circuits with a limited number of qubits, they become impractical for larger systems due to exponential memory requirements. For quantum circuits with low entanglement, approximation techniques can extend their applicability, resulting in polynomial computational costs for larger system sizes. However, these methods fail when simulating quantum algorithms demonstrating computational advantages, typically involving more than 50 qubits and high-entanglement architectures.
+	\item \textbf{Tensor Network-Based Methods:} To overcome the limitations of state vector approaches, tensor network simulation algorithms have been developed. These methods convert quantum circuit components into tensor networks, which are then contracted to obtain specific final state bitstring amplitudes. While capable of handling larger qubit numbers and high entanglement, they face challenges in finding optimal contraction paths and achieving efficient implementation on current classical devices.
+\end{itemize}
+Recent advancements in tensor network methods have focused on improving contraction path finding. Various approaches, including graph-partitioning, simulated annealing-like, and architecture-aware methods, have significantly reduced simulation times for complex circuits. For instance, the simulation time for a 53-qubit, 20-cycle Sycamore circuit has been reduced from an estimated 10,000 years to durations comparable with actual quantum experiments.
+However, efficient implementation of tensor network simulations remains challenging. Current high-performance computing devices are not optimized for tensor contractions with arbitrary dimensions and contraction indices. Studies indicate that existing implementations utilize only about 20\% of the peak performance of these devices, highlighting the need for more efficient implementations, especially for verification tasks which are more computationally intensive than bounded-fidelity simulations
+
+% - gpu based accelerators (papers survey gpu and main gpu nvidia - 8xA100s with support board)
+
+\subsection{Comparison}
+% Compare different methods and highlight where your approach fits in the current landscape.
+Tensor network simulation methods can be categorized into three main approaches, each with distinct characteristics and applications:
+
+% us w.r.t. other 3 approaches on tensor contraction
+\begin{itemize}
+	\item \textbf{Single Amplitude Simulation:} This method focuses on computing the amplitude of a single bitstring. It involves re-expressing the target bitstring as a product state and adding it to the end of the quantum circuit, creating a closed tensor network. This approach is repeated for different bitstrings when multiple amplitudes are required.
+	\item \textbf{Full State Simulation:} This approach aims to obtain all amplitudes in the entire Hilbert space. It leaves all bonds in the final state open, resulting in a $2^N$ vector representing all possible amplitudes. However, its exponential memory requirement limits its applicability to circuits with a small number of qubits.
+	\item \textbf{Subspace Simulation:} This method lies between single amplitude and full state simulations. It partially closes the final state by applying product tensors to qubits not of interest. This allows direct obtainment of amplitudes for an opened Hilbert subspace through contraction. It's particularly useful for sampling from circuits with a large number of qubits where storing the full final state is infeasible.
+\end{itemize}
+The key distinction among these methods is the level of restriction placed on the final state. Single amplitude simulation has the highest restriction, full state simulation has no restrictions, and subspace simulation offers a flexible middle ground. The choice of method depends on the circuit size and available computational resources.
+All three methods result in either closed tensor networks or networks with few open bonds, which can typically be contracted through a sequence of einsum equations.
+
+% tensor network expression obtained by compiler VS simulated annealing VS other heuristics
+
+% - tensor cores ops VS streams of complex in coo with ap/floats
+
+\subsection{Gaps}
+% Identify the gaps in the current state of the art that your project aims to fill.
+- decomposing operations (tens exp, mult) in simpler operations (products and sums) on packets of fixed dimension, and then composing the intermediate results
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 4
+\section{Methods}
+
+\subsection{Design Approach}
+% Describe the overall design and methodology used to develop the quantum simulation accelerator.
+Simulation algorithm:
+- we have circuit
+- build a graph with connections representing possible expansions and contractions
+- build a contraction tree and find expression
+- send data to fpgas for computational
+- receive results , and sample bitstring of quantum vector
+
+\subsection{Technology Stack}
+% Provide an overview of the technologies and tools used, including Vitis HLS, Rust, and OpenCL.
+- for frontend, quantum circuit compiler and tensor network optimization, Rust
+- for developing both fpga kernels, vitis hsl
+- for hostcode, be integration and rtl export vitis + opencl
+
+\subsection{Development Process}
+% Outline the steps taken in the development process, from initial design to final implementation.
+% FIXME - how does it relate to section 4 Methods/Design_Approach ?
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 5
+
+\section{Frontend (Host Side) Explanation}
+
+% TODO highlight the implementation of x86 ISA
+
+The Frontend is a fundamental component in the quantum circuit simulation process, serving as the interface between high-level quantum circuit descriptions and low-level computational backends. By reducing the quantum circuit to a tensor network and optimizing the contraction tree, the frontend prepares the circuit for efficient simulation with minimum number of operations. Without this crucial step, the computational backends would be unable to efficiently simulate quantum circuits, leading to significant performance degradation and resource wastage.
+
+All the code employed in the frontend is hosted on GitHub at the following \href{https://github.com/federico123579/HPPS24-Quantum-Simulation}{repository}.
+
+This section presents the architecture, functionality, and implementation details of the frontend, presenting at the end a compilation example to illustrate the process.
+
+\subsection{Architectural Overview and Core Functionality}
+
+The principal objective of the frontend is to transform a high-level quantum circuit description into an optimized sequence of instructions for efficient simulation. This process involves several key stages, each explained more in detail forward:
+
+\begin{enumerate}
+    \item \textbf{Parsing} of a high-level quantum circuit description language (QASM) into an internal representation
+    \item \textbf{Conversion} of the quantum circuit into a \textbf{Tensor Network}, highlighting available tensor contractions
+    \item \textbf{Generation} of an optimized contraction tree, packed in a \textbf{Contraction Plan} (\textbf{CP}) structure
+    \item \textbf{Compilation} of the contraction plan to an optimal sequence of instructions, based on a backend-specific \textbf{Instruction Set Architecture} (\textbf{ISA})
+    \item \textbf{Scheduling} of instructions for optimal execution, exploiting independency between leaves of the contraction tree and maximizing instruction-level parallelism
+\end{enumerate}
+
+\subsection{Circuit Parsing and Representation}
+
+The initial phase of the frontend's operation involves parsing a QASM 3.0\cite{cross2017openquantumassemblylanguage} file. Our parser implementation supports a subset of the QASM 3.0 specification, focusing on the essential elements required to parse QisKit\cite{qiskit2024} randomly generated circuits. Specifically, it supports all standard gates included in the \href{https://github.com/Qiskit/qiskit/blob/main/qiskit/qasm/libs/stdgates.inc}{\texttt{stdgates.inc}} library, custom gate definitions within the QASM file, while excluding certain advanced features such as measurement operations and classical control structures.
+
+Following the parsing phase, the frontend constructs an internal representation of the quantum circuit. This internal model serves as the foundation for subsequent compilation stages.
+
+\subsection{Tensor Network Conversion}
+
+The next crucial stage involves the transformation of the quantum circuit into a tensor network. This process comply with the following rules:
+
+\begin{itemize}
+    \item Each quantum gate is mapped to a corresponding tensor, preserving its quantum operational semantics.
+    \item Connections between gates are represented as tensor contractions, reflecting the flow of quantum information through the circuit.
+\end{itemize}
+
+The resulting structure is a graph where edges represent tensors and nodes represent tensor contractions.
+
+The rules for drawing contraction arcs in the tensor network follow established conventions in quantum tensor network theory \cite{biamonte2017tensornetworksnutshell}. These rules ensure that the tensor network accurately represents the quantum circuit's operations and qubit interactions.
+
+\subsection{Contraction Tree Generation}
+
+From the tensor network representation, the frontend generates a contraction tree using a custom algorithm. This binary tree structure represents the optimal order of tensor contractions:
+
+\begin{itemize}
+    \item Leaf nodes represent individual tensors, corresponding to quantum gates in the original circuit.
+    \item Internal nodes represent contraction operations between tensors.
+    \item The tree structure is optimized to minimize the total number of operations required to compute the final quantum state.
+\end{itemize}
+
+Our custom algorithm for generating the contraction tree is based on a heuristic approach that balances computational efficiency with contraction order optimization. While the detailed description of this algorithm is beyond the scope of this section, it can be summarized as a recursive process that identifies the most efficient contraction order based on tensor dimensions and connectivity.
+
+Once the contraction tree is constructed, it is encapsulated in a Contraction Plan (CP) structure, which serves as the blueprint for subsequent compilation stages.
+
+\subsection{ISA Compilation and Instruction Scheduling}
+
+The contraction plan is subsequently converted to a set of instructions based on a backend-specific Instruction Set Architecture (ISA). This ISA is composed of two fundamental operations:
+
+\begin{enumerate}
+    \item \textbf{Tensor Expansion (TE):} Implements the Kronecker product to expand tensors for subsequent contractions. This operation is crucial for aligning tensor dimensions prior to multiplication.
+    \item \textbf{Matrix Multiplication (MM):} Performs the actual tensor contraction through optimized matrix multiplication operations.
+\end{enumerate}
+
+Both operations utilize sparse matrix representations in Coordinate (COO) format to optimize computations, particularly for FPGA backends. This format allows for efficient storage and manipulation of the typically sparse quantum operators.
+
+A scheduler is employed to optimize the order of instructions in the set derived from the contraction plan, maximizing instruction-level parallelism and minimizing computational overhead. This scheduling process controls the execution flow of the quantum circuit simulation, in a dynamic and adaptive manner by employing a dependency graph constructed from the contraction plan. The scheduler uses and updates this graph to determine the optimal instruction sequence.
+
+\subsection{Backend Interface}
+
+The frontend is architected to support multiple computational backends, while currently supporting only the CPU backend, FPGA and GPU backends are complete and lack only the OpenCL communication layer with the frontend.
+
+The final ISA instructions are transmitted to the chosen backend for execution, controlled by the scheduler and optimized for the specific hardware architecture.
+
+The communication between the Rust-based frontend and the FPGA backend is planned to be implemented using OpenCL Rust bindings. This communication layer is currently under development, while the link between the host and the FPGA is based on a custom binary file format read once and executed in order (without dynamic scheduling).
+
+\subsection{Implementation Details}
+
+The entire frontend is implemented in Rust, taking advantage of the robust type system and memory safety features the language offers. This choice offers several significant advantages:
+
+\begin{itemize}
+    \item Enhanced reliability through compile-time error checking, reducing the likelihood of runtime errors.
+    \item Improved maintainability and extensibility of the codebase, facilitated by Rust's modern language features and clear ownership model.
+    \item Efficient parallelization for the CPU backend using the \href{https://github.com/rayon-rs/rayon}{\texttt{rayon}} parallel computing library.
+\end{itemize}
+
+Rust's strong typing and borrow checker have been particularly beneficial in implementing the tensor network operations, ensuring memory safety in complex data transformations without sacrificing performance and boosting productivity, thanks to many errors avoided at compile time.
+
+\subsection{Compilation Example}
+
+Let us take the Quantum Fourier Transform (QFT)\cite{coppersmith2002approximatefouriertransformuseful} circuit as an example. The QFT circuit is a fundamental quantum algorithm that transforms a quantum state into its Fourier representation. The QFT circuit is represented in QASM as follows:
+
+\begin{lstlisting}[style=qasm, caption={QFT Circuit in QASM}]
+	qubit[4] q;
+	x q[0];
+	x q[2];
+	barrier q;
+	h q[0];
+	cphase(pi / 2) q[1], q[0];
+	h q[1];
+	cphase(pi / 4) q[2], q[0];
+	cphase(pi / 2) q[2], q[1];
+	h q[2];
+	cphase(pi / 8) q[3], q[0];
+	cphase(pi / 4) q[3], q[1];
+	cphase(pi / 2) q[3], q[2];
+	h q[3];
+\end{lstlisting}
+
+% TODO add diagram of the tensor network
+% TODO add diagram of the contraction tree
+% TODO add sequence of instructions
+
+\subsection{Future Work and Optimizations}
+
+While the current implementation provides a robust foundation, several areas for future improvement have been identified:
+
+\begin{itemize}
+    \item Extending QASM support to full specification compliance
+    \item Optimizing the contraction tree generation algorithm employing advanced graph based techniques \cite{PhysRevE.90.033315}
+    \item Implementing and optimizing the OpenCL communication layer for FPGA and GPU backends
+    \item Exploring advanced scheduling techniques for improved instruction-level parallelism
+\end{itemize}
+
+Potential optimization strategies include the implementation of a hybrid CPU-FPGA approach for dynamic workload distribution and the exploration of quantum-inspired classical algorithms for improved tensor network contraction.
+
+By continually refining and expanding the frontend's capabilities, we aim to create a versatile and efficient quantum circuit simulation framework that can leverage various backend architectures and implementations.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 6
+
+\section{Kernel (FPGA Side) Explanation}
+
+% TODO highlight the implementation of the FPGA kernel from scratch
+
+% - kernel implemented from scratch
+% - two kernels, one for tensor expansion and one for matrix multiplication
+% - both kernels make use of COO sparse matrix representation
+% - no external libraries used, only Vitis HLS includes
+% - extensive use of producer-consumer pattern in kernel design
+% - use of dataflow pragma for pipelining and parallelism
+% - imperfect loop due to the nature of the problem (employing COO format)
+% - tensor expansion kernel
+% 	- kronecker product of an arbitrary large matrix with another large arbitrary matrix
+% 	- employed for the tensor product operation in the tensor network contraction
+% - use of a customized binary data format to read operations from a file and feed them to the kernel
+% - matrix multiplication kernel
+% 	- multiplication of two sparse matrices in COO format
+% 	- employed for the tensor contraction operation in the tensor network contraction
+%   - use of packet based approach to handle the sparse matrix multiplication
+% - use of vitis as the main tool for kernel development
+% - use of OpenCL for communication between the host and the FPGA
+
+\subsection{Architecture}
+% Describe the FPGA kernel’s architecture and how it accelerates quantum simulations.
+
+\subsection{Implementation Details}
+% Provide detailed explanations of the implementation using Vitis HLS. Discuss any optimizations made for performance.
+
+\subsection{Integration}
+% Explain how the kernel integrates with the host side via OpenCL. Include diagrams and flowcharts to illustrate the process.
+
+\subsection{Code Examples}
+% Include HLS code snippets and explain their functionality.
+
+\section{Kernel (FPGA Side) Explanation}
+
+The FPGA kernel represents the core computational engine of our quantum circuit simulation framework. This section elucidates the architecture, implementation details, and integration of the FPGA kernels, highlighting their role in accelerating tensor network contractions for quantum circuit simulation.
+
+\subsection{Architectural Overview}
+
+Our FPGA-based acceleration solution comprises two primary kernels, each tailored for a specific operation in the tensor network contraction process:
+
+\begin{enumerate}
+    \item \textbf{Tensor Expansion Kernel}: Implements the Kronecker product operation.
+    \item \textbf{Matrix Multiplication Kernel}: Performs sparse matrix multiplication for tensor contractions.
+\end{enumerate}
+
+Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, optimizing memory usage and computational efficiency for the typically sparse quantum operators.
+
+\subsection{Implementation Details}
+
+The kernels have been implemented from scratch using Vitis High-Level Synthesis (HLS), without relying on external libraries beyond the standard Vitis HLS includes. This approach allows for fine-grained control over the hardware implementation and optimization strategies.
+
+\subsubsection{Tensor Expansion Kernel}
+
+The Tensor Expansion kernel implements the Kronecker product of two arbitrarily large matrices. This operation is fundamental to the tensor product operations in quantum circuit simulation.
+
+Key features of the Tensor Expansion kernel include:
+
+\begin{itemize}
+    \item Support for arbitrary matrix dimensions, accommodating various quantum gate configurations.
+    \item Efficient handling of sparse matrices in COO format, minimizing memory bandwidth requirements.
+    \item Utilization of the dataflow pragma for enhanced pipelining and parallelism.
+\end{itemize}
+
+\subsubsection{Matrix Multiplication Kernel}
+
+The Matrix Multiplication kernel performs the multiplication of two sparse matrices in COO format, which is essential for tensor contraction operations in the quantum circuit simulation process.
+
+Notable aspects of the Matrix Multiplication kernel include:
+
+\begin{itemize}
+    \item Implementation of a packet-based approach to efficiently handle sparse matrix multiplication.
+    \item Optimization for the inherently imperfect loop structures resulting from the COO format.
+    \item Extensive use of the producer-consumer pattern to enhance data flow and reduce latency.
+\end{itemize}
+
+\subsection{Optimization Strategies}
+
+Several optimization techniques have been employed to maximize the performance of our FPGA kernels:
+
+\begin{enumerate}
+    \item \textbf{Dataflow Optimization}: Extensive use of the dataflow pragma enables pipelining and parallelism, significantly improving throughput.
+
+    \item \textbf{Memory Access Optimization}: The COO sparse matrix format reduces memory bandwidth requirements, crucial for handling large quantum circuits.
+
+    \item \textbf{Packet-Based Processing}: Implemented in the Matrix Multiplication kernel to efficiently handle sparse data structures and improve computational density.
+
+    \item \textbf{Producer-Consumer Pattern}: This design pattern enhances data flow between different stages of the computation, reducing overall latency.
+\end{enumerate}
+
+\subsection{Integration and Data Flow}
+
+The integration of the FPGA kernels with the host side is facilitated through OpenCL, enabling efficient communication and data transfer between the host CPU and the FPGA device.
+
+\begin{figure}[h]
+    \centering
+    % Replace with actual path to your diagram
+    \includegraphics[width=0.8\textwidth]{path_to_your_diagram}
+    \caption{Data flow between Host and FPGA Kernels}
+    \label{fig:dataflow}
+\end{figure}
+
+The data flow process can be summarized as follows:
+
+\begin{enumerate}
+    \item The host prepares input data in a custom binary format, encoding the operations to be performed.
+    \item This data is transferred to the FPGA device memory via OpenCL.
+    \item The appropriate kernel (Tensor Expansion or Matrix Multiplication) is invoked to process the data.
+    \item Results are transferred back to the host for further processing or final output.
+\end{enumerate}
+
+\subsection{Code Example: Tensor Expansion Kernel}
+
+To illustrate the implementation details, consider the following simplified code snippet from the Tensor Expansion kernel:
+
+This snippet demonstrates the use of HLS pragmas for interface specification and dataflow optimization, as well as the division of the kernel into separate read and compute stages for improved pipeline efficiency.
+
+\subsection{Performance Considerations}
+
+The performance of our FPGA-based solution is influenced by several factors:
+
+\begin{itemize}
+    \item \textbf{Memory Bandwidth}: The efficiency of data transfer between off-chip memory and on-chip processing elements.
+    \item \textbf{Computational Density}: The ratio of compute operations to memory operations, which is optimized through our packet-based approach.
+    \item \textbf{Parallelism}: The degree of concurrent execution achieved through our dataflow design and kernel architecture.
+    \item \textbf{Precision}: The use of fixed-point arithmetic (ap_fixed<16,8>) balances computational accuracy with hardware resource utilization.
+\end{itemize}
+
+\subsection{Future Work and Optimizations}
+
+While the current implementation provides a solid foundation for FPGA-accelerated quantum circuit simulation, several areas for future enhancement have been identified:
+
+\begin{enumerate}
+    \item Implementation of multiple Processing Elements (PEs) for the sparse matrix multiplication kernel to further increase parallelism.
+    \item Exploration of dynamic indexing schemes for the Tensor Expansion kernel to improve flexibility and efficiency for varying input sizes.
+    \item Investigation of mixed-precision arithmetic to optimize the trade-off between accuracy and performance.
+    \item Development of a more sophisticated OpenCL-based communication layer to enable dynamic scheduling and workload distribution between the host and FPGA.
+\end{enumerate}
+
+By continuing to refine and optimize our FPGA kernel implementations, we aim to push the boundaries of what's possible in hardware-accelerated quantum circuit simulation, providing a powerful tool for researchers and practitioners in the field of quantum computing.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 7
+
+\section{Results and Discussion}
+
+\subsection{Performance Metrics}
+% Present the performance metrics of your accelerator. Compare them against benchmarks or other state-of-the-art solutions.
+
+\subsection{Analysis}
+% Analyze the results, discussing any improvements or unexpected outcomes. Use charts and graphs to visualize data.
+
+\subsection{Limitations}
+% Discuss the limitations of your current implementation and any potential improvements for future work.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 8
+
+\section{Conclusion}
+
+\subsection{Summary}
+% Summarize the key findings and contributions of your project.
+
+\subsection{Future Work}
+% Suggest areas for future research or improvements that can be made to your quantum simulation accelerator.
+- since network contraction is NP hard, find better methods (currently sota are heuristics, such as simulated annealing)
+- multiple PEs for spMM in coo format
+- dynamic indexes for tensor expansion
+
+\subsection{Final Thoughts}
+% Provide any concluding remarks or reflections on the project.
+- deeply challenging, on many aspects, both theoretical (quantum computing) and practical (hsl, open cl). vastness of work that has been done (cover all theoretical work to find reasonable fpga advantages to solve the problem), quantum circuit compiler to get final expression to be computed, two kernels from scratch and managing their usage.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 9
+
+\printbibliography[title={\section{References}}]
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 10
+
+\section{Appendices}
+% Include any supplementary material, such as full code listings or additional data, in the appendices.
+An explanation of some technical terms used in the report.
+- bitstring : in quantum computing, it refers to
+- gate : in a quantum circuit,
+- lane :
+- sota : state of the art
+- state vector : in a quantum circuit,
+- tensor : math object that
+- tensor expansion : math operation that
+
+
+
+% Additional Tips
+    % Figures and Charts: Ensure that all figures, charts, and diagrams are clearly labeled and referenced in the text. Use them to illustrate complex points and provide visual clarity.
+    % Clarity and Conciseness: Make sure your writing is clear and concise. Avoid unnecessary jargon and explain technical terms where needed.
+
+
+\end{document}
