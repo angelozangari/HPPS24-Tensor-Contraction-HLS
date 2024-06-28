@@ -1,35 +1,31 @@
 main := report
 
-.PHONY: remove-build remove-all
-
 ASSETS_DIR := assets
 BUILD_DIR := build
-LTC = TEXINPUTS=$(ASSETS_DIR): pdflatex -interaction=nonstopmode -shell-escape -synctex=1 -output-directory=$(BUILD_DIR)
-BIB = biber --input-directory $(BUILD_DIR) --output-directory $(BUILD_DIR)
 
-other_texs = $(filter-out $(main).tex, $(wildcard *.tex))
+.PHONY: all clean distclean
 
-all: $(main).pdf
+LTC = TEXINPUTS=.:$(ASSETS_DIR): pdflatex -interaction=nonstopmode -shell-escape -synctex=1 -output-directory=$(BUILD_DIR)
+BIB = biber --input-directory $(BUILD_DIR) --output-directory=$(BUILD_DIR)
+
+other_texs = $(wildcard $(ASSETS_DIR)/*.tex)
+
+all: $(BUILD_DIR)/$(main).pdf
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(main).pdf: $(BUILD_DIR)/$(main).pdf
-	cp $(BUILD_DIR)/$(main).pdf .
-
-$(BUILD_DIR)/$(main).pdf: $(main).tex $(other_texs) $(ASSETS_DIR)/biblio.bib | $(BUILD_DIR)
+$(BUILD_DIR)/$(main).pdf: $(main).tex $(other_texs) | $(BUILD_DIR)
 	$(LTC) $(main).tex
-	# Check if biber ran successfully
-	if ! $(BIB) $(main); then \
-		echo "Error running biber. Please check Biber and BibLaTeX versions."; \
-		exit 1; \
-	fi
+ifeq (,$(wildcard $(ASSETS_DIR)/*.bib))
+	$(BIB) $(main)
+endif
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
 
-remove-build:
+clean:
 	@rm -rf $(BUILD_DIR)
 
-remove-all: remove-build
+distclean: clean
 	@rm -f $(main).pdf

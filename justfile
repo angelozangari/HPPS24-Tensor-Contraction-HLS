@@ -1,8 +1,7 @@
 alias b := build-ninja
 alias c := clean
 alias rb := report-build
-alias rcb := report-clear-build
-alias rca := report-clear-all
+alias rc := report-clean
 
 _default:
   just --choose
@@ -47,12 +46,7 @@ report-build:
     cd report
     make
 
-report-clear-build:
+report-clean:
     #!/usr/bin/env bash
     cd report
-    make remove-build
-
-report-clear-all:
-    #!/usr/bin/env bash
-    cd report
-    make remove-all
+    make clean
