@@ -19,9 +19,11 @@ $(main).pdf: $(BUILD_DIR)/$(main).pdf
 
 $(BUILD_DIR)/$(main).pdf: $(main).tex $(other_texs) $(ASSETS_DIR)/biblio.bib | $(BUILD_DIR)
 	$(LTC) $(main).tex
-# ifeq (,$(wildcard $(ASSETS_DIR)/*.bib))
-	$(BIB) $(main)
-# endif
+	# Check if biber ran successfully
+	if ! $(BIB) $(main); then \
+		echo "Error running biber. Please check Biber and BibLaTeX versions."; \
+		exit 1; \
+	fi
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex
 	$(LTC) $(main).tex

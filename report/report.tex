@@ -89,33 +89,48 @@ In the modern era of quantum computing, the need for simulation of quantum circu
 
 \subsection{Objective and Scope}
 % State the purpose/objectives of your project, and the scope.
-objectives: develop simulation toolchain for quantum circuits on hw, in particular fpgas.
-scope: simulation OR verification fo quantum circuits,
+This project aims to develop an efficient simulation toolchain for quantum circuits, with a particular focus on implementation on Field-Programmable Gate Arrays (FPGAs). Our primary objective is to create a versatile and high-performance system capable of both simulating and verifying quantum circuits.
+The scope of this work encompasses:
+
+Development of a comprehensive toolchain for quantum circuit simulation.
+Implementation of this toolchain on FPGA hardware, leveraging its parallel processing capabilities.
+Focus on both simulation and verification aspects of quantum circuits, particularly for Random Circuit Sampling (RCS) experiments.
 
 \subsection{Significance}
 % Discuss the significance of this work in the context of current technological advancements and potential applications. Explain why developing a quantum simulation accelerator is important.
-importance of classical simulation and classical verification for Random Circuit Sampling (RCS) experiments.
-simulation -> sampling bitstring with bounded LXEB values -> quantifies distance between classical and quantum computing for a specific tasks
-verification -> computing the exact amplitudes of bitstrings sampled in RCS experiments, in order to
+The significance of this work lies in its potential to bridge the gap between quantum and classical computing, particularly in the context of current technological advancements in quantum hardware.
+Classical simulation and verification of quantum circuits, especially for RCS experiments, are crucial for several reasons:
+
+Simulation: By sampling bitstrings with bounded Linear Cross-Entropy Benchmark (LXEB) values, we can quantify the distance between classical and quantum computing for specific tasks. This helps in understanding the computational advantages of quantum systems and validating claims of quantum supremacy.
+Verification: Computing the exact amplitudes of bitstrings sampled in RCS experiments serves two primary objectives:
 \begin{enumerate}
-	\item validate outputs of RCS experiments
-	\item sampling-based quantum algorithms, with applications: (solving subgraph problems, generate rand numbers)
+	\item It validates the authentic outputs of RCS experiments, ensuring the reliability of experimental results from quantum hardware.
+	\item It enables the realization of numerous potential applications of sampling-based quantum algorithms, such as solving subgraph problems and generating random numbers with certified randomness.
 \end{enumerate}
 
+Developing an efficient quantum simulation accelerator on FPGAs is particularly important because:
+
+It provides a cost-effective and flexible platform for simulating and verifying quantum circuits, making quantum research more accessible.
+It allows for the exploration of quantum algorithms and their classical counterparts, contributing to our understanding of quantum computational advantages.
+It supports the development and testing of quantum algorithms before implementation on actual quantum hardware, accelerating the progress in quantum computing research.
+
+By focusing on FPGA implementation, this project aims to leverage the parallel processing capabilities of these devices, potentially offering performance improvements over traditional CPU-based simulations. This could lead to faster and more efficient verification of quantum experiments, ultimately contributing to the advancement of quantum computing technology.
 
 
 \subsection{Overview}
 % Provide a brief overview of the report structure.
 The report is organized according to the following structure:
-- section 2 : a brief and exhaustive explanation of the problem, background, current challenges and motivations
-- section 3 : sota reference, different methods to tackle the problem and how we relate to them
-- section 4 : methods, our approach
-- section 5 : FE
-- section 6 : BE
-- section 7 : results and discussions
-- section 8 : conclusions
-- section 9 : references to other material
-- section 10 : the appendix contains both acronyms used in the report and, most importantly, a slightly more detailed explanation w.r.t. section 2 of the essential concepts necessary to understand the problem
+\begin{itemize}
+	\item section 2 : a brief and exhaustive explanation of the problem, background, current challenges and motivations
+	\item section 3 : sota reference, different methods to tackle the problem and how we relate to them
+	\item section 4 : methods, our approach
+	\item section 5 : FE
+	\item section 6 : BE
+	\item section 7 : results and discussions
+	\item section 8 : conclusions
+	\item section 9 : references to other material
+	\item section 10 : the appendix contains both acronyms used in the report and, most importantly, a slightly more detailed explanation w.r.t. section 2 of the essential concepts necessary to understand the problem
+\end{itemize}
 
 
 
@@ -124,21 +139,31 @@ The report is organized according to the following structure:
 
 \subsection{Background}
 % Explain what quantum simulation is and why it is challenging. Include the theoretical foundations and the practical implications.
-- what is quantum computing
-- what is a quantum gate
-- measurement
-- sampling and evaluating quality of obtained sample with LXEB
+
+\subsubsection{What is quantum computing}
+Quantum computing represents a paradigm shift from classical computing, leveraging the principles of quantum mechanics to process information. At its core, quantum computing utilizes quantum bits, or qubits, which can exist in superposition, encoding multiple classical states simultaneously. This fundamental difference allows quantum computers to potentially solve certain problems exponentially faster than their classical counterparts.
+
+\subsubsection{What is a quantum gate}
+Central to quantum computing are quantum gates, which are unitary operations that manipulate quantum states. These gates serve as the building blocks of quantum circuits, analogous to logic gates in classical circuits. However, unlike classical gates that operate on definite binary states, quantum gates act on superpositions of states, enabling complex quantum operations.
+
+\subsubsection{Measurement}
+The process of extracting information from a quantum system involves measurement. When a measurement is performed, the quantum state collapses to a classical state, yielding a binary string (bitstring) in the measurement basis. This collapse is probabilistic and irreversible, necessitating multiple experiment repetitions to gain comprehensive information about the quantum state.
+
+\subsubsection{Sampling and evaluating quality of obtained sample with LXEB}
+To evaluate the quality of quantum computations, particularly in Random Circuit Sampling (RCS) experiments, researchers use the Linear Cross-Entropy Benchmark (LXEB). The LXEB serves as a proxy for fidelity in large quantum circuits where direct fidelity calculation is impractical. It compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations.
+
+Quantum simulation on classical computers faces significant challenges due to the exponential growth of the quantum state space with the number of qubits. For instance, storing the full quantum state vector becomes infeasible for systems with more than 50 qubits. To address this, tensor network methods have emerged as a powerful tool for simulating quantum circuits. These methods represent quantum gates and states as tensors, mapping the circuit to a network of interconnected tensors. By contracting this network, one can compute amplitudes for specific bitstrings without storing the entire state vector, enabling simulation of larger quantum systems within the limitations of classical hardware.
+
+
+\subsection{Current Challenges}
+% Highlight the key challenges in quantum simulation that your project aims to address.
+limitations of current traditional methods (state vector) -> solved by using tensor network approach
 
 % FIXME: maybe move to challenges?
 different approaches with different limitations, plus common ones:
 - ap precision
 - high sparsity
 - cancellation of very small values which greatly affects total result
-
-\subsection{Current Challenges}
-% Highlight the key challenges in quantum simulation that your project aims to address.
-limitations of current traditional methods (state vector) -> solved by using tensor network approach
-
 
 
 main problems of tensor network based methods:
@@ -159,20 +184,32 @@ overcome challenges of previous methods and analyze potential benefits of using 
 
 \subsection{Literature Review}
 % Summarize existing work in the field of quantum simulation accelerators. Discuss various approaches, technologies used, and their limitations.
-Classical simulation and verification approached with different methods:
+Classical simulation and verification of quantum algorithms have evolved significantly over time, with two primary approaches emerging:
 \begin{itemize}
-	\item state vector based methods : traditional way, severely limited due to ...
-	\item tensor network based methods :
+	\item \textbf{State Vector-Based Methods:} These traditional approaches store and manipulate the entire quantum state vector or density matrix. While effective for circuits with a limited number of qubits, they become impractical for larger systems due to exponential memory requirements. For quantum circuits with low entanglement, approximation techniques can extend their applicability, resulting in polynomial computational costs for larger system sizes. However, these methods fail when simulating quantum algorithms demonstrating computational advantages, typically involving more than 50 qubits and high-entanglement architectures.
+	\item \textbf{Tensor Network-Based Methods:} To overcome the limitations of state vector approaches, tensor network simulation algorithms have been developed. These methods convert quantum circuit components into tensor networks, which are then contracted to obtain specific final state bitstring amplitudes. While capable of handling larger qubit numbers and high entanglement, they face challenges in finding optimal contraction paths and achieving efficient implementation on current classical devices.
 \end{itemize}
+Recent advancements in tensor network methods have focused on improving contraction path finding. Various approaches, including graph-partitioning, simulated annealing-like, and architecture-aware methods, have significantly reduced simulation times for complex circuits. For instance, the simulation time for a 53-qubit, 20-cycle Sycamore circuit has been reduced from an estimated 10,000 years to durations comparable with actual quantum experiments.
+However, efficient implementation of tensor network simulations remains challenging. Current high-performance computing devices are not optimized for tensor contractions with arbitrary dimensions and contraction indices. Studies indicate that existing implementations utilize only about 20\% of the peak performance of these devices, highlighting the need for more efficient implementations, especially for verification tasks which are more computationally intensive than bounded-fidelity simulations
 
-- gpu based accelerators (papers survey gpu and main gpu nvidia - 8xA100s with support board)
+% - gpu based accelerators (papers survey gpu and main gpu nvidia - 8xA100s with support board)
 
 \subsection{Comparison}
 % Compare different methods and highlight where your approach fits in the current landscape.
-AS PAPER, COMPARISON WITH 3 METHODS
-- us w.r.t. other 3 approaches on tensor contraction
-- tensor network expression obtained by compiler VS simulated annealing VS other heuristics
-- tensor cores ops VS streams of complex in coo with ap/floats
+Tensor network simulation methods can be categorized into three main approaches, each with distinct characteristics and applications:
+
+% us w.r.t. other 3 approaches on tensor contraction
+\begin{itemize}
+	\item \textbf{Single Amplitude Simulation:} This method focuses on computing the amplitude of a single bitstring. It involves re-expressing the target bitstring as a product state and adding it to the end of the quantum circuit, creating a closed tensor network. This approach is repeated for different bitstrings when multiple amplitudes are required.
+	\item \textbf{Full State Simulation:} This approach aims to obtain all amplitudes in the entire Hilbert space. It leaves all bonds in the final state open, resulting in a 2^N vector representing all possible amplitudes. However, its exponential memory requirement limits its applicability to circuits with a small number of qubits.
+	\item \textbf{Subspace Simulation:} This method lies between single amplitude and full state simulations. It partially closes the final state by applying product tensors to qubits not of interest. This allows direct obtainment of amplitudes for an opened Hilbert subspace through contraction. It's particularly useful for sampling from circuits with a large number of qubits where storing the full final state is infeasible.
+\end{itemize}
+The key distinction among these methods is the level of restriction placed on the final state. Single amplitude simulation has the highest restriction, full state simulation has no restrictions, and subspace simulation offers a flexible middle ground. The choice of method depends on the circuit size and available computational resources.
+All three methods result in either closed tensor networks or networks with few open bonds, which can typically be contracted through a sequence of einsum equations.
+
+% tensor network expression obtained by compiler VS simulated annealing VS other heuristics
+
+% - tensor cores ops VS streams of complex in coo with ap/floats
 
 \subsection{Gaps}
 % Identify the gaps in the current state of the art that your project aims to fill.
