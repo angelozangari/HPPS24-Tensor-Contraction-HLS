@@ -4,15 +4,15 @@ void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi
                       coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm, dim_t A_NZ,
                       dim_t B_NZ, rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=32
-#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=32
-#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 depth=8 max_read_burst_length=32
-#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 depth=4 max_read_burst_length=32
-#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 depth=4 max_read_burst_length=32
-#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 depth=4 max_read_burst_length=32
-#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 depth=32 max_write_burst_length=32
-#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 depth=32 max_write_burst_length=32
-#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 depth=32 max_write_burst_length=32
+#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 depth=8 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 depth=4 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 depth=4 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 depth=4 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 depth=32 max_write_burst_length=64
+#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 depth=32 max_write_burst_length=64
+#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 depth=32 max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=Ar bundle=control
 #pragma HLS INTERFACE s_axilite port=Ai bundle=control
 #pragma HLS INTERFACE s_axilite port=Am bundle=control
@@ -32,19 +32,19 @@ void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi
   dim_t C_NZ = A_NZ * B_NZ;
   hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream, Ci_stream;
   // clang-format off
-#pragma HLS STREAM variable=Ar_stream depth=32
-#pragma HLS STREAM variable=Ai_stream depth=32
-#pragma HLS STREAM variable=Br_stream depth=32
-#pragma HLS STREAM variable=Bi_stream depth=32
-#pragma HLS STREAM variable=Cr_stream depth=32
-#pragma HLS STREAM variable=Ci_stream depth=32
+#pragma HLS STREAM variable=Ar_stream depth=128
+#pragma HLS STREAM variable=Ai_stream depth=128
+#pragma HLS STREAM variable=Br_stream depth=128
+#pragma HLS STREAM variable=Bi_stream depth=128
+#pragma HLS STREAM variable=Cr_stream depth=128
+#pragma HLS STREAM variable=Ci_stream depth=128
   // clang-format on
 
   hls::stream<coo_meta_t> Am_stream, Bm_stream, Cm_stream;
   // clang-format off
-#pragma HLS STREAM variable=Am_stream depth=32
-#pragma HLS STREAM variable=Bm_stream depth=32
-#pragma HLS STREAM variable=Cm_stream depth=32
+#pragma HLS STREAM variable=Am_stream depth=128
+#pragma HLS STREAM variable=Bm_stream depth=128
+#pragma HLS STREAM variable=Cm_stream depth=128
   // clang-format on
 
 #pragma HLS dataflow
@@ -94,18 +94,18 @@ void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
   hls::stream<float> Ar_stream_buffer, Ai_stream_buffer, Br_stream_buffer,
       Bi_stream_buffer, Br_cycle_buffer, Bi_cycle_buffer;
   // clang-format off
-#pragma HLS STREAM variable=Ar_stream_buffer depth=32
-#pragma HLS STREAM variable=Ai_stream_buffer depth=32
-#pragma HLS STREAM variable=Br_stream_buffer depth=32
-#pragma HLS STREAM variable=Bi_stream_buffer depth=32
-#pragma HLS STREAM variable=Br_cycle_buffer depth=32
-#pragma HLS STREAM variable=Bi_cycle_buffer depth=32
+#pragma HLS STREAM variable=Ar_stream_buffer depth=128
+#pragma HLS STREAM variable=Ai_stream_buffer depth=128
+#pragma HLS STREAM variable=Br_stream_buffer depth=128
+#pragma HLS STREAM variable=Bi_stream_buffer depth=128
+#pragma HLS STREAM variable=Br_cycle_buffer depth=128
+#pragma HLS STREAM variable=Bi_cycle_buffer depth=128
   // clang-format on
   hls::stream<coo_meta_t> Am_stream_buffer, Bm_stream_buffer, Bm_cycle_buffer;
   // clang-format off
-#pragma HLS STREAM variable=Am_stream_buffer depth=32
-#pragma HLS STREAM variable=Bm_stream_buffer depth=32
-#pragma HLS STREAM variable=Bm_cycle_buffer depth=32
+#pragma HLS STREAM variable=Am_stream_buffer depth=128
+#pragma HLS STREAM variable=Bm_stream_buffer depth=128
+#pragma HLS STREAM variable=Bm_cycle_buffer depth=128
   // clang-format on
   float ar, ai, br, bi, cr, ci, tmp_r, tmp_i;
   coo_meta_t am, bm, cm, tmp_m;
