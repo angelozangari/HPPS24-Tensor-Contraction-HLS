@@ -30,5 +30,11 @@ test-combined: build-ninja
     cd src/tests/combined
     ../../../build/test-combined
 
+test-qft: build-ninja
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd src/tests/qft
+    ../../../build/test-qft
+
 clean:
     rm -rf ./build

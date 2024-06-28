@@ -5,6 +5,7 @@ add_library(qcslib STATIC
 
     # Tests
     src/tests/golden_reader.cpp
+    src/tests/qcf_reader.cpp
 )
 target_include_directories(qcslib PUBLIC include src)
 
@@ -26,3 +27,9 @@ add_executable(test-combined src/tests/combined/test_combined.cpp)
 target_compile_definitions(test-combined PRIVATE TEST_ALL)
 target_include_directories(test-combined PUBLIC include)
 target_link_libraries(test-combined PUBLIC qcslib)
+
+# QFT qcf test
+add_executable(test-qft src/tests/qft/test_qft_qcf.cpp)
+target_compile_definitions(test-qft PRIVATE TEST_ALL)
+target_include_directories(test-qft PUBLIC include)
+target_link_libraries(test-qft PUBLIC qcslib)
