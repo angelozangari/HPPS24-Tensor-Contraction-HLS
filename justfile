@@ -1,7 +1,8 @@
 alias b := build-ninja
 alias c := clean
 alias rb := report-build
-alias rc := report-clear-build
+alias rcb := report-clear-build
+alias rca := report-clear-all
 
 _default:
   just --choose
