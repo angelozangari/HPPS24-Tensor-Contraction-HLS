@@ -4,7 +4,7 @@
 
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi,
                            coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm,
-                           dim_t A_NZ, dim_t B_NZ, dim_t *CD) {
+                           dim_t A_NZ, dim_t B_NZ, dim_t *CD, flag_t left_row_format) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=64
 #pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=64
@@ -53,7 +53,8 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
   Matrix::Multiplication::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
   // Compute matrix multiplication
   Matrix::Multiplication::compute(Ar_stream, Ai_stream, Am_stream, Br_stream, Bi_stream,
-                                  Bm_stream, Cr_stream, Ci_stream, Cm_stream, CD);
+                                  Bm_stream, Cr_stream, Ci_stream, Cm_stream, CD,
+                                  left_row_format);
   // Store result
   // FIXME how to pass dimension of c stream
   Matrix::Multiplication::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, *CD);
@@ -94,7 +95,7 @@ void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
              hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
              hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
              hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-             hls::stream<coo_meta_t> &Cm_stream, dim_t *CD) {
+             hls::stream<coo_meta_t> &Cm_stream, dim_t *CD, flag_t left_row_format) {
 
   hls::stream<float> Ar_stream_buf, Ai_stream_buf;
   hls::stream<coo_meta_t> Am_stream_buf;
@@ -173,7 +174,9 @@ LOOP_T:
   LOOP_Q:
     for (; i < PACKET_SIZE &&
            j < PACKET_SIZE;) { /* compute c while both packets contain valid elements */
-      if (Y(A_row_m[i]) == X(B_col_m[j])) {
+
+      if ((Y(A_row_m[i]) == X(B_col_m[j]) && left_row_format) ||
+          (X(A_row_m[i]) == Y(B_col_m[j]) && !left_row_format)) {
         cr += A_row_r[i] * B_col_r[j] - A_row_i[i] * B_col_i[j];
         ci += A_row_i[i] * B_col_r[j] + A_row_r[i] * B_col_i[j];
       }
@@ -186,7 +189,8 @@ LOOP_T:
       }
 
       // update i, j only if not last_in_row
-      if (Y(A_row_m[i]) > X(B_col_m[j])) {
+      if ((Y(A_row_m[i]) > X(B_col_m[j]) && left_row_format) ||
+          (X(A_row_m[i]) > Y(B_col_m[j]) && !left_row_format)) {
         if (!LAST_IN_ROW(B_col_m[j])) {
           j++;
         } else {
@@ -202,10 +206,16 @@ LOOP_T:
     }
 
     if (c_ready) { /* write c to stream if ready */
-      X(cm) = X(A_row_m[i]);
-      Y(cm) = Y(B_col_m[j]);
+      if (left_row_format) {
+        X(cm) = X(A_row_m[i]);
+        Y(cm) = Y(B_col_m[j]);
+      } else {
+        Y(cm) = Y(A_row_m[i]);
+        X(cm) = X(B_col_m[j]);
+      }
       if (!(old_c_r == 0.0f && old_c_i == 0.0f)) {
-        if (X(old_c_m) != X(cm)) {
+        if ((X(old_c_m) != X(cm) && left_row_format) ||
+            (Y(old_c_m) != Y(cm) && !left_row_format)) {
           LAST_IN_ROW(old_c_m) = 1;
         } else {
           LAST_IN_ROW(old_c_m) = 0;

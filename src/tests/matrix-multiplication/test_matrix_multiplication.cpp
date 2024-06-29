@@ -34,10 +34,13 @@ int main() {
 
     // op.print();
 
+    flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
+
     // Call the kernel
     matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
                           right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                          tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size);
+                          tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size,
+                          left_row_format);
 
     // Compare the output
     CooTens predicted_out{tmp_r, tmp_i, tmp_m, real_size, left.rank};

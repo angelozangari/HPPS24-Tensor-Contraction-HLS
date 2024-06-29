@@ -33,8 +33,20 @@ OpKind parse_op_kind(istream &inp) {
   return static_cast<OpKind>(kind);
 }
 
+MatrixFormat parse_matrix_format(istream &inp) {
+  uint8_t format = read_from_stream<uint8_t>(inp);
+  if (format == 0) {
+    return MatrixFormat::RowMajor;
+  } else {
+    return MatrixFormat::ColMajor;
+  }
+}
+
 CooTens parse_coo_tens(istream &inp) {
   nz_len_t size = read_from_stream<nz_len_t>(inp);
+  uint8_t rank = read_from_stream<uint8_t>(inp);
+  // 0 for row-major, 1 for col-major
+  MatrixFormat format = parse_matrix_format(inp);
   real_t d_data_r[size];
   imag_t d_data_i[size];
   coo_meta_t data_m[size];
@@ -56,18 +68,25 @@ CooTens parse_coo_tens(istream &inp) {
 
   // check for last in row and last in tensor
   for (size_t i = 0; i < size - 1; i++) {
-    if (X(data_m[i]) != X(data_m[i + 1])) {
-      LAST_IN_ROW(data_m[i]) = true;
+    if (format == MatrixFormat::RowMajor) {
+      if (X(data_m[i]) != X(data_m[i + 1])) {
+        LAST_IN_ROW(data_m[i]) = true;
+      } else {
+        LAST_IN_ROW(data_m[i]) = false;
+      }
     } else {
-      LAST_IN_ROW(data_m[i]) = false;
+      if (Y(data_m[i]) != Y(data_m[i + 1])) {
+        LAST_IN_ROW(data_m[i]) = true;
+      } else {
+        LAST_IN_ROW(data_m[i]) = false;
+      }
     }
     LAST_IN_TENSOR(data_m[i]) = false;
   }
   LAST_IN_ROW(data_m[size - 1]) = true;
+  LAST_IN_TENSOR(data_m[size - 1]) = true;
 
-  int rank = ceil(log2(sqrt(size)));
-
-  return CooTens{data_r, data_i, data_m, size, rank};
+  return CooTens{data_r, data_i, data_m, size, rank, format};
 }
 
 Operand parse_operand(istream &inp, bool is_tens) {

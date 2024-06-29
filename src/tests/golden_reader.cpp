@@ -104,14 +104,21 @@ CooTens::CooTens(Tens &tens) : rank(tens.rank) {
       LAST_IN_TENSOR(data_m.back()) = true;
     }
   }
+
+  if (tens.reversed) {
+    format = MatrixFormat::ColMajor;
+  } else {
+    format = MatrixFormat::RowMajor;
+  }
 }
 
 CooTens::CooTens(vector<float> tens_r, vector<float> tens_i, vector<coo_meta_t> tens_m,
-                 int rank)
-    : data_r(tens_r), data_i(tens_i), data_m(tens_m), rank(rank) {}
+                 int rank, MatrixFormat format)
+    : data_r(tens_r), data_i(tens_i), data_m(tens_m), rank(rank), format(format) {}
 
-CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, int rank)
-    : rank(rank) {
+CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, int rank,
+                 MatrixFormat format)
+    : rank(rank), format(format) {
   for (size_t i = 0; i < size; i++) {
     data_r.push_back(tens_r[i]);
     data_i.push_back(tens_i[i]);
@@ -120,9 +127,11 @@ CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, 
 }
 
 void CooTens::print() const {
+  printf("%s\n", format == MatrixFormat::RowMajor ? "Row-major: " : "Col-major: ");
   for (size_t i = 0; i < size(); i++) {
-    printf("(%f + %fi) at (%lu, %lu)\n", data_r[i], data_i[i], X(data_m[i]).to_long(),
-           Y(data_m[i]).to_long());
+    printf("(%f + %fi) at (%lu, %lu) - (%d, %d)\n", data_r[i], data_i[i],
+           X(data_m[i]).to_long(), Y(data_m[i]).to_long(), (int)LAST_IN_ROW(data_m[i]),
+           (int)LAST_IN_TENSOR(data_m[i]));
   }
 }
 

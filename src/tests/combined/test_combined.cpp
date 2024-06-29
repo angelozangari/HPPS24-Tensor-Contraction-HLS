@@ -31,12 +31,15 @@ CooTens compute_matmul(CooTens &left, CooTens &right) {
   float tmp_i[max_out_size];
   coo_meta_t tmp_m[max_out_size];
 
+  flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
+
   // Call the kernel
   matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
                         right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                        tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size);
+                        tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size,
+                        left_row_format);
 
-  return CooTens{tmp_r, tmp_i, tmp_m, real_size, left.rank};
+  return CooTens{tmp_r, tmp_i, tmp_m, real_size, left.rank, left.format};
 }
 
 int main() {
@@ -81,12 +84,13 @@ int main() {
       std::cout << "FAILED" << endl;
       std::cout << "Mismatch in data" << endl;
       // print_op_matrices(op);
-      std::cout << "Predicted output:" << "(" << predicted_out.data_r[i] << " + "
-                << predicted_out.data_i[i] << "i) at (" << X(predicted_out.data_m[i])
-                << ", " << Y(predicted_out.data_m[i]) << ")" << endl;
-      std::cout << "Real output:" << "(" << real_out.data_r[i] << " + "
-                << real_out.data_i[i] << "i) at (" << X(real_out.data_m[i]) << ", "
-                << Y(real_out.data_m[i]) << ")" << endl;
+      std::cout << "Predicted output:"
+                << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+                << "i) at (" << X(predicted_out.data_m[i]) << ", "
+                << Y(predicted_out.data_m[i]) << ")" << endl;
+      std::cout << "Real output:"
+                << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+                << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
       std::cout << "Full Real output:" << endl;
       real_out.print();
       std::cout << "Full Predicted output:" << endl;

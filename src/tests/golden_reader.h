@@ -8,6 +8,7 @@
 #include <vector>
 
 enum class OpKind { MatMul, TensExp };
+enum class MatrixFormat { RowMajor, ColMajor };
 
 OpKind parse_op_kind(std::istream &inp);
 bool parse_reversed(std::istream &inp);
@@ -31,12 +32,15 @@ public:
   CooTens() = default;
   CooTens(Tens &tens);
   CooTens(std::vector<float> tens_r, std::vector<float> tens_i,
-          std::vector<coo_meta_t> tens_m, int rank);
-  CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, int rank);
+          std::vector<coo_meta_t> tens_m, int rank,
+          MatrixFormat format = MatrixFormat::RowMajor);
+  CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, int rank,
+          MatrixFormat format = MatrixFormat::RowMajor);
 
   void print() const;
   size_t size() const { return data_r.size(); }
 
+  MatrixFormat format;
   std::vector<float> data_r;
   std::vector<float> data_i;
   std::vector<coo_meta_t> data_m;
