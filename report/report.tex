@@ -96,39 +96,69 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
 
-% TODO rework this whole section
 \section{Introduction}
 
+\subsection{The Quantum Computing Landscape}
 
-\subsection{The problem}
-The field of quantum computing is experiencing a significant surge in interest and development. Quantum computers hold the promise of solving certain classes of problems exponentially faster than their classical counterparts, potentially revolutionizing fields such as cryptography, drug discovery, and complex system simulation.
-However, despite the rapid advancements in quantum hardware, classical computers continue to play a crucial role in the development and validation of quantum systems. Specifically, they are indispensable for the simulation and verification of quantum circuits. These simulations are vital for testing and optimizing quantum algorithms before implementation on actual quantum hardware, which is still limited in availability and prone to errors.
-Currently, there are several tools available for quantum circuit simulation, such as Qiskit, which offer a certain level of performance. However, as quantum circuits grow in complexity and size, there is an increasing need for more efficient and scalable simulation methods.
-Our project addresses this challenge by developing a comprehensive simulation toolchain for quantum circuits. The primary goal is to create a system that can take a quantum circuit as input, perform specific computations to decompose and analyze it, and output an expression that accurately represents the quantum circuit. This expression should be capable of being broken down into a series of instructions that can be executed on various computing architectures, taking into account data dependencies.
-Furthermore, we aim to extend this toolchain with an implementation of specialized kernels designed to perform the required computations on Field-Programmable Gate Arrays (FPGAs), specifically targeting the Alveo U55C board. This implementation focuses on two critical mathematical operations used in circuit decomposition: tensor expansion and matrix multiplication. These kernels need to be developed from the ground up to ensure optimal performance and efficiency on the FPGA architecture.
-By tackling this problem, we seek to bridge the gap between the theoretical potential of quantum algorithms and the practical limitations of current quantum hardware, providing researchers and developers with a powerful tool for quantum circuit simulation and analysis.
+In recent years, the field of quantum computing has experienced significant advancements, promising to revolutionize computational capabilities for specific classes of problems. Quantum computers have the potential to solve certain tasks exponentially faster than their classical counterparts, particularly in areas such as cryptography \cite{Shor1995PolynomialTimeAF}, optimization \cite{Farhi2014AQA}, and quantum system simulations. However, the development and verification of quantum algorithms and circuits still heavily rely on classical computing resources.
 
+\subsection{The Role of Classical Simulation}
 
-\subsection{Our work}
-To address the challenge of developing an efficient quantum circuit simulation toolchain, we implemented a comprehensive approach that spans from circuit representation to hardware-specific optimization. Our work began with adopting the QASM (Quantum Assembly Language) standard for quantum circuit representation. This choice ensures maximum compatibility with existing quantum computing tools and frameworks, including IBM's Qiskit, a leader in the quantum computing sector.
+Classical computers play a crucial role in the development of quantum computing technologies. They are extensively used for simulating and verifying quantum circuits, which is essential for:
 
-Once we have the circuit representation, we convert it into a tensor network. This method, which will be explained in detail in the background section, allows for efficient handling of complex quantum circuits. Following this conversion, we implemented a search heuristic to find an optimal contraction path for the tensor network. This algorithm performs a local search, taking into account both data dependencies and mathematical constraints to minimize computational complexity.
+\begin{itemize}
+    \item Debugging and testing quantum algorithms
+    \item Benchmarking quantum hardware performance
+    \item Exploring the behavior of quantum systems at scales currently unattainable by physical quantum devices
+\end{itemize}
 
-Based on the optimized contraction path, we generate a series of instructions. These instructions include the specific data to be processed and the mathematical operators to be applied. We then implement a scheduler to organize these instructions efficiently, managing data dependencies and potential parallelism.
-A key aspect of our work was developing specialized kernels for Field-Programmable Gate Arrays (FPGAs), specifically targeting the Alveo U55C board. Two crucial mathematical operations - tensor expansion and matrix multiplication - were implemented from scratch to ensure optimal performance on the FPGA architecture.
+Currently, popular frameworks like \textbf{Qiskit} \cite{qiskit2024} provide simulation capabilities with varying levels of performance. However, as quantum circuits grow in size and complexity, there is an increasing need for more efficient simulation techniques.
 
-Our approach computes the matrix representation of the quantum circuit once, which can then be reused for subsequent sampling operations. This strategy significantly reduces computational overhead for repeated simulations or analyses of the same circuit. The final step involves generating simulation results and providing tools for their analysis, including capabilities for sampling from the simulated quantum state and computing relevant metrics.
+\subsection{Project Objectives}
 
-By integrating these components, our work provides a complete pipeline for quantum circuit simulation, from circuit description to hardware-optimized execution. This toolchain offers a balance between flexibility (through its use of standard representations and modular design) and efficiency (through optimized algorithms and hardware-specific implementations). Our approach aims to enable more effective development and testing of quantum algorithms, potentially accelerating progress in the field of quantum computing.
+The primary goal of this project is to develop a versatile and efficient simulation toolchain for quantum circuits, with a focus on compatibility with heterogeneous hardware while maintaining user-friendliness and integration with existing frameworks. Our key objectives can be summarized as follows:
 
-\subsection{Results}
-% TODO, add results cpu speedup qiskit, fpgas results
-We developed an Instruction Set Architecture that can decompose a quantum circuit into instructions with two mathematical operations (tensor expansion and spase multiplication), which can be then fed to heterogeneous architectures, such as fpgas and gpus. we then proceded with an fpga implementation with RESULTS x speedup.
+\begin{enumerate}
+    \item Design a comprehensive simulation toolchain for quantum circuits that can interface with various classical computing accelerators, including GPUs and FPGAs.
+    \item Ensure interoperability with established quantum computing frameworks, particularly Qiskit, to integrate seamlessly into existing quantum development workflows.
+    \item Develop a flexible representation of quantum operations that can be efficiently translated to different hardware architectures.
+    \item Implement a prototype FPGA accelerator as a proof-of-concept to demonstrate the potential performance benefits of our approach.
+    \item Establish a foundation for future research in heterogeneous quantum circuit simulation, allowing for easy extension to other accelerator architectures.
+\end{enumerate}
+
+Through these objectives, we aim to contribute to the advancement of quantum computing research by providing a powerful simulation toolchain that leverages the capabilities of heterogeneous computing architectures.
+
+\subsection{Our Approach}
+
+Our approach to quantum circuit simulation involves several key points:
+
+\begin{itemize}
+    \item \textbf{Whole circuit evaluation:} We aim to evaluate the whole circuit at once and the provide the resulting matrix, thus enabling the reuse of the matrix for successive experiments.
+    \item \textbf{Use of well established standards:} By adhering to the QASM standard\cite{cross2017openquantumassemblylanguage} for quantum circuit representation we ensure compatibility with widely used quantum computing frameworks like Qiskit.
+    \item \textbf{Instruction Set Architecture (ISA) Design:} We developed a custom ISA that decomposes quantum circuits into a series of instructions, enabling efficient representation and execution on various hardware platforms.
+    \item \textbf{Tensor Network Contraction:} By employing tensor networks to represent quantum circuits and perform optimized contractions we aim to achieve efficient simulation in terms of computational complexity and memory usage \cite{pan2023efficientquantumcircuitsimulation}.
+    \item \textbf{Sparse Matrix Operations:} We chose to represent quantum gate operands as sparse matrices (in COO format) and kept this format throughout the simulation to optimize memory usage and computational efficiency. We think that leveraging the sparsity of quantum states is crucial for efficient simulation of large circuits.
+    \item \textbf{Compilation in an executable format:} We designed a compilation step that transforms the optimized contraction tree into a sequence of instructions compiled in a lightweight, portable binary format, representing the optimized computation plan. We also developed an interpreter to translate this binary format into the actual OpenCL operations to be executed on the FPGA.
+    \item \textbf{Dynamic Scheduling:} Based on the optimized contraction path, we developed a scheduler that dynamically orders the instructions to maximize parallelism and minimize computational overhead.
+    \item \textbf{FPGA Implementation:} We develop custom kernels from scratch, optimized for tensor expansion and matrix multiplication operations for COO sparse matrices on FPGAs to showcase the potential performance of accelerated quantum circuit simulation on heterogeneous architectures.
+    \item \textbf{Use of memory safe compiled languages:} We implemented the entire simulation toolchain in Rust, leveraging its memory safety features and performance characteristics to ensure robustness and efficiency, along its extendability and maintainability.
+\end{itemize}
+
+\subsection{Report Structure}
+
+The remainder of this report is organized as follows:
+
+\begin{itemize}
+    \item Section \ref{sec:background}: Provides necessary background information on quantum computing, tensor networks, and FPGA technology.
+    \item Section \ref{sec:methodology}: Describes our simulation toolchain in detail, including the ISA design, tensor network contraction methods, and FPGA implementation.
+    \item Section \ref{sec:results}: Presents the performance results of our implementation, comparing it with existing simulation methods.
+\end{itemize}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 2
 
 \section{Background}
+\label{sec:background}
 
 \subsection{What is quantum computing}
 Quantum computing represents a revolutionary approach to information processing, fundamentally different from classical computing. It harnesses the principles of quantum mechanics to perform calculations, offering the potential to solve certain problems exponentially faster than traditional computers.
@@ -224,6 +254,7 @@ Addressing these challenges is crucial for advancing the field of quantum circui
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 3
 
 \section{Methodology}
+\label{sec:methodology}
 
 % FIXME how to write frontend, on mit found this notation (most authoritative institution found so far)
 \subsection{Front-End}
@@ -548,6 +579,7 @@ By continuing to refine and optimize our FPGA kernel implementations, we aim to 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 4
 
 \section{Results}
+\label{sec:results}
 
 \subsection{Setup}
 % what was run and on which architecture (to allow others to replicate results)
