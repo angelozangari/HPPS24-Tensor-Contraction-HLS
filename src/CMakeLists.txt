@@ -6,6 +6,7 @@ add_library(qcslib STATIC
     # Tests
     src/tests/golden_reader.cpp
     src/tests/qcf_reader.cpp
+    src/tests/csv_writer.cpp
 )
 target_include_directories(qcslib PUBLIC include src)
 

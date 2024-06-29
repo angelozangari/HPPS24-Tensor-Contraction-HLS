@@ -5,26 +5,40 @@
 
 #include "matrix-multiplication/krnl_mat_mul.h"
 #include "tensor-expansion/krnl_tens_exp.h"
+#include "tests/csv_writer.h"
 #include "tests/golden_reader.h"
 #include "tests/qcf_reader.h"
+#include <chrono>
 #include <unordered_map>
+#include <vector>
 
 using namespace std;
+using namespace std::chrono;
 
-CooTens compute_te(CooTens &left, CooTens &right) {
+CooTens compute_te(CooTens &left, CooTens &right, TeExecution *te_exe) {
   std::vector<float> out_r(left.size() * right.size());
   std::vector<float> out_i(left.size() * right.size());
   std::vector<coo_meta_t> out_m(left.size() * right.size());
+
+  auto t1 = high_resolution_clock::now();
 
   tensor_expansion(left.data_r.data(), left.data_i.data(), left.data_m.data(),
                    right.data_r.data(), right.data_i.data(), right.data_m.data(),
                    out_r.data(), out_i.data(), out_m.data(), left.size(), right.size(),
                    left.rank, right.rank);
 
+  auto t2 = high_resolution_clock::now();
+  te_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
+  te_exe->transfer_time = nanoseconds(0);
+  te_exe->left_nz_size = left.size();
+  te_exe->right_nz_size = right.size();
+  te_exe->left_rank = left.rank;
+  te_exe->right_rank = right.rank;
+
   return CooTens{out_r, out_i, out_m, left.rank + right.rank, left.format};
 }
 
-CooTens compute_matmul(CooTens &left, CooTens &right) {
+CooTens compute_matmul(CooTens &left, CooTens &right, MmExecution *mm_exe) {
   dim_t N = 1 << left.rank;
   size_t max_out_size = N * N;
   dim_t real_size;
@@ -35,27 +49,46 @@ CooTens compute_matmul(CooTens &left, CooTens &right) {
 
   flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
 
+  auto t1 = high_resolution_clock::now();
+
   // Call the kernel
   matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
                         right.data_r.data(), right.data_i.data(), right.data_m.data(),
                         tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size,
                         left_row_format);
 
+  auto t2 = high_resolution_clock::now();
+  mm_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
+  mm_exe->transfer_time = nanoseconds(0);
+  mm_exe->left_nz_size = left.size();
+  mm_exe->right_nz_size = right.size();
+  mm_exe->rank = left.rank;
+
   return CooTens{tmp_r, tmp_i, tmp_m, real_size, left.rank, left.format};
 }
 
 int main() {
   CooTens left, right, out;
+  StatsRecorder stats_recorder{};
+  nanoseconds cpu_time, e2e_time;
+  high_resolution_clock::time_point cpu_t1, cpu_t2;
+  vector<TeExecution> te_exes;
+  vector<MmExecution> mm_exes;
 
   QCF::QcfReader reader("qft.qcf");
   reader.consume();
   auto ops = &reader.operations;
 
-  // cout << "Number of operations: " << ops->size() << endl;
+  // std::cout << "Number of operations: " << ops->size() << endl;
 
   unordered_map<uint32_t, CooTens> op_map;
 
+  auto e2e_t1 = high_resolution_clock::now();
+  cpu_t1 = high_resolution_clock::now();
+
   for (auto &op : *ops) {
+    cpu_t1 = high_resolution_clock::now();
+
     switch (op.kind) {
     case QCF::OpKind::TE_MA:
     case QCF::OpKind::MM_MA:
@@ -81,51 +114,72 @@ int main() {
       break;
     }
 
+    cpu_t2 = high_resolution_clock::now();
+    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+
     switch (op.kind) {
     case QCF::OpKind::TE_MA:
     case QCF::OpKind::TE_AM:
     case QCF::OpKind::TE_MM:
     case QCF::OpKind::TE_AA:
-      out = compute_te(left, right);
+      TeExecution te_exe;
+      out = compute_te(left, right, &te_exe);
+      te_exes.push_back(te_exe);
       break;
     case QCF::OpKind::MM_MA:
     case QCF::OpKind::MM_AM:
     case QCF::OpKind::MM_MM:
     case QCF::OpKind::MM_AA:
-      out = compute_matmul(left, right);
+      MmExecution mm_exe;
+      out = compute_matmul(left, right, &mm_exe);
+      mm_exes.push_back(mm_exe);
       break;
     default:
       break;
     }
+
+    cpu_t1 = high_resolution_clock::now();
 
     op_map.insert({op.id, out});
-    // cout << "Op " << op.id << " done" << endl;
-    // cout << "Left size: " << left.size() << " Rank: " << left.rank << endl;
-    // left.print();
-    // cout << "Right size: " << right.size() << " Rank: " << right.rank << endl;
-    // right.print();
-    // cout << "Out size: " << out.size() << " Rank: " << out.rank << endl;
-    // out.print();
-    // cout << "--------------------------------" << endl;
+    std::cout << "Op " << op.id << " done" << endl;
+    std::cout << "Left size: " << left.size() << " Rank: " << left.rank << endl;
+    left.print();
+    std::cout << "Right size: " << right.size() << " Rank: " << right.rank << endl;
+    right.print();
+    std::cout << "Out size: " << out.size() << " Rank: " << out.rank << endl;
+    out.print();
+    std::cout << "--------------------------------" << endl;
+
+    cpu_t2 = high_resolution_clock::now();
+    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
   }
 
-  // cout << "Done All" << endl;
-  // out.print();
+  std::cout << "Done All" << endl;
+
+  auto e2e_t2 = high_resolution_clock::now();
+  e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
+
+  out.print();
 
   // make sure that all elements in out matrix have norm 0.25
   for (size_t i = 0; i < out.size(); i++) {
     if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
-      cout << "FAILED" << endl;
-      cout << "Mismatch in data" << endl;
-      cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
-           << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")" << endl;
-      cout << "Full Predicted output:" << endl;
+      std::cout << "FAILED" << endl;
+      std::cout << "Mismatch in data" << endl;
+      std::cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
+                << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")"
+                << endl;
+      std::cout << "Full Predicted output:" << endl;
       out.print();
       return 1;
     }
   }
 
-  cout << "PASSED" << endl;
+  std::cout << "PASSED" << endl;
+
+  // record stats and write to csv
+  stats_recorder.record("qft.qcf", cpu_time, e2e_time, te_exes, mm_exes);
+  stats_recorder.write();
 
   return 0;
 }
