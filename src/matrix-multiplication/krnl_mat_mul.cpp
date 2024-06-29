@@ -6,15 +6,15 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
                            coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm,
                            dim_t A_NZ, dim_t B_NZ, dim_t *CD, flag_t left_row_format) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 depth=8 max_read_burst_length=64
-#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 depth=8 max_read_burst_length=64
+#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 depth=8 max_read_burst_length=128
 #pragma HLS INTERFACE s_axilite port=Ar bundle=control
 #pragma HLS INTERFACE s_axilite port=Ai bundle=control
 #pragma HLS INTERFACE s_axilite port=Am bundle=control
@@ -34,19 +34,19 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
   // hls-streams for matrices
   hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream, Ci_stream;
   // clang-format off
-#pragma HLS STREAM variable=Ar_stream depth=128
-#pragma HLS STREAM variable=Ai_stream depth=128
-#pragma HLS STREAM variable=Br_stream depth=128
-#pragma HLS STREAM variable=Bi_stream depth=128
-#pragma HLS STREAM variable=Cr_stream depth=128
-#pragma HLS STREAM variable=Ci_stream depth=128
+#pragma HLS STREAM variable=Ar_stream depth=1024
+#pragma HLS STREAM variable=Ai_stream depth=1024
+#pragma HLS STREAM variable=Br_stream depth=1024
+#pragma HLS STREAM variable=Bi_stream depth=1024
+#pragma HLS STREAM variable=Cr_stream depth=1024
+#pragma HLS STREAM variable=Ci_stream depth=1024
   // clang-format on
 
   hls::stream<coo_meta_t> Am_stream, Bm_stream, Cm_stream;
   // clang-format off
-#pragma HLS STREAM variable=Am_stream depth=128
-#pragma HLS STREAM variable=Bm_stream depth=128
-#pragma HLS STREAM variable=Cm_stream depth=128
+#pragma HLS STREAM variable=Am_stream depth=1024
+#pragma HLS STREAM variable=Bm_stream depth=1024
+#pragma HLS STREAM variable=Cm_stream depth=1024
   // clang-format on
 
   // Load matrices A, B
