@@ -28,6 +28,7 @@
 	basicstyle=\small\normalfont,
 	xleftmargin=\parindent,
 	keywordstyle=\color{green!40!black},
+    % FIXME remove this comments
 	%  commentstyle=\itshape\color{purple!40!black},
 	%  identifierstyle=\color{blue},
 	%  stringstyle=\color{orange},
@@ -57,7 +58,7 @@
 % FIXME fix title
 % Quantum Circuit Simulation through Tensor Network Contractions
 % a compilation toolchain for quantum circuits which can target hw accelerators \\ on FPGAs
-\title{\textbf{A compilation toolchain for Quantum Circuits on heterogeneous archictures with an FPGA implementation}}
+\title{\textbf{A compilation toolchain for Quantum Circuits on heterogeneous architectures with an FPGA implementation}}
 
 \author{Federico Lolli, Angelo Zangari}
 
@@ -71,6 +72,7 @@
     \maketitle
 	\thispagestyle{empty}
 	\vspace*{1cm}
+    % FIXME remove this comments
 	% \includegraphics[width=4cm]{example.jpg} % qui mettete il vostro logo, o cancellate la linea
 	\vfill
 	\centering
@@ -82,6 +84,7 @@
 
 \begin{abstract}
 
+    % FIXME review this and pay extra attention on the details
 	In the rapidly evolving field of quantum computing, the simulation of quantum circuits on classical computers has become increasingly crucial. This project focuses on developing an efficient simulation toolchain for quantum circuits, with particular emphasis on Field-Programmable Gate Array (FPGA) implementation. Our approach centers on two key innovations: First, we develop a general x86 Instruction Set Architecture (ISA) that decomposes quantum circuits into a series of schedulable instructions, utilizing two fundamental mathematical operators: tensor expansions and matrix multiplications. This abstraction allows for flexible and efficient representation of quantum operations. Second, we implement this ISA on FPGAs to perform quantum circuit simulations. Our implementation features two custom-designed kernels, developed from scratch, specifically optimized for tensor expansion and matrix multiplication operations. This tailored approach enables us to leverage the  processing capabilities of FPGAs, potentially offering significant performance improvements over traditional simulation methods. By focusing on these aspects, our work aims to advance the field of quantum circuit simulation, providing a powerful tool for researchers and developers in quantum computing.
 
 \end{abstract}
@@ -93,6 +96,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
 
+% TODO rework this whole section
 \section{Introduction}
 
 
@@ -137,7 +141,7 @@ Quantum circuits, the building blocks of quantum computation, consist of quantum
 Quantum gates are fundamental components in quantum computing, serving as the building blocks of quantum circuits. These gates are mathematical representations of unitary operations that manipulate quantum states, analogous to logic gates in classical circuits but with significantly different properties and capabilities.
 Unlike classical gates that operate on definite binary states (0 or 1), quantum gates act on qubits, which can exist in superpositions of states. This key difference allows quantum gates to perform complex quantum operations that have no direct classical counterpart.
 The unitary nature of quantum gates ensures that the total probability of all possible outcomes remains conserved, a crucial property in maintaining the integrity of quantum information. These gates enable various transformations of quantum states, including rotations in the complex vector space, phase shifts, and entanglement operations between multiple qubits.
-% TODO add simple drawing + explation
+% TODO add simple drawing + explanation
 Quantum circuits are constructed by combining these quantum gates in specific sequences. While classical circuits use high and low voltages to represent and process binary information, quantum circuits leverage the quantum superposition principle to encode and manipulate multiple states simultaneously. This parallel processing capability is a key factor in the potential computational advantage of quantum systems.
 The implementation of quantum gates allows for the execution of complex quantum algorithms. These algorithms can perform tasks such as quantum Fourier transforms, quantum error correction, and other operations that exploit the unique properties of quantum systems.
 In essence, quantum gates are the operators that drive quantum computation, enabling the manipulation and transformation of quantum information in ways that are fundamentally different from classical information processing. Their ability to act on superpositions and create entanglement is central to the power and promise of quantum computing.
@@ -153,11 +157,11 @@ Understanding and managing the measurement process is crucial in quantum computi
 \subsection{Different approaches for quantum circuit simulation}
 There are many different methods to tackle the simulation problem, mainly divided into two categories: state vector propagation and tensor networks.
 The first method is the traditionally used one. It consists in computing the state vector of the circuit and propagating it through the circuit from the start to the end. Although method is functional, it presents severe limitations; mainly using a state vector to represent the circuit means that we need to store it, but the issue is that the vector dimension grows exponentially with respect to the number of circuit lanes. This renders the state vector method computationally infeasible from a spatial point of view for circuits with bigger dimension.
-The second method is newer and resorts to decomposing the quantum circuit into its correnponded tensor network representation. From here we can perform mathematical operations to contract the terms and get an equivalent expression of the circuit.
+The second method is newer and resorts to decomposing the quantum circuit into its corresponding tensor network representation. From here we can perform mathematical operations to contract the terms and get an equivalent expression of the circuit.
 This method presents multiple great benefits:
 \begin{itemize}
     \item perform computations on subset of data, can be contained in fpga
-    \item independed operations, can be scheduled in parallel
+    \item independent operations, can be scheduled in parallel
     \item decomposing in different operations allows for specific implementations (e.g. different fpga kernels)
 \end{itemize}
 
@@ -191,7 +195,7 @@ The choice among these methods depends on the circuit size, available computatio
 
 \subsection{Tensor Expansion}
 % TODO check, complete and expand
-Is a mathematical operator through which two tensors originate a third one with rank the product of the rank of the input tensors. There are many algorithms to implement it, such as the einsum notation, which compresses the indexes, or the kronecker product. We followed the latter, in which every element of the first matrix is multiplied by the entire second matrix and then be appropriately put in the result matrix.
+Is a mathematical operator through which two tensors originate a third one with rank the product of the rank of the input tensors. There are many algorithms to implement it, such as the Einsum notation, which compresses the indexes, or the kronecker product. We followed the latter, in which every element of the first matrix is multiplied by the entire second matrix and then be appropriately put in the result matrix.
 
 \subsection{Tensor Contraction}
 % TODO check, complete and expand
