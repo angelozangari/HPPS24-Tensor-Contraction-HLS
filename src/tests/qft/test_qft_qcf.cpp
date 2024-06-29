@@ -51,7 +51,7 @@ int main() {
   reader.consume();
   auto ops = &reader.operations;
 
-  cout << "Number of operations: " << ops->size() << endl;
+  // cout << "Number of operations: " << ops->size() << endl;
 
   unordered_map<uint32_t, CooTens> op_map;
 
@@ -99,53 +99,33 @@ int main() {
     }
 
     op_map.insert({op.id, out});
-    cout << "Op " << op.id << " done" << endl;
-    cout << "Left size: " << left.size() << " Rank: " << left.rank << endl;
-    left.print();
-    cout << "Right size: " << right.size() << " Rank: " << right.rank << endl;
-    right.print();
-    cout << "Out size: " << out.size() << " Rank: " << out.rank << endl;
-    out.print();
-    cout << "--------------------------------" << endl;
+    // cout << "Op " << op.id << " done" << endl;
+    // cout << "Left size: " << left.size() << " Rank: " << left.rank << endl;
+    // left.print();
+    // cout << "Right size: " << right.size() << " Rank: " << right.rank << endl;
+    // right.print();
+    // cout << "Out size: " << out.size() << " Rank: " << out.rank << endl;
+    // out.print();
+    // cout << "--------------------------------" << endl;
   }
 
-  cout << "Done All" << endl;
-  out.print();
+  // cout << "Done All" << endl;
+  // out.print();
 
-  // if (predicted_out.size() != real_out.size()) {
-  //   std::cout << "FAILED" << endl;
-  //   std::cout << "Mismatch in sizes" << endl;
-  //   std::cout << "Predicted output size: " << predicted_out.size() << endl;
-  //   std::cout << "Real output size: " << real_out.size() << endl;
-  //   return 1;
-  // }
+  // make sure that all elements in out matrix have norm 0.25
+  for (size_t i = 0; i < out.size(); i++) {
+    if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in data" << endl;
+      cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
+           << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")" << endl;
+      cout << "Full Predicted output:" << endl;
+      out.print();
+      return 1;
+    }
+  }
 
-  // for (size_t i = 0; i < predicted_out.size(); i++) {
-  //   if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
-  //         predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
-  //         predicted_out.data_m[i] == real_out.data_m[i])) {
-  //     std::cout << "FAILED" << endl;
-  //     std::cout << "Mismatch in data" << endl;
-  //     // print_op_matrices(op);
-  //     std::cout << "Predicted output:"
-  //               << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-  //               << "i) at (" << X(predicted_out.data_m[i]) << ", "
-  //               << Y(predicted_out.data_m[i]) << ")" << endl;
-  //       std::cout << "Real output:"
-  //                 << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i)
-  //                 at
-  //                 ("
-  //                 << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" <<
-  //                 endl;
-  //       std::cout << "Full Real output:" << endl;
-  //       real_out.print();
-  //       std::cout << "Full Predicted output:" << endl;
-  //       predicted_out.print();
-  //       return 1;
-  //   }
-  // }
-
-  // std::cout << "PASSED" << endl;
+  cout << "PASSED" << endl;
 
   return 0;
 }
