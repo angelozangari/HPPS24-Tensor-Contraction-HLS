@@ -61,7 +61,7 @@ PLATFORM_BLOCKLIST += nodma
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
 CXXFLAGS += -I$(XF_PROJ_ROOT)/src
-HOST_SRCS += host/host-combined.cpp $(XF_PROJ_ROOT)/src/tests/golden_reader.cpp $(XF_PROJ_ROOT)/src/tests/qcf_reader.cpp
+HOST_SRCS += host/host-combined.cpp $(XF_PROJ_ROOT)/src/tests/golden_reader.cpp $(XF_PROJ_ROOT)/src/tests/qcf_reader.cpp $(XF_PROJ_ROOT)/src/tests/csv_writer.cpp
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 

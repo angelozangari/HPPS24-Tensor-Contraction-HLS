@@ -7,19 +7,24 @@
   }
 
 #include "host-combined.h"
+#include "tests/csv_writer.h"
 #include "tests/golden_reader.h"
 #include "tests/qcf_reader.h"
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
 #include <unordered_map>
+#include <vector>
+
+using namespace std::chrono;
 
 static const std::string error_message = "Error: Result mismatch:\n"
                                          "i = %d CPU result = %d Device result = %d\n";
 
 CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
                                  cl::Kernel &krnl, cl::CommandQueue &q,
-                                 cl::Context &context) {
+                                 cl::Context &context, TeExecution *te_exe) {
   cl_int err;
 
   // initialize parameters
@@ -29,6 +34,13 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   size_t right_coo_meta_bytes = right.size() * sizeof(coo_meta_t);
   size_t out_float_bytes = left.size() * right.size() * sizeof(float);
   size_t out_coo_meta_bytes = left.size() * right.size() * sizeof(coo_meta_t);
+
+  te_exe->left_nz_size = left.size();
+  te_exe->right_nz_size = right.size();
+  te_exe->left_rank = left.rank;
+  te_exe->right_rank = right.rank;
+
+  auto t1 = high_resolution_clock::now();
 
   // These commands will allocate memory on the Device. The cl::Buffer objects
   // can be used to reference the memory locations on the device.
@@ -116,9 +128,16 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
                                                    buffer_right_i, buffer_right_m},
                                                   0 /* 0 means from host*/));
 
-  // Launch the Kernel
-  OCL_CHECK(err, err = q.enqueueTask(krnl));
+  auto t2 = high_resolution_clock::now();
+  te_exe->transfer_time = duration_cast<nanoseconds>(t2 - t1);
 
+  // Launch the Kernel
+  t1 = high_resolution_clock::now();
+  OCL_CHECK(err, err = q.enqueueTask(krnl));
+  t2 = high_resolution_clock::now();
+  te_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
+
+  t1 = high_resolution_clock::now();
   // The result of the previous kernel execution will need to be retrieved in
   // order to view the results. This call will transfer the data from FPGA to
   // source_results vector
@@ -149,12 +168,15 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_out_m, ptr_out_m));
   OCL_CHECK(err, err = q.finish());
 
+  t2 = high_resolution_clock::now();
+  te_exe->transfer_time += duration_cast<nanoseconds>(t2 - t1);
+
   return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank, left.format};
 }
 
 CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
                                       cl::Kernel &krnl, cl::CommandQueue &q,
-                                      cl::Context &context) {
+                                      cl::Context &context, MmExecution *mm_exe) {
   cl_int err;
 
   // initialize parameters
@@ -168,6 +190,12 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   size_t out_float_bytes = max_out_size * sizeof(float); //
   size_t out_coo_meta_bytes = max_out_size * sizeof(coo_meta_t);
   flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
+
+  mm_exe->left_nz_size = left.size();
+  mm_exe->right_nz_size = right.size();
+  mm_exe->rank = left.rank;
+
+  auto t1 = high_resolution_clock::now();
 
   // These commands will allocate memory on the Device. The cl::Buffer objects
   // can be used to reference the memory locations on the device.
@@ -255,9 +283,16 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
                                                    buffer_right_i, buffer_right_m},
                                                   0 /* 0 means from host*/));
 
-  // Launch the Kernel
-  OCL_CHECK(err, err = q.enqueueTask(krnl));
+  auto t2 = high_resolution_clock::now();
+  mm_exe->transfer_time = duration_cast<nanoseconds>(t2 - t1);
 
+  // Launch the Kernel
+  t1 = high_resolution_clock::now();
+  OCL_CHECK(err, err = q.enqueueTask(krnl));
+  t2 = high_resolution_clock::now();
+  mm_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
+
+  t1 = high_resolution_clock::now();
   // The result of the previous kernel execution will need to be retrieved in
   // order to view the results. This call will transfer the data from FPGA to
   // source_results vector
@@ -291,6 +326,9 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_out_i, ptr_out_i));
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_out_m, ptr_out_m));
   OCL_CHECK(err, err = q.finish());
+
+  t2 = high_resolution_clock::now();
+  mm_exe->transfer_time += duration_cast<nanoseconds>(t2 - t1);
 
   return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank, left.format};
 }
@@ -385,12 +423,21 @@ int main(int argc, char *argv[]) {
   }
 
   // Read the golden vector
+  CooTens left, right, out;
+  StatsRecorder stats_recorder{};
+  nanoseconds cpu_time, e2e_time;
+  high_resolution_clock::time_point cpu_t1, cpu_t2;
+  std::vector<TeExecution> te_exes;
+  std::vector<MmExecution> mm_exes;
+
   QCF::QcfReader reader(qcfFilename);
   reader.consume();
   auto ops = &reader.operations;
 
-  CooTens left, right, out;
   std::unordered_map<uint32_t, CooTens> op_map;
+
+  auto e2e_t1 = high_resolution_clock::now();
+  cpu_t1 = high_resolution_clock::now();
 
   for (auto &op : *ops) {
     switch (op.kind) {
@@ -418,26 +465,42 @@ int main(int argc, char *argv[]) {
       break;
     }
 
+    cpu_t2 = high_resolution_clock::now();
+    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+
     switch (op.kind) {
     case QCF::OpKind::TE_MA:
     case QCF::OpKind::TE_AM:
     case QCF::OpKind::TE_MM:
     case QCF::OpKind::TE_AA:
-      out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context);
+      TeExecution te_exe;
+      out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context,
+                                     &te_exe);
+      te_exes.push_back(te_exe);
       break;
     case QCF::OpKind::MM_MA:
     case QCF::OpKind::MM_AM:
     case QCF::OpKind::MM_MM:
     case QCF::OpKind::MM_AA:
+      MmExecution mm_exe;
       out = enqueue_matrix_multiplication(left, right, krnl_matrix_multiplication, q,
-                                          context);
+                                          context, &mm_exe);
+      mm_exes.push_back(mm_exe);
       break;
     default:
       break;
     }
 
+    cpu_t1 = high_resolution_clock::now();
+
     op_map.insert({op.id, out});
+
+    cpu_t2 = high_resolution_clock::now();
+    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
   }
+
+  auto e2e_t2 = high_resolution_clock::now();
+  e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
 
   // Verify the result
   int match = 0;
@@ -455,5 +518,10 @@ int main(int argc, char *argv[]) {
   }
 
   std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
+
+  // record stats and write to csv
+  stats_recorder.record(qcfFilename, cpu_time, e2e_time, te_exes, mm_exes);
+  stats_recorder.write();
+
   return (match ? EXIT_FAILURE : EXIT_SUCCESS);
 }
