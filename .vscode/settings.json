@@ -4,6 +4,7 @@
         "bitstring",
         "bitstrings",
         "captionpos",
+        "cphase",
         "framexleftmargin",
         "globaldata",
         "gmem",
@@ -16,13 +17,13 @@
         "numbersep",
         "QASM",
         "qubit",
+        "qubits",
         "showspaces",
         "singlelinecheck",
         "sota",
         "stepnumber",
         "stringstyle",
         "tabsize",
-        "cphase",
         "Vitis"
     ],
     "files.associations": {
