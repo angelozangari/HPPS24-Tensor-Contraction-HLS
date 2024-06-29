@@ -7,6 +7,7 @@
 \usepackage{multicol}
 \usepackage{caption}
 \usepackage{hyperref}
+\usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{listings}
 \lstdefinestyle{qasm}{
@@ -80,25 +81,27 @@
 
 
 \begin{abstract}
-	
+
 	In the rapidly evolving field of quantum computing, the simulation of quantum circuits on classical computers has become increasingly crucial. This project focuses on developing an efficient simulation toolchain for quantum circuits, with particular emphasis on Field-Programmable Gate Array (FPGA) implementation. Our approach centers on two key innovations: First, we develop a general x86 Instruction Set Architecture (ISA) that decomposes quantum circuits into a series of schedulable instructions, utilizing two fundamental mathematical operators: tensor expansions and matrix multiplications. This abstraction allows for flexible and efficient representation of quantum operations. Second, we implement this ISA on FPGAs to perform quantum circuit simulations. Our implementation features two custom-designed kernels, developed from scratch, specifically optimized for tensor expansion and matrix multiplication operations. This tailored approach enables us to leverage the  processing capabilities of FPGAs, potentially offering significant performance improvements over traditional simulation methods. By focusing on these aspects, our work aims to advance the field of quantum circuit simulation, providing a powerful tool for researchers and developers in quantum computing.
-	
-\end{abstract} 
+
+\end{abstract}
 
 \newpage
 \tableofcontents
+
 \newpage
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 1
 
 \section{Introduction}
 
 
 \subsection{The problem}
-Currently great push on quantum computing. It allows to solve particular classes of problem exponentially faster than classical computers. 
-Still, classical computers play great role in development of their quantum counterpart. Specifically, used for simulation and verification of quantum circuits. 
+Currently great push on quantum computing. It allows to solve particular classes of problem exponentially faster than classical computers.
+Still, classical computers play great role in development of their quantum counterpart. Specifically, used for simulation and verification of quantum circuits.
 Currenty to simulate on quant comp. there is quiskit with x performance.
 Our goal is to develop a simulation toolchain that receives as input a quantum circuit. It performs specific computations (link to next subsection 'what we did') and outputs an expression that represents the quantum circuit. It can be decomposed in instructions, managing data dependencies, and be feed to heterogeneous architectures.
-We continued with an implementation of the kernels that allows to perform the required computations on fpga, targeting the alveo u55c board. In particular the two kernels that had to be implemented from scratch allow us to perform the two mathematical operations used in the circuit decomposition: tensor expansion and matrix multiplication. 
+We continued with an implementation of the kernels that allows to perform the required computations on fpga, targeting the alveo u55c board. In particular the two kernels that had to be implemented from scratch allow us to perform the two mathematical operations used in the circuit decomposition: tensor expansion and matrix multiplication.
 
 
 \subsection{Our work}
@@ -113,7 +116,7 @@ Once this is done, we proceed with the creation and scheduling of the operations
 
 The instructions are then sent to the specific hw, fpga in our case.
 
-The results are 
+The results are
 
 Efficient because compute once the matrix and then can reuse it for successive sampling.
 
@@ -331,9 +334,64 @@ Let us take the Quantum Fourier Transform (QFT)\cite{coppersmith2002approximatef
 	h q[3];
 \end{lstlisting}
 
-% TODO add diagram of the tensor network
-% TODO add diagram of the contraction tree
-% TODO add sequence of instructions
+% add figure of the tensor network
+
+In figure~\ref{fig:tensor-network}, we present the tensor network representation of the QFT circuit. In this illustration of the tensor network, each node represents a tensor, along what we define as \textbf{span} (the qubits it acts on), and each edge represents a qubit connection between tensors, where an eventual contraction will take place.
+
+Possible contractions can be identified by edges characterized by the same \textbf{span} as the intersection of the \textbf{spans} of the two tensors they connect (highlighted in red and green in the figure).
+
+Each contraction has a cost associated with it, defined by the \textbf{rank} of the operation tied to the contraction. With the word \textbf{rank} we refer to the number of qubits involved in the operation. The cost of a contraction depends on the number of qubits involved in the operation, with higher ranks incurring higher costs (in terms of computational complexity). In the figure two colors, one lighter than the other, have been used to identify nodes (gates) of rank one and greater, respectively.
+
+\begin{figure}
+    \centering
+    \begin{minipage}{.45\textwidth}
+        \centering
+        \includegraphics[width=.6\textwidth]{tensor_network.png}
+        \caption{Tensor Network Representation of the QFT Circuit}
+        \label{fig:tensor-network}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \centering
+        \begin{tabular}{c}
+            $\texttt{000: M(02x02)}\;\odot\;\texttt{M(02x02)}$ \\
+            $\texttt{001: I(00000)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{002: I(00001)}\;\odot\;\texttt{M(04x04)}$ \\
+            $\texttt{003: M(02x02)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{004: I(00002)}\;\odot\;\texttt{I(00003)}$ \\
+            $\texttt{005: I(00004)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{006: M(04x04)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{007: I(00006)}\;\odot\;\texttt{M(08x08)}$ \\
+            $\texttt{008: I(00005)}\;\odot\;\texttt{I(00007)}$ \\
+            $\texttt{009: M(02x02)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{010: M(04x04)}\;\odot\;\texttt{I(00009)}$ \\
+            $\texttt{011: M(02x02)}\;\otimes\;\texttt{I(00010)}$ \\
+            $\texttt{012: I(00008)}\;\odot\;\texttt{I(00011)}$ \\
+            $\texttt{013: I(00012)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{014: M(02x02)}\;\otimes\;\texttt{M(08x08)}$ \\
+            $\texttt{015: M(16x16)}\;\odot\;\texttt{I(00014)}$ \\
+            $\texttt{016: M(02x02)}\;\otimes\;\texttt{M(02x02)}$ \\
+            $\texttt{017: M(04x04)}\;\odot\;\texttt{I(00016)}$ \\
+            $\texttt{018: M(04x04)}\;\otimes\;\texttt{I(00017)}$ \\
+            $\texttt{019: I(00015)}\;\odot\;\texttt{I(00018)}$ \\
+            $\texttt{020: I(00013)}\;\odot\;\texttt{I(00019)}$
+        \end{tabular}
+        \caption{Operation Plan for the QFT Circuit}
+        \label{fig:operation-plan}
+    \end{minipage}
+\end{figure}
+
+Highlighted in green is the contraction that will be performed first, as it has the lowest cost (rank 1, involving only 1 qubit). The contractions highlighted in red will be re-evaluated in another \textbf{sweep} of the algorithm, that is the process of identifying the optimal contraction path.
+
+Starting from the tensor network, the frontend will go through a series of intermediate steps, eventually leading to the generation of an \textbf{Operation Plan} (OP) (figure~\ref{fig:operation-plan}). This plan is a set of instructions, produced by the scheduler with an \textbf{Operation Tree} (OT) as its input, that will be sent to the backend for execution.
+
+Each instruction can be seen as a tensor operation, with the format:
+
+\begin{center}
+    \texttt{<ID>: <T1> <OP> <T2>}
+\end{center}
+
+Where \texttt{<ID>} is the instruction identifier, \texttt{<T1>} and \texttt{<T2>} are the tensors involved in the operation, and \texttt{<OP>} is the operation to be performed (e.g., $\otimes$ for tensor expansion and $\odot$ for matrix multiplication). The tensor operands can be identified either directly by matrix dimensions or by the address, if the the operation has a dependency on a previous instruction.
 
 \subsubsection{Future Work and Optimizations}
 
@@ -422,11 +480,11 @@ Several optimization techniques have been employed to maximize the performance o
 
 \begin{enumerate}
     \item \textbf{Dataflow Optimization}: Extensive use of the dataflow pragma enables pipelining and parallelism, significantly improving throughput.
-	
+
     \item \textbf{Memory Access Optimization}: The COO sparse matrix format reduces memory bandwidth requirements, crucial for handling large quantum circuits.
-	
+
     \item \textbf{Packet-Based Processing}: Implemented in the Matrix Multiplication kernel to efficiently handle sparse data structures and improve computational density.
-	
+
     \item \textbf{Producer-Consumer Pattern}: This design pattern enhances data flow between different stages of the computation, reducing overall latency.
 \end{enumerate}
 
@@ -434,13 +492,13 @@ Several optimization techniques have been employed to maximize the performance o
 % Explain how the kernel integrates with the host side via OpenCL. Include diagrams and flowcharts to illustrate the process.
 The integration of the FPGA kernels with the host side is facilitated through OpenCL, enabling efficient communication and data transfer between the host CPU and the FPGA device.
 
-\begin{figure}[h]
-    \centering
-    % Replace with actual path to your diagram
-    \includegraphics[width=0.8\textwidth]{path_to_your_diagram}
-    \caption{Data flow between Host and FPGA Kernels}
-    \label{fig:dataflow}
-\end{figure}
+% \begin{figure}[h]
+%     \centering
+%     % Replace with actual path to your diagram
+%     \includegraphics[width=0.8\textwidth]{path_to_your_diagram}
+%     \caption{Data flow between Host and FPGA Kernels}
+%     \label{fig:dataflow}
+% \end{figure}
 
 The data flow process can be summarized as follows:
 
@@ -466,7 +524,7 @@ The performance of our FPGA-based solution is influenced by several factors:
     \item \textbf{Memory Bandwidth}: The efficiency of data transfer between off-chip memory and on-chip processing elements.
     \item \textbf{Computational Density}: The ratio of compute operations to memory operations, which is optimized through our packet-based approach.
     \item \textbf{Parallelism}: The degree of concurrent execution achieved through our dataflow design and kernel architecture.
-    \item \textbf{Precision}: The use of fixed-point arithmetic (ap_fixed<16,8>) balances computational accuracy with hardware resource utilization.
+    \item \textbf{Precision}: The use of fixed-point arithmetic (\texttt{ap\_fixed<16,8>}) balances computational accuracy with hardware resource utilization.
 \end{itemize}
 
 \subsubsection{Future Work and Optimizations}
