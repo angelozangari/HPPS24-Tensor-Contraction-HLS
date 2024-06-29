@@ -93,7 +93,7 @@
 \section{Introduction}
 
 
-\subsection{intro to our problem}
+\subsection{The problem}
 Currently great push on quantum computing. It allows to solve particular classes of problem exponentially faster than classical computers. 
 Still, classical computers play great role in development of their quantum counterpart. Specifically, used for simulation and verification of quantum circuits. 
 Currenty to simulate on quant comp. there is quiskit with x performance.
@@ -101,7 +101,7 @@ Our goal is to develop a simulation toolchain that receives as input a quantum c
 We continued with an implementation of the kernels that allows to perform the required computations on fpga, targeting the alveo u55c board. In particular the two kernels that had to be implemented from scratch allow us to perform the two mathematical operations used in the circuit decomposition: tensor expansion and matrix multiplication. 
 
 
-\subsection{our things and what we did}
+\subsection{Our work}
 As outlined in the previous section, the starting point was the quantum circuit.
 To maximize compatibility we adhered to the qasm standard for quantum circuit representation, which is the most used one (also used by quiskit, developed by one of the leaders in quantum computing sector: IBM)
 
@@ -117,7 +117,7 @@ The results are
 
 Efficient because compute once the matrix and then can reuse it for successive sampling.
 
-\subsection{sneak peek on results}
+\subsection{Results}
 We developed an Instruction Set Architecture that can decompose a quantum circuit into instructions with two mathematical operations (tensor expansion and spase multiplication), which can be then fed to heterogeneous architectures, such as fpgas and gpus. we then proceded with an fpga implementation with RESULTS x speedup.
 
 
@@ -126,13 +126,26 @@ We developed an Instruction Set Architecture that can decompose a quantum circui
 \section{Background}
 
 \subsection{What is quantum computing}
-Quantum computing represents a paradigm shift from classical computing, leveraging the principles of quantum mechanics to process information. At its core, quantum computing utilizes quantum bits, or qubits, which can exist in superposition, encoding multiple classical states simultaneously. This fundamental difference allows quantum computers to potentially solve certain problems exponentially faster than their classical counterparts.
+Quantum computing represents a revolutionary approach to information processing, fundamentally different from classical computing. It harnesses the principles of quantum mechanics to perform calculations, offering the potential to solve certain problems exponentially faster than traditional computers.
+At the heart of quantum computing are quantum bits, or qubits. Unlike classical bits that can only be in one of two states (0 or 1), qubits can exist in a superposition of states, effectively encoding multiple classical states simultaneously. This unique property allows quantum computers to process vast amounts of information in parallel.
+Quantum circuits, the building blocks of quantum computation, consist of quantum gates that manipulate qubits. These circuits differ significantly from classical circuits, which use high and low voltages to represent binary states. Instead, quantum circuits leverage quantum superposition to encode and process multiple states concurrently.
 
 \subsection{What is a quantum gate}
-Central to quantum computing are quantum gates, which are unitary operations that manipulate quantum states. These gates serve as the building blocks of quantum circuits, analogous to logic gates in classical circuits. However, unlike classical gates that operate on definite binary states, quantum gates act on superpositions of states, enabling complex quantum operations.
+Quantum gates are fundamental components in quantum computing, serving as the building blocks of quantum circuits. These gates are mathematical representations of unitary operations that manipulate quantum states, analogous to logic gates in classical circuits but with significantly different properties and capabilities.
+Unlike classical gates that operate on definite binary states (0 or 1), quantum gates act on qubits, which can exist in superpositions of states. This key difference allows quantum gates to perform complex quantum operations that have no direct classical counterpart.
+The unitary nature of quantum gates ensures that the total probability of all possible outcomes remains conserved, a crucial property in maintaining the integrity of quantum information. These gates enable various transformations of quantum states, including rotations in the complex vector space, phase shifts, and entanglement operations between multiple qubits.
+% TODO add simple drawing + explation
+Quantum circuits are constructed by combining these quantum gates in specific sequences. While classical circuits use high and low voltages to represent and process binary information, quantum circuits leverage the quantum superposition principle to encode and manipulate multiple states simultaneously. This parallel processing capability is a key factor in the potential computational advantage of quantum systems.
+The implementation of quantum gates allows for the execution of complex quantum algorithms. These algorithms can perform tasks such as quantum Fourier transforms, quantum error correction, and other operations that exploit the unique properties of quantum systems.
+In essence, quantum gates are the operators that drive quantum computation, enabling the manipulation and transformation of quantum information in ways that are fundamentally different from classical information processing. Their ability to act on superpositions and create entanglement is central to the power and promise of quantum computing.
 
 \subsection{Measurement}
-The process of extracting information from a quantum system involves measurement. When a measurement is performed, the quantum state collapses to a classical state, yielding a binary string (bitstring) in the measurement basis. This collapse is probabilistic and irreversible, necessitating multiple experiment repetitions to gain comprehensive information about the quantum state.
+Measurement is a critical and unique aspect of quantum computing, fundamentally different from classical data readout. It represents the process of extracting information from a quantum system, bridging the quantum world with our classical reality.
+In quantum computing, measurement involves observing the state of a qubit or a system of qubits. However, this process is not straightforward due to the probabilistic nature of quantum mechanics. When a measurement is performed, it causes the quantum state to "collapse" from a superposition of potential states into a definite classical state.
+This collapse results in a binary string (bitstring) in the measurement basis, effectively converting quantum information into classical information. For example, a qubit in superposition might collapse to either '0' or '1' upon measurement, with probabilities determined by its quantum state prior to measurement.
+A key characteristic of quantum measurement is its irreversibility. Once a measurement is made, the original superposition is lost, and repeated measurements on the same qubit will yield the same result. This property has profound implications for quantum algorithms and error correction techniques.
+Furthermore, the probabilistic nature of quantum measurement means that a single measurement doesn't provide complete information about the original quantum state. To gain comprehensive understanding, the entire quantum computation typically needs to be repeated multiple times, with measurements performed each time. This allows for the reconstruction of the probability distribution of possible outcomes, providing insights into the quantum state before measurement.
+Understanding and managing the measurement process is crucial in quantum computing. It affects how quantum algorithms are designed, how results are interpreted, and how quantum error correction is implemented. The interplay between quantum operations and measurement is a fundamental consideration in harnessing the power of quantum computation.
 
 \subsection{Different approaches for quantum circuit simulation}
 There are many different methods to tackle the simulation problem, mainly divided into two categories: state vector propagation and tensor networks.
@@ -145,10 +158,40 @@ This method presents multiple great benefits:
     \item decomposing in different operations allows for specific implementations (e.g. different fpga kernels)
 \end{itemize}
 
+Quantum circuit simulation is a crucial tool in quantum computing research and development. Two main approaches have emerged to tackle this challenge: state vector propagation and tensor network methods.
+
+\subsubsection{State Vector Propagation:}
+This traditional method involves computing and propagating the state vector of the circuit from start to finish. While functional, it faces severe limitations, primarily due to the exponential growth of the state vector's dimension with respect to the number of circuit lanes. This exponential scaling renders the state vector method computationally infeasible for larger circuits, especially when the number of qubits exceeds 50.
+
+\subsubsection{Tensor Network Methods:}
+A more recent approach involves decomposing the quantum circuit into its corresponding tensor network representation. This method offers several advantages:
+
+\begin{itemize}
+    \item Subset Computation: It allows for computations on subsets of data, making it feasible for implementation on devices with limited memory, such as FPGAs.
+    \item Parallelization: Independent operations can be scheduled and executed in parallel, enhancing computational efficiency.
+    \item Specialized Implementations: Decomposition into different operations allows for specific implementations, such as different FPGA kernels for various tensor operations.
+\end{itemize}
+
+In the tensor network approach, quantum gates and initial states are represented as tensors and vectors, respectively. The circuit's structure is mapped to bonds between these tensors, creating a unique tensor network. Contracting this network yields a vector representing the final quantum state, containing amplitudes for the entire Hilbert space.
+
+Tensor Network Simulation Categories:
+\begin{enumerate}
+    \item Single Amplitude Simulation: Focuses on computing the amplitude of a single bitstring, with maximal restriction on the final state.
+    \item Full State Simulation: Aims to obtain all amplitudes in the entire Hilbert space, with no restrictions on the final state. However, this is feasible only for small qubit numbers due to exponential memory requirements.
+    \item Subspace Simulation: A middle ground approach, partially closing the final state and allowing direct obtainment of amplitudes for an opened Hilbert subspace.
+    \item Sparse-State Simulation: Designed to calculate amplitudes of multiple bitstrings in one tensor network contraction, with specific restrictions on the final state configuration.
+\end{enumerate}
+
+The choice among these methods depends on the circuit size, available computational resources, and the specific requirements of the simulation task. Tensor network methods, particularly sparse-state simulation, offer a promising approach for simulating larger quantum circuits that are beyond the capabilities of traditional state vector methods.
+
+
+
 \subsection{Tensor Expansion}
+% TODO check, complete and expand
 Is a mathematical operator through which two tensors originate a third one with rank the product of the rank of the input tensors. There are many algorithms to implement it, such as the einsum notation, which compresses the indexes, or the kronecker product. We followed the latter, in which every element of the first matrix is multiplied by the entire second matrix and then be appropriately put in the result matrix.
 
 \subsection{Tensor Contraction}
+% TODO check, complete and expand
 Can be though as a generalization of a matrix multiplication. It can be performed between two tensors with same rank and spanning on exactly the same lanes, with no other quantum gates in between. The resulting tensor has the same dimensions (rank) as the starting tensors and each element can be computed as the traditional dot product between the appropriate row and column of the first and second matrix, respectively.
 
 
@@ -158,11 +201,18 @@ Our work poses as objective the computation of the tensor representing the final
 Quantum simulation on classical computers faces significant challenges due to the exponential growth of the quantum state space with the number of qubits. For instance, storing the full quantum state vector becomes infeasible for systems with more than 50 qubits. To address this, tensor network methods have emerged as a powerful tool for simulating quantum circuits. These methods represent quantum gates and states as tensors, mapping the circuit to a network of interconnected tensors. By contracting this network, one can compute amplitudes for specific bitstrings without storing the entire state vector, enabling simulation of larger quantum systems within the limitations of classical hardware.
 
 \subsection{Challenges}
-In particular, quantum circuit simulation requires to take into account many different challenges. What follows are the major ones that we encountered and the steps we took to overcome them:
+While tensor network methods offer significant advantages for quantum circuit simulation, they also present several challenges that need to be addressed for effective implementation. The main challenges include:
 \begin{itemize}
-    \item sparsity
-    \item high precision, with computations that can lead to numerical cancellation
+    \item Contraction Path Finding: The identification of an optimal contraction path for tensor networks is a complex combinatorial optimization problem. With numerous tensors involving multiple dimensions, finding the most efficient contraction sequence becomes increasingly difficult as the circuit size grows. Recent advancements in path-finding approaches, including graph-partitioning, simulated annealing-like, and architecture-aware methods, have shown promise in improving simulation efficiency for large-scale circuits.
+    \item Sparsity: Quantum states in larger circuits often exhibit high sparsity, meaning that many amplitudes are zero or near-zero. Efficiently handling this sparsity in tensor network contractions is crucial for performance optimization and memory management.
+    \item Precision Requirements: Quantum simulations often require high numerical precision to maintain accuracy, especially in cases where small amplitude differences are significant. This high precision requirement can lead to computational challenges, particularly when dealing with numerical cancellation in complex calculations.
+    \item Efficient Implementation on Classical Devices: Modern high-performance computing devices are not inherently designed for tensor contractions with arbitrary dimensions and contraction indices. This mismatch leads to suboptimal utilization of available computing resources. Current implementations typically achieve only about 20\% of the peak performance of these devices, highlighting the need for more efficient implementation strategies.
+    \item Scalability: As quantum circuits grow in size and complexity, the computational resources required for simulation increase dramatically. Balancing the trade-off between simulation accuracy and computational feasibility becomes increasingly challenging.
+    \item Memory Management: Tensor network methods can be memory-intensive, especially for larger circuits. Efficient memory allocation and management are critical to prevent bottlenecks and enable simulation of more complex quantum systems.
+    \item Parallelization and Hardware Optimization: Leveraging parallel computing architectures and optimizing for specific hardware (like FPGAs or GPUs) requires careful algorithm design and implementation to fully exploit the potential performance gains.
 \end{itemize}
+
+Addressing these challenges is crucial for advancing the field of quantum circuit simulation. Ongoing research focuses on developing more efficient contraction algorithms, improving numerical stability, and optimizing implementation for various hardware architectures. These efforts aim to bridge the gap between the theoretical capabilities of tensor network methods and their practical implementation in simulating increasingly complex quantum circuits.
 
 \subsection{all the rest}
 
