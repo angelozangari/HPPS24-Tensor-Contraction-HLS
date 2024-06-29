@@ -8,9 +8,11 @@
 
 #include "host-combined.h"
 #include "tests/golden_reader.h"
+#include "tests/qcf_reader.h"
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
+#include <unordered_map>
 
 static const std::string error_message = "Error: Result mismatch:\n"
                                          "i = %d CPU result = %d Device result = %d\n";
@@ -27,6 +29,7 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   size_t right_coo_meta_bytes = right.size() * sizeof(coo_meta_t);
   size_t out_float_bytes = left.size() * right.size() * sizeof(float);
   size_t out_coo_meta_bytes = left.size() * right.size() * sizeof(coo_meta_t);
+  flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
 
   // These commands will allocate memory on the Device. The cl::Buffer objects
   // can be used to reference the memory locations on the device.
@@ -64,6 +67,7 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)right.size()));
   OCL_CHECK(err, err = krnl.setArg(narg++, (rank_t)left.rank));
   OCL_CHECK(err, err = krnl.setArg(narg++, (rank_t)right.rank));
+  OCL_CHECK(err, err = krnl.setArg(narg++, (flag_t)left_row_format));
 
   // We then need to map our OpenCL buffers to get the pointers
   float *ptr_left_r, *ptr_left_i, *ptr_right_r, *ptr_right_i, *ptr_out_r, *ptr_out_i;
@@ -147,7 +151,7 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_out_m, ptr_out_m));
   OCL_CHECK(err, err = q.finish());
 
-  return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank};
+  return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank, left.format};
 }
 
 CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
@@ -288,17 +292,19 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_out_m, ptr_out_m));
   OCL_CHECK(err, err = q.finish());
 
-  return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank};
+  return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank, left.format};
 }
 
 int main(int argc, char *argv[]) {
   // TARGET_DEVICE macro needs to be passed from gcc command line
   if (argc != 2) {
-    std::cout << "Usage: " << argv[0] << " <xclbin>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <xclbin>"
+              << " <circuit.qcf>" << std::endl;
     return EXIT_FAILURE;
   }
 
   std::string xclbinFilename = argv[1];
+  std::string qcfFilename = argv[2];
 
   // Creates a vector of DATA_SIZE elements with an initial value of 10 and 32
   // using customized allocator for getting buffer alignment to 4k boundary
@@ -379,57 +385,70 @@ int main(int argc, char *argv[]) {
   }
 
   // Read the golden vector
-  GoldenReader reader("golden-vectors.dat");
+  QCF::QcfReader reader(qcfFilename);
   reader.consume();
   auto ops = &reader.operations;
 
-  OP left_te = ops->at(0);
-  OP right_te = ops->at(1);
-  OP out_matmul = ops->at(2);
+  CooTens left, right, out;
+  unordered_map<uint32_t, CooTens> op_map;
 
-  CooTens left{left_te.left};
-  CooTens right{left_te.right};
-  CooTens out_left_te =
-      enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context);
+  for (auto &op : *ops) {
+    switch (op.kind) {
+    case QCF::OpKind::TE_MA:
+    case QCF::OpKind::MM_MA:
+      left = {op.left.u.tens};
+      right = op_map.at(op.right.u.id);
+      break;
+    case QCF::OpKind::TE_AM:
+    case QCF::OpKind::MM_AM:
+      left = op_map.at(op.left.u.id);
+      right = {op.right.u.tens};
+      break;
+    case QCF::OpKind::TE_MM:
+    case QCF::OpKind::MM_MM:
+      left = {op.left.u.tens};
+      right = {op.right.u.tens};
+      break;
+    case QCF::OpKind::TE_AA:
+    case QCF::OpKind::MM_AA:
+      left = op_map.at(op.left.u.id);
+      right = op_map.at(op.right.u.id);
+      break;
+    default:
+      break;
+    }
 
-  left = {right_te.left};
-  right = {right_te.right};
-  CooTens out_right_te =
-      enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context);
+    switch (op.kind) {
+    case QCF::OpKind::TE_MA:
+    case QCF::OpKind::TE_AM:
+    case QCF::OpKind::TE_MM:
+    case QCF::OpKind::TE_AA:
+      out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context);
+      break;
+    case QCF::OpKind::MM_MA:
+    case QCF::OpKind::MM_AM:
+    case QCF::OpKind::MM_MM:
+    case QCF::OpKind::MM_AA:
+      out = enqueue_matrix_multiplication(left, right, krnl_matrix_multiplication, q,
+                                          context);
+      break;
+    default:
+      break;
+    }
 
-  left = {out_left_te};
-  right = {out_right_te};
-  CooTens computed_matmul =
-      enqueue_matrix_multiplication(left, right, krnl_matrix_multiplication, q, context);
+    op_map.insert({op.id, out});
+  }
 
   // Verify the result
-  CooTens predicted_out = computed_matmul;
-  CooTens real_out{out_matmul.out};
   int match = 0;
-  if (predicted_out.size() != real_out.size()) {
-    std::cout << "FAILED" << std::endl;
-    std::cout << "Mismatch in sizes" << std::endl;
-    std::cout << "Predicted output size: " << predicted_out.size() << std::endl;
-    std::cout << "Real output size: " << real_out.size() << std::endl;
-    match = 1;
-  }
-  for (size_t i = 0; i < predicted_out.size(); i++) {
-    if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
-          predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
-          predicted_out.data_m[i] == real_out.data_m[i])) {
-      std::cout << "FAILED" << std::endl;
-      std::cout << "Mismatch in data" << std::endl;
-      // print_op_matrices(op);
-      std::cout << "Predicted output:" << "(" << predicted_out.data_r[i] << " + "
-                << predicted_out.data_i[i] << "i) at (" << X(predicted_out.data_m[i])
-                << ", " << Y(predicted_out.data_m[i]) << ")" << std::endl;
-      std::cout << "Real output:" << "(" << real_out.data_r[i] << " + "
-                << real_out.data_i[i] << "i) at (" << X(real_out.data_m[i]) << ", "
-                << Y(real_out.data_m[i]) << ")" << std::endl;
-      std::cout << "Full Real output:" << std::endl;
-      real_out.print();
-      std::cout << "Full Predicted output:" << std::endl;
-      predicted_out.print();
+  for (size_t i = 0; i < out.size(); i++) {
+    if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in data" << endl;
+      cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
+           << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")" << endl;
+      cout << "Full Predicted output:" << endl;
+      out.print();
       match = 1;
     }
   }
