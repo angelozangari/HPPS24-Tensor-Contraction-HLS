@@ -55,7 +55,8 @@
 
 % FIXME fix title
 % Quantum Circuit Simulation through Tensor Network Contractions
-\title{\textbf{a compilation toolchain for quantum circuits which can target hw accelerators \\ on FPGAs}}
+% a compilation toolchain for quantum circuits which can target hw accelerators \\ on FPGAs
+\title{\textbf{A compilation toolchain for Quantum Circuits on heterogeneous archictures with an FPGA implementation}}
 
 \author{Federico Lolli, Angelo Zangari}
 
@@ -93,17 +94,31 @@
 
 
 \subsection{intro to our problem}
+Currently great push on quantum computing. It allows to solve particular classes of problem exponentially faster than classical computers. 
+Still, classical computers play great role in development of their quantum counterpart. Specifically, used for simulation and verification of quantum circuits. 
+Currenty to simulate on quant comp. there is quiskit with x performance.
+Our goal is to develop a simulation toolchain that receives as input a quantum circuit. It performs specific computations (link to next subsection 'what we did') and outputs an expression that represents the quantum circuit. It can be decomposed in instructions, managing data dependencies, and be feed to heterogeneous architectures.
+We continued with an implementation of the kernels that allows to perform the required computations on fpga, targeting the alveo u55c board. In particular the two kernels that had to be implemented from scratch allow us to perform the two mathematical operations used in the circuit decomposition: tensor expansion and matrix multiplication. 
+
 
 \subsection{our things and what we did}
-Simulation algorithm:
-- we have circuit
-- build a graph with connections representing possible expansions and contractions
-- build a contraction tree and find expression
-- send data to fpgas for computational
-- receive results , and sample bitstring of quantum vector
+As outlined in the previous section, the starting point was the quantum circuit.
+To maximize compatibility we adhered to the qasm standard for quantum circuit representation, which is the most used one (also used by quiskit, developed by one of the leaders in quantum computing sector: IBM)
+
+Once we have circuit we need to obtain the final expression of the contraction of the circuit. This was done using a method that leverages tensor networks, which will be explained in greater detail in section 2 (link to background section).
+
+We then implement a search heuristic to perform a local search and find a suitable contraction path of the network, keeping into account both data dependencies and mathematical constraints.
+
+Once this is done, we proceed with the creation and scheduling of the operations, including their data and the mathematical operator used for the computation.
+
+The instructions are then sent to the specific hw, fpga in our case.
+
+The results are 
+
 Efficient because compute once the matrix and then can reuse it for successive sampling.
 
 \subsection{sneak peek on results}
+We developed an Instruction Set Architecture that can decompose a quantum circuit into instructions with two mathematical operations (tensor expansion and spase multiplication), which can be then fed to heterogeneous architectures, such as fpgas and gpus. we then proceded with an fpga implementation with RESULTS x speedup.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 2
@@ -119,6 +134,16 @@ Central to quantum computing are quantum gates, which are unitary operations tha
 \subsection{Measurement}
 The process of extracting information from a quantum system involves measurement. When a measurement is performed, the quantum state collapses to a classical state, yielding a binary string (bitstring) in the measurement basis. This collapse is probabilistic and irreversible, necessitating multiple experiment repetitions to gain comprehensive information about the quantum state.
 
+\subsection{Different approaches for quantum circuit simulation}
+There are many different methods to tackle the simulation problem, mainly divided into two categories: state vector propagation and tensor networks.
+The first method is the traditionally used one. It consists in computing the state vector of the circuit and propagating it through the circuit from the start to the end. Although method is functional, it presents severe limitations; mainly using a state vector to represent the circuit means that we need to store it, but the issue is that the vector dimension grows exponentially with respect to the number of circuit lanes. This renders the state vector method computationally infeasible from a spatial point of view for circuits with bigger dimension.
+The second method is newer and resorts to decomposing the quantum circuit into its correnponded tensor network representation. From here we can perform mathematical operations to contract the terms and get an equivalent expression of the circuit.
+This method presents multiple great benefits:
+\begin{itemize}
+    \item perform computations on subset of data, can be contained in fpga
+    \item independed operations, can be scheduled in parallel
+    \item decomposing in different operations allows for specific implementations (e.g. different fpga kernels)
+\end{itemize}
 
 \subsection{Tensor Expansion}
 Is a mathematical operator through which two tensors originate a third one with rank the product of the rank of the input tensors. There are many algorithms to implement it, such as the einsum notation, which compresses the indexes, or the kronecker product. We followed the latter, in which every element of the first matrix is multiplied by the entire second matrix and then be appropriately put in the result matrix.
@@ -134,8 +159,10 @@ Quantum simulation on classical computers faces significant challenges due to th
 
 \subsection{Challenges}
 In particular, quantum circuit simulation requires to take into account many different challenges. What follows are the major ones that we encountered and the steps we took to overcome them:
-- sparsity
-- high precision, with computations that can lead to numerical cancellation
+\begin{itemize}
+    \item sparsity
+    \item high precision, with computations that can lead to numerical cancellation
+\end{itemize}
 
 \subsection{all the rest}
 
