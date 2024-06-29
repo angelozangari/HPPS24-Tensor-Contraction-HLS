@@ -110,13 +110,13 @@ Efficient because compute once the matrix and then can reuse it for successive s
 
 \section{Background}
 
-\subsubsection{What is quantum computing}
+\subsection{What is quantum computing}
 Quantum computing represents a paradigm shift from classical computing, leveraging the principles of quantum mechanics to process information. At its core, quantum computing utilizes quantum bits, or qubits, which can exist in superposition, encoding multiple classical states simultaneously. This fundamental difference allows quantum computers to potentially solve certain problems exponentially faster than their classical counterparts.
 
-\subsubsection{What is a quantum gate}
+\subsection{What is a quantum gate}
 Central to quantum computing are quantum gates, which are unitary operations that manipulate quantum states. These gates serve as the building blocks of quantum circuits, analogous to logic gates in classical circuits. However, unlike classical gates that operate on definite binary states, quantum gates act on superpositions of states, enabling complex quantum operations.
 
-\subsubsection{Measurement}
+\subsection{Measurement}
 The process of extracting information from a quantum system involves measurement. When a measurement is performed, the quantum state collapses to a classical state, yielding a binary string (bitstring) in the measurement basis. This collapse is probabilistic and irreversible, necessitating multiple experiment repetitions to gain comprehensive information about the quantum state.
 
 
@@ -127,12 +127,12 @@ Is a mathematical operator through which two tensors originate a third one with 
 Can be though as a generalization of a matrix multiplication. It can be performed between two tensors with same rank and spanning on exactly the same lanes, with no other quantum gates in between. The resulting tensor has the same dimensions (rank) as the starting tensors and each element can be computed as the traditional dot product between the appropriate row and column of the first and second matrix, respectively.
 
 
-\subsubsection{Sampling and evaluating quality of obtained sample with LXEB}
+\subsection{Sampling and evaluating quality of obtained sample with LXEB}
 Our work poses as objective the computation of the tensor representing the final and contracted quantum circuit. This allows us to obtain a sample of the output bitstring simply by multiplying it for the input vector. After having computed the output tensor, it is useful to remark for completeness what needs to be done for the verification part of the quantum experiment. Verification is used to evaluate the quality of quantum computations. In particular, in Random Circuit Sampling (RCS) experiments, researchers use the Linear Cross-Entropy Benchmark (LXEB) to quantify the circuit quality. The LXEB serves as a proxy for fidelity in large quantum circuits where direct fidelity calculation is impractical. It compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations.
 
 Quantum simulation on classical computers faces significant challenges due to the exponential growth of the quantum state space with the number of qubits. For instance, storing the full quantum state vector becomes infeasible for systems with more than 50 qubits. To address this, tensor network methods have emerged as a powerful tool for simulating quantum circuits. These methods represent quantum gates and states as tensors, mapping the circuit to a network of interconnected tensors. By contracting this network, one can compute amplitudes for specific bitstrings without storing the entire state vector, enabling simulation of larger quantum systems within the limitations of classical hardware.
 
-\subsections{Challenges}
+\subsection{Challenges}
 In particular, quantum circuit simulation requires to take into account many different challenges. What follows are the major ones that we encountered and the steps we took to overcome them:
 - sparsity
 - high precision, with computations that can lead to numerical cancellation
