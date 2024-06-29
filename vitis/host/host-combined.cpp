@@ -29,7 +29,6 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   size_t right_coo_meta_bytes = right.size() * sizeof(coo_meta_t);
   size_t out_float_bytes = left.size() * right.size() * sizeof(float);
   size_t out_coo_meta_bytes = left.size() * right.size() * sizeof(coo_meta_t);
-  flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
 
   // These commands will allocate memory on the Device. The cl::Buffer objects
   // can be used to reference the memory locations on the device.
@@ -67,7 +66,6 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)right.size()));
   OCL_CHECK(err, err = krnl.setArg(narg++, (rank_t)left.rank));
   OCL_CHECK(err, err = krnl.setArg(narg++, (rank_t)right.rank));
-  OCL_CHECK(err, err = krnl.setArg(narg++, (flag_t)left_row_format));
 
   // We then need to map our OpenCL buffers to get the pointers
   float *ptr_left_r, *ptr_left_i, *ptr_right_r, *ptr_right_i, *ptr_out_r, *ptr_out_i;
@@ -169,6 +167,7 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   dim_t real_size;
   size_t out_float_bytes = max_out_size * sizeof(float); //
   size_t out_coo_meta_bytes = max_out_size * sizeof(coo_meta_t);
+  flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
 
   // These commands will allocate memory on the Device. The cl::Buffer objects
   // can be used to reference the memory locations on the device.
@@ -205,6 +204,7 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)left.size()));
   OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)right.size()));
   OCL_CHECK(err, err = krnl.setArg(narg++, real_size));
+  OCL_CHECK(err, err = krnl.setArg(narg++, (flag_t)left_row_format));
 
   // We then need to map our OpenCL buffers to get the pointers
   float *ptr_left_r, *ptr_left_i, *ptr_right_r, *ptr_right_i, *ptr_out_r, *ptr_out_i;
@@ -297,7 +297,7 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
 
 int main(int argc, char *argv[]) {
   // TARGET_DEVICE macro needs to be passed from gcc command line
-  if (argc != 2) {
+  if (argc != 3) {
     std::cout << "Usage: " << argv[0] << " <xclbin>"
               << " <circuit.qcf>" << std::endl;
     return EXIT_FAILURE;
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
   auto ops = &reader.operations;
 
   CooTens left, right, out;
-  unordered_map<uint32_t, CooTens> op_map;
+  std::unordered_map<uint32_t, CooTens> op_map;
 
   for (auto &op : *ops) {
     switch (op.kind) {
@@ -443,11 +443,12 @@ int main(int argc, char *argv[]) {
   int match = 0;
   for (size_t i = 0; i < out.size(); i++) {
     if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
-      cout << "FAILED" << endl;
-      cout << "Mismatch in data" << endl;
-      cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
-           << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")" << endl;
-      cout << "Full Predicted output:" << endl;
+      std::cout << "FAILED" << std::endl;
+      std::cout << "Mismatch in data" << std::endl;
+      std::cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
+                << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")"
+                << std::endl;
+      std::cout << "Full Predicted output:" << std::endl;
       out.print();
       match = 1;
     }
