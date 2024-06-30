@@ -247,10 +247,16 @@ Addressing these challenges is crucial for advancing the field of quantum circui
 \section{Methodology}
 \label{sec:methodology}
 
-% FIXME how to write frontend, on mit found this notation (most authoritative institution found so far)
-\subsection{Front-End}
+Our toolchain consists of two key components:
 
+\begin{itemize}
+    \item \textbf{Frontend:} Responsible for parsing quantum circuits, converting them into tensor networks, generating contraction plans, and compiling them into an optimized sequence of instructions. It's the high-level interface between the user and the simulation process.
+    \item \textbf{Backend:} Executes the compiled instructions on the target hardware, performing tensor expansions and matrix multiplications to compute the whole circuit unitary matrix. It's the low-level computational engine that drives the simulation process.
+\end{itemize}
 
+The frontend is built with expandability and compatibility in mind, allowing for easy integration with existing quantum computing frameworks and interaction with various computational backends. The backend is designed to efficiently execute the compiled instructions on different hardware platforms, leveraging the unique capabilities of each architecture. Together, these components form a comprehensive simulation toolchain that can adapt to diverse quantum computing research needs.
+
+\subsection{Frontend}
 % TODO highlight the implementation of x86 ISA
 
 The Frontend is a fundamental component in the quantum circuit simulation process, serving as the interface between high-level quantum circuit descriptions and low-level computational backends. By reducing the quantum circuit to a tensor network and optimizing the contraction tree, the frontend prepares the circuit for efficient simulation with minimum number of operations. Without this crucial step, the computational backends would be unable to efficiently simulate quantum circuits, leading to significant performance degradation and resource wastage.
@@ -266,9 +272,10 @@ The principal objective of the frontend is to transform a high-level quantum cir
 \begin{enumerate}
     \item \textbf{Parsing} of a high-level quantum circuit description language (QASM) into an internal representation
     \item \textbf{Conversion} of the quantum circuit into a \textbf{Tensor Network}, highlighting available tensor contractions
-    \item \textbf{Generation} of an optimized contraction tree, packed in a \textbf{Contraction Plan} (\textbf{CP}) structure
-    \item \textbf{Compilation} of the contraction plan to an optimal sequence of instructions, based on a backend-specific \textbf{Instruction Set Architecture} (\textbf{ISA})
-    \item \textbf{Scheduling} of instructions for optimal execution, exploiting independency between leaves of the contraction tree and maximizing instruction-level parallelism
+    \item \textbf{Generation} of an optimized contraction tree, packed in a \textbf{Contraction Plan} (\textbf{CP}) structure (for CPU backends, where each contraction can be executed as a single Einsum operation), or an \textbf{Operation Tree} (\textbf{OT}) realized in an \textbf{Operation Plan} (\textbf{OP}) structure (for FPGA backends, where the contraction is split into multiple operations).
+    \item \textbf{Compilation} of the generated plan (CP/OP) in a set of instructions with explicit dependencies, based on a backend-specific \textbf{Instruction Set Architecture} (\textbf{ISA}).
+    \item \textbf{Scheduling} of instructions for optimal execution, exploiting independency between leaves of the contraction tree and maximizing instruction-level parallelism.
+    \item \textbf{(QCF) Compilation} of the optimized instructions into a lightweight, portable binary format (\textbf{Q}uantum \textbf{C}omputation \textbf{F}ormat), ready for execution on the chosen backend.
 \end{enumerate}
 
 \subsubsection{Circuit Parsing and Representation}
@@ -405,9 +412,16 @@ Each contraction has a cost associated with it, defined by the \textbf{rank} of 
     \end{minipage}
 \end{figure}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{operation_tree.png}
+    \caption{Operation Tree for the QFT Circuit}
+    \label{fig:operation-tree}
+\end{figure}
+
 Highlighted in green is the contraction that will be performed first, as it has the lowest cost (rank 1, involving only 1 qubit). The contractions highlighted in red will be re-evaluated in another \textbf{sweep} of the algorithm, that is the process of identifying the optimal contraction path.
 
-Starting from the tensor network, the frontend will go through a series of intermediate steps, eventually leading to the generation of an \textbf{Operation Plan} (OP) (figure~\ref{fig:operation-plan}). This plan is a set of instructions, produced by the scheduler with an \textbf{Operation Tree} (OT) as its input, that will be sent to the backend for execution.
+Starting from the tensor network, the frontend will go through a series of intermediate steps, eventually leading to the generation of an \textbf{Operation Tree} (OT) (figure~\ref{fig:operation-tree}) and its subsequent \textbf{Operation Plan} (Op) (figure~\ref{fig:operation-plan}). This plan is fed to the scheduler, that will optimize the order of the operations to send to the backend for execution.
 
 Each instruction can be seen as a tensor operation, with the format:
 
