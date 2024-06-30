@@ -1,61 +1,5 @@
 OPENQASM 3.0;
 include "stdgates.inc";
-gate ryy_4564496992(_gate_p_0) _gate_q_0, _gate_q_1 {
-  rx(pi/2) _gate_q_0;
-  rx(pi/2) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  rz(1.2530871902620113) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  rx(-pi/2) _gate_q_0;
-  rx(-pi/2) _gate_q_1;
-}
-gate rccx _gate_q_0, _gate_q_1, _gate_q_2 {
-  u2(0, pi) _gate_q_2;
-  u1(pi/4) _gate_q_2;
-  cx _gate_q_1, _gate_q_2;
-  u1(-pi/4) _gate_q_2;
-  cx _gate_q_0, _gate_q_2;
-  u1(pi/4) _gate_q_2;
-  cx _gate_q_1, _gate_q_2;
-  u1(-pi/4) _gate_q_2;
-  u2(0, pi) _gate_q_2;
-}
-gate sxdg _gate_q_0 {
-  s _gate_q_0;
-  h _gate_q_0;
-  s _gate_q_0;
-}
-gate ccz _gate_q_0, _gate_q_1, _gate_q_2 {
-  h _gate_q_2;
-  ccx _gate_q_0, _gate_q_1, _gate_q_2;
-  h _gate_q_2;
-}
-gate csdg _gate_q_0, _gate_q_1 {
-  p(-pi/4) _gate_q_0;
-  cx _gate_q_0, _gate_q_1;
-  p(pi/4) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  p(-pi/4) _gate_q_1;
-}
-gate cu1_4564497184(_gate_p_0) _gate_q_0, _gate_q_1 {
-  u1(0.46324650104424697) _gate_q_0;
-  cx _gate_q_0, _gate_q_1;
-  u1(-0.46324650104424697) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  u1(0.46324650104424697) _gate_q_1;
-}
-gate cu1_4534176272(_gate_p_0) _gate_q_0, _gate_q_1 {
-  u1(pi/4) _gate_q_0;
-  cx _gate_q_0, _gate_q_1;
-  u1(-pi/4) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  u1(pi/4) _gate_q_1;
-}
-gate csx _gate_q_0, _gate_q_1 {
-  h _gate_q_1;
-  cu1_4534176272(pi/2) _gate_q_0, _gate_q_1;
-  h _gate_q_1;
-}
 gate rcccx _gate_q_0, _gate_q_1, _gate_q_2, _gate_q_3 {
   u2(0, pi) _gate_q_3;
   u1(pi/4) _gate_q_3;
@@ -76,89 +20,195 @@ gate rcccx _gate_q_0, _gate_q_1, _gate_q_2, _gate_q_3 {
   u1(-pi/4) _gate_q_3;
   u2(0, pi) _gate_q_3;
 }
-gate rzz_4564495840(_gate_p_0) _gate_q_0, _gate_q_1 {
-  cx _gate_q_0, _gate_q_1;
-  rz(1.6120902733834466) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
+gate sxdg _gate_q_0 {
+  s _gate_q_0;
+  h _gate_q_0;
+  s _gate_q_0;
 }
-gate xx_minus_yy_4564497952(_gate_p_0, _gate_p_1) _gate_q_0, _gate_q_1 {
-  rz(-0.7216926043020907) _gate_q_1;
-  rz(-pi/2) _gate_q_0;
-  sx _gate_q_0;
-  rz(pi/2) _gate_q_0;
-  s _gate_q_1;
+gate cu3_4540421312(_gate_p_0, _gate_p_1, _gate_p_2) _gate_q_0, _gate_q_1 {
+  u1(3.393126784300656) _gate_q_0;
+  u1(0.7137080964931846) _gate_q_1;
   cx _gate_q_0, _gate_q_1;
-  ry(1.1957696846491819) _gate_q_0;
-  ry(-1.1957696846491819) _gate_q_1;
+  u3(-1.0443373209090354, 0, -3.393126784300656) _gate_q_1;
   cx _gate_q_0, _gate_q_1;
-  sdg _gate_q_1;
-  rz(-pi/2) _gate_q_0;
-  sxdg _gate_q_0;
-  rz(pi/2) _gate_q_0;
-  rz(0.7216926043020907) _gate_q_1;
+  u3(1.0443373209090354, 2.6794186878074715, 0) _gate_q_1;
 }
 gate dcx _gate_q_0, _gate_q_1 {
   cx _gate_q_0, _gate_q_1;
   cx _gate_q_1, _gate_q_0;
 }
-gate ryy_4564497712(_gate_p_0) _gate_q_0, _gate_q_1 {
-  rx(pi/2) _gate_q_0;
-  rx(pi/2) _gate_q_1;
+gate iswap _gate_q_0, _gate_q_1 {
+  s _gate_q_0;
+  s _gate_q_1;
+  h _gate_q_0;
   cx _gate_q_0, _gate_q_1;
-  rz(4.524546081179745) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  rx(-pi/2) _gate_q_0;
-  rx(-pi/2) _gate_q_1;
+  cx _gate_q_1, _gate_q_0;
+  h _gate_q_1;
 }
-gate cu1_4564495408(_gate_p_0) _gate_q_0, _gate_q_1 {
-  u1(0.1574533680286838) _gate_q_0;
-  cx _gate_q_0, _gate_q_1;
-  u1(-0.1574533680286838) _gate_q_1;
-  cx _gate_q_0, _gate_q_1;
-  u1(0.1574533680286838) _gate_q_1;
+gate rccx _gate_q_0, _gate_q_1, _gate_q_2 {
+  u2(0, pi) _gate_q_2;
+  u1(pi/4) _gate_q_2;
+  cx _gate_q_1, _gate_q_2;
+  u1(-pi/4) _gate_q_2;
+  cx _gate_q_0, _gate_q_2;
+  u1(pi/4) _gate_q_2;
+  cx _gate_q_1, _gate_q_2;
+  u1(-pi/4) _gate_q_2;
+  u2(0, pi) _gate_q_2;
 }
-gate r_4564496752(_gate_p_0, _gate_p_1) _gate_q_0 {
-  u3(4.140854727766151, 4.112733174991313, -4.112733174991313) _gate_q_0;
+gate rzx_4540422080(_gate_p_0) _gate_q_0, _gate_q_1 {
+  h _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  rz(2.200584472114572) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  h _gate_q_1;
+}
+gate r_4540418720(_gate_p_0, _gate_p_1) _gate_q_0 {
+  u3(3.9998343335070636, 2.8280470348958042, -2.8280470348958042) _gate_q_0;
+}
+gate cu1_4510278928(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+}
+gate cu1_4510279168(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(-pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+}
+gate cu1_4489280976(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+}
+gate cu1_4510419856(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(-pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+}
+gate cu1_4510420000(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+}
+gate cu1_4510420096(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(-pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+}
+gate cu1_4510420192(_gate_p_0) _gate_q_0, _gate_q_1 {
+  u1(pi/16) _gate_q_0;
+  cx _gate_q_0, _gate_q_1;
+  u1(-pi/16) _gate_q_1;
+  cx _gate_q_0, _gate_q_1;
+  u1(pi/16) _gate_q_1;
+}
+gate c3sx _gate_q_0, _gate_q_1, _gate_q_2, _gate_q_3 {
+  h _gate_q_3;
+  cu1_4510278928(pi/8) _gate_q_0, _gate_q_3;
+  h _gate_q_3;
+  cx _gate_q_0, _gate_q_1;
+  h _gate_q_3;
+  cu1_4510279168(-pi/8) _gate_q_1, _gate_q_3;
+  h _gate_q_3;
+  cx _gate_q_0, _gate_q_1;
+  h _gate_q_3;
+  cu1_4489280976(pi/8) _gate_q_1, _gate_q_3;
+  h _gate_q_3;
+  cx _gate_q_1, _gate_q_2;
+  h _gate_q_3;
+  cu1_4510419856(-pi/8) _gate_q_2, _gate_q_3;
+  h _gate_q_3;
+  cx _gate_q_0, _gate_q_2;
+  h _gate_q_3;
+  cu1_4510420000(pi/8) _gate_q_2, _gate_q_3;
+  h _gate_q_3;
+  cx _gate_q_1, _gate_q_2;
+  h _gate_q_3;
+  cu1_4510420096(-pi/8) _gate_q_2, _gate_q_3;
+  h _gate_q_3;
+  cx _gate_q_0, _gate_q_2;
+  h _gate_q_3;
+  cu1_4510420192(pi/8) _gate_q_2, _gate_q_3;
+  h _gate_q_3;
+}
+gate ccz _gate_q_0, _gate_q_1, _gate_q_2 {
+  h _gate_q_2;
+  ccx _gate_q_0, _gate_q_1, _gate_q_2;
+  h _gate_q_2;
+}
+gate xx_plus_yy_4540418576(_gate_p_0, _gate_p_1) _gate_q_0, _gate_q_1 {
+  rz(0.009836230563337484) _gate_q_0;
+  rz(-pi/2) _gate_q_1;
+  sx _gate_q_1;
+  rz(pi/2) _gate_q_1;
+  s _gate_q_0;
+  cx _gate_q_1, _gate_q_0;
+  ry(-0.8089169684044876) _gate_q_1;
+  ry(-0.8089169684044876) _gate_q_0;
+  cx _gate_q_1, _gate_q_0;
+  sdg _gate_q_0;
+  rz(-pi/2) _gate_q_1;
+  sxdg _gate_q_1;
+  rz(pi/2) _gate_q_1;
+  rz(-0.009836230563337484) _gate_q_0;
+}
+gate r_4540417280(_gate_p_0, _gate_p_1) _gate_q_0 {
+  u3(0.8277122675090758, 1.2080618344090381, -1.2080618344090381) _gate_q_0;
 }
 qubit[7] q;
-ryy_4564496992(1.2530871902620113) q[5], q[4];
-rccx q[0], q[1], q[6];
-x q[3];
-sxdg q[2];
-sdg q[1];
-u2(1.2723100951081494, 5.142422767009706) q[4];
-ccz q[5], q[0], q[2];
-csdg q[3], q[6];
-cry(3.9904875483260867) q[5], q[1];
-ch q[3], q[4];
-cu1_4564497184(0.9264930020884939) q[0], q[2];
-z q[6];
-rz(2.623993708744345) q[0];
-cy q[3], q[5];
-csx q[4], q[2];
-cx q[1], q[6];
-rcccx q[3], q[6], q[2], q[5];
-rzz_4564495840(1.6120902733834466) q[1], q[4];
-U(3.005105545260571, 3.9532624110303165, 3.8407496369874927) q[0];
-rx(4.312367571566898) q[5];
-csdg q[3], q[1];
-cry(4.126162440630374) q[4], q[0];
-rz(0.7335872896438707) q[6];
-sx q[2];
-cu(2.860878658708051, 1.9219626000823529, 2.8532381493553958, 2.1698871061115854) q[2], q[0];
-sxdg q[4];
-xx_minus_yy_4564497952(2.3915393692983637, 0.7216926043020907) q[1], q[5];
-dcx q[6], q[3];
-csdg q[1], q[3];
-ryy_4564497712(4.524546081179745) q[0], q[6];
-cu1_4564495408(0.3149067360573676) q[5], q[4];
-sxdg q[2];
-u3(0.6245069386275934, 5.46223797480515, 2.828806242292452) q[5];
-cu(6.105501575183939, 5.959903658418842, 1.2446666372038353, 1.3602658836437964) q[3], q[0];
-h q[2];
-ccx q[1], q[4], q[6];
-cu(3.866330562948339, 0.7385739469327519, 0.4306241872762449, 4.985417858203194) q[4], q[1];
-id q[6];
-cry(0.33497126500216473) q[0], q[5];
 id q[2];
-r_4564496752(4.140854727766151, 5.68352950178621) q[3];
+rcccx q[1], q[0], q[6], q[4];
+p(3.839645538295714) q[3];
+sxdg q[5];
+sxdg q[2];
+cu3_4540421312(2.088674641818071, 2.6794186878074715, 4.106834880793841) q[5], q[4];
+dcx q[6], q[0];
+u1(4.301209474088477) q[3];
+x q[1];
+iswap q[3], q[0];
+crx(5.678544190772014) q[4], q[5];
+x q[1];
+u3(0.5077584537584937, 1.5639598370869987, 5.9994240823140785) q[6];
+rx(6.2724320819238155) q[2];
+rccx q[6], q[5], q[0];
+rzx_4540422080(2.200584472114572) q[1], q[4];
+sx q[3];
+r_4540418720(3.9998343335070636, 4.398843361690701) q[2];
+c3sx q[2], q[1], q[4], q[5];
+tdg q[6];
+sdg q[3];
+sdg q[0];
+cy q[2], q[4];
+t q[6];
+rx(0.6670122225767349) q[5];
+id q[3];
+sx q[1];
+s q[0];
+ccz q[5], q[2], q[4];
+crz(3.128829755638768) q[1], q[6];
+xx_plus_yy_4540418576(1.6178339368089751, 0.009836230563337484) q[0], q[3];
+z q[3];
+c3sx q[5], q[1], q[4], q[2];
+r_4540417280(0.8277122675090758, 2.7788581612039347) q[0];
+rx(3.7377058100140674) q[6];
+swap q[4], q[0];
+ch q[3], q[1];
+dcx q[2], q[5];
+id q[6];
+iswap q[0], q[1];
+cx q[5], q[4];
+cx q[6], q[2];
+s q[3];
