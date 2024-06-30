@@ -175,60 +175,56 @@ Furthermore, the probabilistic nature of quantum measurement means that a single
 Understanding and managing the measurement process is crucial in quantum computing. It affects how quantum algorithms are designed, how results are interpreted, and how quantum error correction is implemented. The interplay between quantum operations and measurement is a fundamental consideration in harnessing the power of quantum computation.
 
 \subsection{Different approaches for quantum circuit simulation}
-There are many different methods to tackle the simulation problem, mainly divided into two categories: state vector propagation and tensor networks.
-The first method is the traditionally used one. It consists in computing the state vector of the circuit and propagating it through the circuit from the start to the end. Although method is functional, it presents severe limitations; mainly using a state vector to represent the circuit means that we need to store it, but the issue is that the vector dimension grows exponentially with respect to the number of circuit lanes. This renders the state vector method computationally infeasible from a spatial point of view for circuits with bigger dimension.
+There are two main methods in quantum simulation: \\
+
+The first one is state vector propagation, which is the traditional approach. It consists in computing the state vector of the circuit and propagating it through the circuit from the start to the end. This methodpresents severe limitations; mainly using a state vector to represent the circuit means that we need to store it, but the issue is that the vector dimension grows exponentially with respect to the number of circuit lanes. This renders the state vector method computationally infeasible from a spatial point of view for circuits with bigger dimension, roughly when the number of qubits exceeds 50.\\
+
 The second method is newer and resorts to decomposing the quantum circuit into its corresponding tensor network representation. From here we can perform mathematical operations to contract the terms and get an equivalent expression of the circuit.
 This method presents multiple great benefits:
 \begin{itemize}
-    \item perform computations on subset of data, can be contained in fpga
-    \item independent operations, can be scheduled in parallel
-    \item decomposing in different operations allows for specific implementations (e.g. different fpga kernels)
+    \item It allows us to perform computations on subset of data, which can be contained on FPGAs.
+    \item There are independent operations that can be scheduled in parallel.
+    \item Decomposing the circuit in simpler operations allows for specific implementations (for instance specific kernels on FPGA).
 \end{itemize}
 
-Quantum circuit simulation is a crucial tool in quantum computing research and development. Two main approaches have emerged to tackle this challenge: state vector propagation and tensor network methods.
+\subsection{Tensor Network Methods}
+A more recent approach involves decomposing the quantum circuit into its corresponding tensor network representation. In this method, quantum gates and initial states are represented as tensors and vectors, respectively. The circuit's structure is mapped to bonds between these tensors, creating a unique tensor network. Contracting this network yields a vector representing the final quantum state, containing amplitudes for the entire Hilbert space.\\
 
-\subsubsection{State Vector Propagation:}
-This traditional method involves computing and propagating the state vector of the circuit from start to finish. While functional, it faces severe limitations, primarily due to the exponential growth of the state vector's dimension with respect to the number of circuit lanes. This exponential scaling renders the state vector method computationally infeasible for larger circuits, especially when the number of qubits exceeds 50.
-
-\subsubsection{Tensor Network Methods:}
-A more recent approach involves decomposing the quantum circuit into its corresponding tensor network representation. This method offers several advantages:
-
-\begin{itemize}
-    \item Subset Computation: It allows for computations on subsets of data, making it feasible for implementation on devices with limited memory, such as FPGAs.
-    \item Parallelization: Independent operations can be scheduled and executed in parallel, enhancing computational efficiency.
-    \item Specialized Implementations: Decomposition into different operations allows for specific implementations, such as different FPGA kernels for various tensor operations.
-\end{itemize}
-
-In the tensor network approach, quantum gates and initial states are represented as tensors and vectors, respectively. The circuit's structure is mapped to bonds between these tensors, creating a unique tensor network. Contracting this network yields a vector representing the final quantum state, containing amplitudes for the entire Hilbert space.
-
-Tensor Network Simulation Categories:
+In particular, there are several approaches to take advantage of tensor networks for simulating quantum circuits. An brief explanation of them is necessary to understand the strenghts and weakness of each, and to understand where we place ourself in relation to them:
 \begin{enumerate}
-    \item Single Amplitude Simulation: Focuses on computing the amplitude of a single bitstring, with maximal restriction on the final state.
-    \item Full State Simulation: Aims to obtain all amplitudes in the entire Hilbert space, with no restrictions on the final state. However, this is feasible only for small qubit numbers due to exponential memory requirements.
-    \item Subspace Simulation: A middle ground approach, partially closing the final state and allowing direct obtainment of amplitudes for an opened Hilbert subspace.
-    \item Sparse-State Simulation: Designed to calculate amplitudes of multiple bitstrings in one tensor network contraction, with specific restrictions on the final state configuration.
+    \item Single Amplitude Simulation: Focuses on computing the amplitude of a single bitstring, with maximal restriction on the final state. Since all the tensors bonds are closed with the final bitstring, the result is directly its amplitude. Advantage of this method is the saving in memory complexity since by closing all tensors we avoid the need for the computation of the entire state vector of the circuit. The drawback is that the tensor constraction need to be repeated for each sampled bitstring. % TODO add image and example
+    \item Full State Simulation: Aims to obtain all amplitudes in the entire Hilbert space, with no restrictions on the final state, by computing the entire state vector of the circuit. While this approach allows to compute the tensor contraction only once, it has the drawback of needing to store the entire state vector, which grows exponentially to the number of qubits of the circuit (for n qubits, the state vector has dimension $2^n$). % TODO add image and example
+    \item Subspace Simulation: A middle ground approach, between single amplitude and full state simulation. It consists in choosing lanes which are not particularly relevant to the final bitstring computation and closing the bonds of the relative tensors, thus reducing the memory footprint while retaining the advantage of the single tensor contraction computation of the full state method. % TODO add image and example
 \end{enumerate}
-
-The choice among these methods depends on the circuit size, available computational resources, and the specific requirements of the simulation task. Tensor network methods, particularly sparse-state simulation, offer a promising approach for simulating larger quantum circuits that are beyond the capabilities of traditional state vector methods.
-
-
+Our approach leans toward full state simulation; this was done because of multiple reasons. First of all, the single amplitude method requires the computation of the tensor contraction each time we need to simulate the circuit, which for large circuits becomes infeasible both computationally and economically. The subspace simulation method is was discarded due to the fact that we are devising a general method to simulate any quantum circuit, so we do not know a-prior what gates should be closed, because it depends on the specific quantum circuit. Because of that we went for the full state simulation approach, because of the following tradeoffs: even though there is the issue of storing the state vector in memory, we are dealing with highly sparse tensors, so although theorically the memory occupancy grows at $2^n$ w.r.t. the number of qubits, usually it will be much lower. Moreover, the modular structure and approach that we devised to tackle the problem (decomposing the circuit in tensors expansions and matrix multiplications) allows us to spread the memory load on multiple units both for storing and for computation (with techniques such as tiling).
 
 \subsection{Tensor Expansion}
-% TODO check, complete and expand
+% TODO add image and example
 Is a mathematical operator through which two tensors originate a third one with rank the product of the rank of the input tensors. There are many algorithms to implement it, such as the Einsum notation, which compresses the indexes, or the kronecker product. We followed the latter, in which every element of the first matrix is multiplied by the entire second matrix and then be appropriately put in the result matrix.
 
 \subsection{Tensor Contraction}
-% TODO check, complete and expand
+% TODO add image and example
 Can be though as a generalization of a matrix multiplication. It can be performed between two tensors with same rank and spanning on exactly the same lanes, with no other quantum gates in between. The resulting tensor has the same dimensions (rank) as the starting tensors and each element can be computed as the traditional dot product between the appropriate row and column of the first and second matrix, respectively.
 
 
 \subsection{Sampling and evaluating quality of obtained sample with LXEB}
-Our work poses as objective the computation of the tensor representing the final and contracted quantum circuit. This allows us to obtain a sample of the output bitstring simply by multiplying it for the input vector. After having computed the output tensor, it is useful to remark for completeness what needs to be done for the verification part of the quantum experiment. Verification is used to evaluate the quality of quantum computations. In particular, in Random Circuit Sampling (RCS) experiments, researchers use the Linear Cross-Entropy Benchmark (LXEB) to quantify the circuit quality. The LXEB serves as a proxy for fidelity in large quantum circuits where direct fidelity calculation is impractical. It compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations.
+A note on circuit verification for completeness:\\
+Our work poses as objective the computation of the tensor representing the final and contracted quantum circuit. This allows us to obtain a sample of the output bitstring simply by multiplying it for the input vector. After having computed the output tensor, and having obtained the bitstring amplitudes (what the researchers call Random Circuit Sampling (RCS) experiments), we can use verification to evaluate the quality of the results. To do this we simply compute the Linear Cross-Entropy Benchmark (LXEB) which compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations. To do this we simply sum the products of the probability of each bitstring in a noise-free circuit pU with the probability in a real one q(x). 
 
-Quantum simulation on classical computers faces significant challenges due to the exponential growth of the quantum state space with the number of qubits. For instance, storing the full quantum state vector becomes infeasible for systems with more than 50 qubits. To address this, tensor network methods have emerged as a powerful tool for simulating quantum circuits. These methods represent quantum gates and states as tensors, mapping the circuit to a network of interconnected tensors. By contracting this network, one can compute amplitudes for specific bitstrings without storing the entire state vector, enabling simulation of larger quantum systems within the limitations of classical hardware.
+\begin{equation}
+    F_l = 2^N \sum_x p_U(x)q(x) - 1 = 2^N E_{x \sim q(x)} p_U(x) - 1
+\end{equation}
+
+Since obtaining all the bistring for computing q(x) is infeasible, we compute the LXEB for a randomically sampled subset of bitstring, with cardinality $m$.
+
+\begin{equation}
+    F_l = 2^N \sum_{i=1}^m p_U(x_i)/m - 1.
+\end{equation}
+
+The obtained $F_l$ is the LXEB score of the circuit, which is usually expressed in percentage.
 
 \subsection{Challenges}
-While tensor network methods offer significant advantages for quantum circuit simulation, they also present several challenges that need to be addressed for effective implementation. The main challenges include:
+While tensor network methods offer significant advantages for quantum circuit simulation, they also present several challenges that need to be addressed for effective implementation, the main ones being:
 \begin{itemize}
     \item Contraction Path Finding: The identification of an optimal contraction path for tensor networks is a complex combinatorial optimization problem. With numerous tensors involving multiple dimensions, finding the most efficient contraction sequence becomes increasingly difficult as the circuit size grows. Recent advancements in path-finding approaches, including graph-partitioning, simulated annealing-like, and architecture-aware methods, have shown promise in improving simulation efficiency for large-scale circuits.
     \item Sparsity: Quantum states in larger circuits often exhibit high sparsity, meaning that many amplitudes are zero or near-zero. Efficiently handling this sparsity in tensor network contractions is crucial for performance optimization and memory management.
@@ -241,7 +237,6 @@ While tensor network methods offer significant advantages for quantum circuit si
 
 Addressing these challenges is crucial for advancing the field of quantum circuit simulation. Ongoing research focuses on developing more efficient contraction algorithms, improving numerical stability, and optimizing implementation for various hardware architectures. These efforts aim to bridge the gap between the theoretical capabilities of tensor network methods and their practical implementation in simulating increasingly complex quantum circuits.
 
-\subsection{all the rest}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 3
 
