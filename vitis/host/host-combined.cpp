@@ -330,7 +330,7 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   t2 = high_resolution_clock::now();
   mm_exe->transfer_time += duration_cast<nanoseconds>(t2 - t1);
 
-  return CooTens{out_r, out_i, out_m, out_size, left.rank + right.rank, left.format};
+  return CooTens{out_r, out_i, out_m, out_size, left.rank, left.format};
 }
 
 int main(int argc, char *argv[]) {
