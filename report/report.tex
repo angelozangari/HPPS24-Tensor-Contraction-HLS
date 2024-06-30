@@ -433,7 +433,7 @@ While the current implementation provides a robust foundation, several areas for
 
 \begin{itemize}
     \item Extending QASM support to full specification compliance
-    \item Optimizing the contraction tree generation algorithm employing advanced graph based techniques \cite{PhysRevE.90.033315}
+    \item Optimizing the contraction tree generation algorithm employing advanced graph based techniques \cite{PhysRevE}
     \item Implementing and optimizing the OpenCL communication layer for FPGA and GPU backends
     \item Exploring advanced scheduling techniques for improved instruction-level parallelism
 \end{itemize}
@@ -509,27 +509,21 @@ The Instruction Set Architecture (ISA) described in table~\ref{tab:isa} is desig
 
 \FloatBarrier
 
-\subsection{Back-End}
-
-% TODO highlight the implementation of the FPGA kernel from scratch
+\subsection{Backend}
 
 % TODO - extensive use of producer-consumer pattern in kernel design
-The FPGA kernel represents the core computational engine of our quantum circuit simulation framework. This section elucidates the architecture, implementation details, and integration of the FPGA kernels, highlighting their role in accelerating tensor network contractions for quantum circuit simulation.
+This section provides an in-depth overview of the FPGA backend, focusing on the architectural design and optimization strategies employed in kernel design. Since the development of both the FPGA kernels has been done from scratch, after months of research and development devoted to the development and optimization of the frontend, the backend currently lacks the same level of maturity and polish. However, being the FPGA backend a crucial component of the toolchain, we focused on delivering a functional prototype that can be further refined and optimized in future iterations.
 
 \subsubsection{Architectural Overview}
-% TODO Describe the FPGA kernel’s architecture and how it accelerates quantum simulations.
 
-% - kernel implemented from scratch
-% - two kernels, one for tensor expansion and one for matrix multiplication
-Our FPGA-based acceleration solution comprises two primary kernels, each tailored for a specific operation in the tensor network contraction process:
+Our FPGA-based acceleration solution comprises two primary kernels, each tailored for a specific mathematical operation described in the ISA previously presented:
 
 \begin{enumerate}
-    \item \textbf{Tensor Expansion Kernel}: Implements the Kronecker product operation.
-    \item \textbf{Matrix Multiplication Kernel}: Performs sparse matrix multiplication for tensor contractions.
+    \item \textbf{Tensor Expansion Kernel}: Implements the Kronecker product operation between two sparse (COO) matrices of variable dimensions, used in tensor expansion operations.
+    \item \textbf{Matrix Multiplication Kernel}: Performs sparse (COO) matrix multiplication for tensor contractions.
 \end{enumerate}
 
-% - both kernels make use of COO sparse matrix representation
-Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, optimizing memory usage and computational efficiency for the typically sparse quantum operators. As show in the (name)\cite{FormatsHwSpMsurvey} paper, the COO format allows for storing a sparse matrix by using for each non-zero value three elements, its row, its column and the value itself. This is particularly important for the FPGA kernels because by storing the element in this format we can have the tensors both in row major and in column major by simply ordering them by the appropriate index (may it be row or column).
+Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, meeting strict memory constraints and ensuring efficient memory access patterns. Choosing the right sparse format is fundamental for a feasible FPGA implementation\cite{FormatsHwSpMsurvey}, as it allows for reduced memory bandwidth requirements and improved computational density, at the cost of dynamic and imperfect loop structures. Choosing COO format allows the kernels to be used transparently with both row-major and column-major matrices, by simply changing the order of the elements in the input stream. The advantages of this approach will be further discussed in the following sections.
 
 \subsubsection{Implementation Details}
 % TODO Provide detailed explanations of the implementation using Vitis HLS. Discuss any optimizations made for performance.
