@@ -156,7 +156,7 @@ The remainder of this report is organized as follows:
 
 \subsection{What is quantum computing}
 Quantum computing represents a revolutionary approach to information processing, fundamentally different from classical computing. It harnesses the principles of quantum mechanics to perform calculations, offering the potential to solve certain problems exponentially faster than traditional computers.
-First of all, we introduce the concept of quantum states, which are complex vectors and in quantum mechanics notation are represented by "kets". 
+First of all, we introduce the concept of quantum states, which are complex vectors and in quantum mechanics notation are represented by "kets".
 \begin{equation}
     \ket{\Psi} = \begin{bmatrix}
         \alpha\\
@@ -164,9 +164,9 @@ First of all, we introduce the concept of quantum states, which are complex vect
     \end{bmatrix},
     \hspace{10 mm} \ket{\Psi} \in \mathbb{H}
 \end{equation}
-At the heart of quantum computing there are quantum bits, or qubits. 
+At the heart of quantum computing there are quantum bits, or qubits.
 The qubit is the basic unit of quantum information; physically it's a two-state quantum-mechanical system, which simply means that it's an entity composed by two quantum states.
-Unlike classical bits that can only be in one of two states (0 or 1), qubits can exist in a superposition of states, effectively encoding multiple classical states simultaneously. The superposition property allows quantum computers to process vast amounts of information in parallel. To achieve superposition the quantum states must form an orthonormal basis, or equivalently, they need to be able to span the entire two-dimensional Hilbert space of the qubit. For example, we can consider the orthonormal "kets" $\ket{0}$, $\ket{1}$; the superposition is mathematically described by a linear combination: 
+Unlike classical bits that can only be in one of two states (0 or 1), qubits can exist in a superposition of states, effectively encoding multiple classical states simultaneously. The superposition property allows quantum computers to process vast amounts of information in parallel. To achieve superposition the quantum states must form an orthonormal basis, or equivalently, they need to be able to span the entire two-dimensional Hilbert space of the qubit. For example, we can consider the orthonormal "kets" $\ket{0}$, $\ket{1}$; the superposition is mathematically described by a linear combination:
 \begin{equation}
     \ket{\Psi} = \alpha \ket{0} + \beta \ket{1} = \alpha \begin{bmatrix} 1 \\ 0 \end{bmatrix} + \beta \begin{bmatrix} 0 \\ 1 \end{bmatrix},
     \hspace{10 mm} \alpha, \beta \in \mathbb{C}, \ket{\Psi}, \ket{1}, \ket{0} \in \mathbb{H}
@@ -187,7 +187,7 @@ Quantum circuits, the building blocks of quantum computation, consist of quantum
 \subsection{What is a quantum gate}
 Quantum gates are fundamental components in quantum computing, serving as the building blocks of quantum circuits. These gates are mathematical representations of unitary operations that manipulate quantum states, analogous to logic gates in classical circuits but with significantly different properties and capabilities.
 Unlike classical gates that operate on definite binary states (0 or 1), quantum gates act on qubits, which can exist in superpositions of states. This key difference allows quantum gates to perform complex quantum operations that have no direct classical counterpart.
-Gates are mathematically linear forms, and in quantum mechanic notation are represented by "bras". 
+Gates are mathematically linear forms, and in quantum mechanic notation are represented by "bras".
 \begin{equation}
     \bra{f} , \hspace{10 mm} f: V \rightarrow \mathbb{C}
 \end{equation}
@@ -635,34 +635,93 @@ By continuing to refine and optimize our FPGA kernel implementations, we aim to 
 
 \subsection{Setup}
 % what was run and on which architecture (to allow others to replicate results)
-- tests in local:
-	- clone repo
-	- install cmake, just and other requirements
-	- ... run tests, look at justfile or type just into terminal
-- vitis hls
-	- which version
-	- ...
-- vivado/opencl
-	- version
-	- parameters to compile kernel (clock frequency, board - alveo u55c, ...)
-	- ...
+% - tests in local:
+% 	- clone repo
+% 	- install cmake, just and other requirements
+% 	- ... run tests, look at justfile or type just into terminal
+% - vitis hls
+% 	- which version
+% 	- ...
+% - vivado/opencl
+% 	- version
+% 	- parameters to compile kernel (clock frequency, board - alveo u55c, ...)
+% 	- ...
+% - Describe the experimental setup:
+% - Hardware specifications (CPU, FPGA model)
+% - Software versions (Vitis HLS, Vivado/OpenCL)
+% - Compilation parameters (clock frequency, target board - Alveo U55C)
+% - Instructions for reproducing the setup (cloning repo, installing dependencies)
 
 \subsection{Results and comparisons}
 
-% FIXME change name
-\subsubsection{Single times}
-\subsubsection{Total time end to end}
-	- only cpu
-	- only fpga
+\section{Results}
 
-Notes:
-	- highlight kernels are proof of concepts
-	- add and highlight isa
-	(I THINK IT CAN BE VERY IMPORTANT) highlight situations in which engineering tradeoff had to be made, what was the domain, the requirements, the final decision and the considerations that lead to it.
+\subsection{Analysis of Tensor Network Contractions Effectiveness}
 
+Our analysis focused on three key measurements: contraction time, execution time, and time gained through optimization techniques. To better showcase how the tensor network contractions approach outperform the normal execution. We examined these metrics across different circuit depths and qubit counts (5, 6, and 7 qubits).
 
+This benchmark has been conducted on a local machine with an Intel Core i5-14600k CPU (single-thread), testing randomly generated circuits with varying depths and qubit counts (using the Qiskit library). Depth has been varied from 50 to 500 (incrementing by 10 each time), while qubit count has been set to 5, 6, and 7.
 
+\subsubsection{Contraction Time vs Circuit Depth}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{depth_vs_contraction_time.png}
+    \caption{Contraction time vs circuit depth}
+    \label{fig:contraction_time}
+\end{figure}
+
+For all qubit counts (5, 6, and 7), contraction time increases linearly with circuit depth and the rate of increase is higher for larger qubit counts, reasonably due to the higher number of tensor contractions required and dimensionality explosion. Still a linear relationship is maintained, allowing for predictable scaling of computational resources.
+
+\subsubsection{Execution Time vs Circuit Depth}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{depth_vs_execution_time.png}
+    \caption{Execution time vs circuit depth}
+    \label{fig:execution_time}
+\end{figure}
+
+Execution time also increases linearly with circuit depth, but at a higher rate compared to contraction time. This is expected, as the execution time includes additional operations beyond tensor contractions, such as matrix multiplications and tensor expansions. The gap between contraction time and execution time widens as circuit depth increases, highlighting how the contraction-based optimization technique outperforms the normal execution method.
+
+\subsubsection{Time Gained vs Circuit Depth}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{depth_vs_time_gained.png}
+    \caption{Time gained vs circuit depth}
+    \label{fig:time_gained}
+\end{figure}
+
+The time gained through the contraction method compared to the normal method is most pronounced for 7-qubit circuits, with substantial increases observed as circuit depth increases. While the overhead cost for lower qubit counts (5 and 6) is minimal, but present, the benefits of the contraction method become more evident for larger quantum systems. The time gained rises rapidly up to a circuit depth of about 350, after which it plateaus at around 6 seconds. This plateau suggests an upper limit to the optimization benefits for very deep circuits, indicating that the contraction method may reach a point of diminishing returns for extremely complex quantum systems.
+
+\subsection{Key Findings}
+
+\begin{enumerate}
+    \item \textbf{Scalability}: The contraction method's efficiency becomes more pronounced as the number of qubits increases, showing particular promise for larger quantum circuits.
+    \item \textbf{Performance Improvement}: The contraction method consistently outperforms the normal method, with the most significant gains observed in 7-qubit circuits, the highest count tested.
+    \item \textbf{Optimization Effectiveness}: The time gained through the contraction method is most substantial for 7-qubit circuits, suggesting that this optimization technique becomes increasingly valuable for more complex quantum systems.
+    \item \textbf{Linear Growth}: Contraction time exhibits a linear relationship with circuit depth, allowing for predictable scaling of computational resources.
+    \item \textbf{Diminishing Returns}: For 7-qubit circuits, the time gained plateaus at higher circuit depths, indicating a potential upper limit to the optimization benefits for very deep circuits. A further investigation would be beneficial to determine the exact point at which diminishing returns occur, or the reasons behind this behavior.
+\end{enumerate}
+
+These results demonstrate the effectiveness of our contraction-based optimization technique, particularly for quantum circuits with higher qubit counts and moderate to high circuit depths. The findings suggest that this approach could be instrumental in improving the efficiency of quantum circuit simulations, especially as we move towards more complex quantum systems.
+
+\subsection{Analysis on FPGA Acceleration}
+
+While our project aimed to leverage Field-Programmable Gate Array (FPGA) technology for quantum circuit simulation acceleration, we encountered significant challenges in the implementation phase.
+
+We believe that the difficulties encountered in the FPGA acceleration phase were mainly due to the complexity of the custom-built kernels and the transition from software emulation to physical FPGA execution. Despite these challenges, we were able to achieve some initial success in running trivial test cases on the FPGA board, providing validation of our basic FPGA integration. However, the full kernels encountered persistent issues with kernel execution, leading to unresponsive or "stuck" kernels during execution. This issue likely arose from the complexity of our custom-built kernels and the challenges of FPGA development and debugging.
+
+This experience has highlighted several important considerations for future work in FPGA-accelerated quantum simulation:
+
+\begin{itemize}
+    \item The transition from software emulation to physical FPGA execution can present unexpected challenges, particularly for complex, custom-built kernels.
+    \item While FPGAs offer significant potential for acceleration, the development and debugging process for FPGA-based solutions can be more time-consuming and complex than traditional software approaches.
+    \item Future efforts should allocate additional time and resources for on-board testing and debugging, potentially incorporating incremental development approaches to identify and resolve issues earlier in the process.
+\end{itemize}
+
+Despite not achieving our full objectives for FPGA acceleration, the knowledge gained from this effort provides valuable insights for future work in this area. The successful software emulation results suggest that the potential for FPGA acceleration in quantum circuit simulation remains promising, warranting further investigation and refinement of our approach.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% REFERENCES
 
@@ -672,9 +731,9 @@ Notes:
 \section{Appendices}
 An explanation of some technical terms used in the report.
 \begin{itemize}
-    \item lane : mark that graphically denotes the direction of propagation of a qubit in a quantum circuit.
-    \item Hilbert space : is a vector space with inner product, necessary for the quantum operations to work.
-    \item state vector : in a quantum circuit, the vector representing the entire Hilbert space, it has cardinality $2^n$, with n number of qubits.
+    \item \textit{lane} : mark that graphically denotes the direction of propagation of a qubit in a quantum circuit.
+    \item \textit{Hilbert space} : is a vector space with inner product, necessary for the quantum operations to work.
+    \item \textit{state vector} : in a quantum circuit, the vector representing the entire Hilbert space, it has cardinality $2^n$, with n number of qubits.
 \end{itemize}
 
 \end{document}
