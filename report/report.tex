@@ -539,7 +539,7 @@ The Tensor Expansion kernel implements the Kronecker product of two arbitrarily 
 
 The Matrix Multiplication kernel performs the multiplication of two sparse matrices in COO format, this operation has to be interpreted as the equivalent gate from two gate in series. To efficiently operate on a stream of COO elements, the kernel is designed to accept left input elements by rows and right input elements by columns. This design choice ensures that the kernel can handle both row-major and column-major matrices transparently (by swapping the input order).
 
-A notable aspects of the Matrix Multiplication kernel is the implementation of a packet-based approach to efficiently handle sparse matrix multiplication. The kernel allows to change the packet size according to needs (with the preprocessor directive PACKET\_SIZE).
+A notable aspects of the Matrix Multiplication kernel is the implementation of a packet-based approach to efficiently handle sparse matrix multiplication. The kernel allows to change the packet size according to needs (with the preprocessor directive \texttt{PACKET\_SIZE}).
 
 % FIXME what do you mean by: " Optimization for the inherently imperfect loop structures resulting from the sparse COO format. " ?
 
