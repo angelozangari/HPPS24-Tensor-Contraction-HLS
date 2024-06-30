@@ -521,43 +521,38 @@ Our FPGA-based acceleration solution comprises two primary kernels, each tailore
 Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, meeting strict memory constraints and ensuring efficient memory access patterns. Choosing the right sparse format is fundamental for a feasible FPGA implementation\cite{FormatsHwSpMsurvey}, as it allows for reduced memory bandwidth requirements and improved computational density, at the cost of dynamic and imperfect loop structures. Choosing COO format allows the kernels to be used transparently with both row-major and column-major matrices, by simply changing the order of the elements in the input stream. The advantages of this approach will be further discussed in the following sections.
 
 \subsubsection{Implementation Details}
-% TODO Provide detailed explanations of the implementation using Vitis HLS. Discuss any optimizations made for performance.
 
-% - no external libraries used, only Vitis HLS includes
-% - use of vitis as the main tool for kernel development
-The kernels have been implemented from scratch using Vitis High-Level Synthesis (HLS), without relying on external libraries beyond the standard Vitis HLS includes. This approach allows for fine-grained control over the hardware implementation and optimization strategies.
+The kernels have been implemented \textit{ex novo} using Vitis High-Level Synthesis (HLS), without relying on external libraries beyond the standard Vitis HLS includes. This approach brought several challenges, the strict hardware constraints made the design process more complex, and different trade-offs had to be considered, but it also allowed for a more tailored and optimized implementation.
 
 \subsubsection{Tensor Expansion Kernel}
 
-The Tensor Expansion kernel implements the Kronecker product of two arbitrarily large matrices. This operation is fundamental to the tensor product operations in quantum circuit simulation.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.9\textwidth]{parallel_gates.png}
+    \caption{Tensor Expansion operation on Quantum Qubits}
+    \label{fig:tensor-expansion}
+\end{figure}
 
-Key features of the Tensor Expansion kernel include:
-
-% - tensor expansion kernel
-% 	- kronecker product of an arbitrary large matrix with another large arbitrary matrix
-% 	- employed for the tensor product operation in the tensor network contraction
-%   - use of a customized binary data format to read operations from a file and feed them to the kernel
-\begin{itemize}
-    \item Support for arbitrary matrix dimensions, accommodating various quantum gate configurations.
-    \item Efficient handling of sparse matrices in COO format, minimizing memory bandwidth requirements.
-    \item Utilization of the dataflow pragma for enhanced pipelining and parallelism.
-\end{itemize}
+The Tensor Expansion kernel implements the Kronecker product of two arbitrarily large matrices (obviously bounded by DRAM constraints). This operation is applied on parallel gates (that is gates that act on different qubits) in the quantum circuit, and it is required to elevate the rank of a gate (increasing its dimensions) to match the rank of the gate it has to be contracted with, while preserving the quantum semantics of the circuit.
 
 \subsubsection{Matrix Multiplication Kernel}
 
-The Matrix Multiplication kernel performs the multiplication of two sparse matrices in COO format, which is essential for tensor contraction operations in the quantum circuit simulation process. In particular, we leverage the usage of the matrix transposition to make sure that both the tensors are fed to the kernel in the correct order, in particular the left tensor is fed by rows while the right tensor is fed by columns.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.7\textwidth]{serial_gates.png}
+    \caption{Matrix Multiplication operation on Quantum Qubits}
+    \label{fig:matrix-multiplication}
+\end{figure}
+
+The Matrix Multiplication kernel performs the multiplication of two sparse matrices in COO format, this operation has to be interpreted as the equivalent gate from two gate in series. To efficiently operate on a stream of COO elements, the kernel is designed to accept left input elements by rows and right input elements by columns. This design choice ensures that the kernel can handle both row-major and column-major matrices transparently (by swapping the input order).
 
 Notable aspects of the Matrix Multiplication kernel include:
 
-% - matrix multiplication kernel
-% 	- multiplication of two sparse matrices in COO format
-% 	- employed for the tensor contraction operation in the tensor network contraction
-%   - use of packet based approach to handle the sparse matrix multiplication
 \begin{itemize}
-    \item Implementation of a packet-based approach to efficiently handle sparse matrix multiplication. In particular, the kernel allows for read packets of non-zero values specified by the preprocessor directive PACKET_SIZE.
+    \item Implementation of a packet-based approach to efficiently handle sparse matrix multiplication. In particular, the kernel allows for read packets of non-zero values specified by the preprocessor directive PACKET\_SIZE.
     % imperfect loop due to the nature of the problem (employing COO format)
     \item Optimization for the inherently imperfect loop structures resulting from the COO format. This is because the storage method of the matrix guarantees that multiplication for zero values are avoided, so we just need to check the indexes on the non zero ones (all the ones present in the coo stream) and appropriately update the accumulator for each element of the output tensor.
-    \item Extensive use of the producer-consumer pattern to enhance data flow and reduce latency. This is done to maximize the efficiency of the dataflow pattern which feeds data to the fpga, it get quantised and used to compute the result. In particular, there is a double producer-consumer pattern; this is due to the fact that we perform the computation of the results in row major, and thus to guarantee an in-order result stream, we need to consume and temporarily store each row of the left tensor, while it gets multiplied by the entire right tensor. Likewise, we need to consume and produce the entire B tensor for each row that multiplies it.
+    \item Extensive use of the producer-consumer pattern to enhance data flow and reduce latency. This is done to maximize the efficiency of the dataflow pattern which feeds data to the fpga, it get quantized and used to compute the result. In particular, there is a double producer-consumer pattern; this is due to the fact that we perform the computation of the results in row major, and thus to guarantee an in-order result stream, we need to consume and temporarily store each row of the left tensor, while it gets multiplied by the entire right tensor. Likewise, we need to consume and produce the entire B tensor for each row that multiplies it.
 \end{itemize}
 
 \subsubsection{Optimization Strategies}
@@ -565,71 +560,28 @@ Notable aspects of the Matrix Multiplication kernel include:
 Several optimization techniques have been employed to maximize the performance of our FPGA kernels:
 
 \begin{enumerate}
-    \item \textbf{Dataflow Optimization}: Extensive use of the dataflow pragma enables pipelining and parallelism, significantly improving throughput.
-
-    \item \textbf{Memory Access Optimization}: The COO sparse matrix format reduces memory bandwidth requirements, crucial for handling large quantum circuits.
-
-    \item \textbf{Packet-Based Processing}: Implemented in the Matrix Multiplication kernel to efficiently handle sparse data structures and improve computational density.
-
-    \item \textbf{Producer-Consumer Pattern}: This design pattern enhances data flow between different stages of the computation, reducing overall latency.
+    \item \textbf{Dataflow Optimization}: Both the kernels have been defined as dataflow kernels, as suggested by the HLS best practices. This allows for a more efficient use of the FPGA resources and a better exploitation of the parallelism available in the problem.
+    \item \textbf{Producer-Consumer Pattern}: HLS streams have been used extensively in the kernels, producer-consumer pattern is at the core of the implementation, enabling correct pipelining of the inner loop, our primary concern.
+    \item \textbf{Packet-Based Processing}: Employed in the Matrix Multiplication kernel to operate on fixed-size packets of non-zero elements, paving the way to efficient sparse matrix multiplication of arbitrary dimensions without incurring significant memory overhead.
+    \item \textbf{Memory constraint awareness}: Exclusive use of sparse matrix formats is a key requirement in this field, since few qubits more can be exponentially penalizing in terms of memory requirements.
 \end{enumerate}
 
 \subsubsection{Integration and Data Flow}
-% Explain how the kernel integrates with the host side via OpenCL. Include diagrams and flowcharts to illustrate the process.
-% - use of OpenCL for communication between the host and the FPGA
-The integration of the FPGA kernels with the host side is facilitated through OpenCL, enabling efficient communication and data transfer between the host CPU and the FPGA device.
 
-% \begin{figure}[h]
-%     \centering
-%     % Replace with actual path to your diagram
-%     \includegraphics[width=0.8\textwidth]{path_to_your_diagram}
-%     \caption{Data flow between Host and FPGA Kernels}
-%     \label{fig:dataflow}
-% \end{figure}
-
-% - use of dataflow pragma for pipelining and parallelism
-The data flow process can be summarized as follows:
-
-\begin{enumerate}
-    \item The host prepares input data in a custom binary format, encoding the operations to be performed.
-    \item This data is transferred to the FPGA device memory via OpenCL.
-    \item The appropriate kernel (Tensor Expansion or Matrix Multiplication) is invoked to process the data.
-    \item Results are transferred back to the host for further processing or final output.
-\end{enumerate}
-
-\subsubsection{Code Example: Tensor Expansion Kernel}
-% Include HLS code snippets and explain their functionality.
-
-To illustrate the implementation details, consider the following simplified code snippet from the Tensor Expansion kernel:
-
-This snippet demonstrates the use of HLS pragmas for interface specification and dataflow optimization, as well as the division of the kernel into separate read and compute stages for improved pipeline efficiency.
-
-\subsubsection{Performance Considerations}
-
-The performance of our FPGA-based solution is influenced by several factors:
-
-\begin{itemize}
-    \item \textbf{Memory Bandwidth}: The efficiency of data transfer between off-chip memory and on-chip processing elements.
-    \item \textbf{Computational Density}: The ratio of compute operations to memory operations, which is optimized through our packet-based approach.
-    \item \textbf{Parallelism}: The degree of concurrent execution achieved through our dataflow design and kernel architecture.
-    \item \textbf{Precision}: The use of fixed-point arithmetic (\texttt{ap\_fixed<16,8>}) balances computational accuracy with hardware resource utilization.
-\end{itemize}
+The integration of the FPGA kernels with the host side is facilitated through OpenCL, enabling seamless data transfer and kernel invocation. At the moment the communication with OpenCL can be performed by leveraging a different executable that reads the QCF file and sends the instructions to the FPGA, but the plan is to integrate the communication layer directly into the frontend, to allow for dynamic scheduling and workload distribution.
 
 \subsubsection{Future Work and Optimizations}
 
-While the current implementation provides a solid foundation for FPGA-accelerated quantum circuit simulation, several areas for future enhancement have been identified:
+While the current implementation provides a valid starting point, several areas for future improvement have been identified:
 
 \begin{enumerate}
     \item Implementation of multiple Processing Elements (PEs) for the sparse matrix multiplication kernel to further increase parallelism.
     \item Exploration of dynamic indexing schemes for the Tensor Expansion kernel to improve flexibility and efficiency for varying input sizes.
-    \item Investigation of mixed-precision arithmetic to optimize the trade-off between accuracy and performance.
+    \item Investigation of fixed-precision arithmetic to optimize the trade-off between accuracy and performance.
     \item Development of a more sophisticated OpenCL-based communication layer to enable dynamic scheduling and workload distribution between the host and FPGA.
 \end{enumerate}
 
-By continuing to refine and optimize our FPGA kernel implementations, we aim to push the boundaries of what's possible in hardware-accelerated quantum circuit simulation, providing a powerful tool for researchers and practitioners in the field of quantum computing.
-
-
-
+By continuing to refine and optimize our FPGA kernel implementations, we aim to deliver a high-performance and scalable solution that can compete with current state-of-the-art quantum circuit simulation GPU implementations, highlighting the unique advantages of FPGA acceleration in this domain.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION 4
 
