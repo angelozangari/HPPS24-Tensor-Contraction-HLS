@@ -9,6 +9,7 @@
 \usepackage{hyperref}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{listings}
 \usepackage[section]{placeins}
 \lstdefinestyle{qasm}{
@@ -184,10 +185,35 @@ A more recent approach involves decomposing the quantum circuit into its corresp
 
 In particular, there are several approaches to take advantage of tensor networks for simulating quantum circuits. An brief explanation of them is necessary to understand the strenghts and weakness of each, and to understand where we place ourself in relation to them:
 \begin{enumerate}
-    \item Single Amplitude Simulation: Focuses on computing the amplitude of a single bitstring, with maximal restriction on the final state. Since all the tensors bonds are closed with the final bitstring, the result is directly its amplitude. Advantage of this method is the saving in memory complexity since by closing all tensors we avoid the need for the computation of the entire state vector of the circuit. The drawback is that the tensor constraction need to be repeated for each sampled bitstring. % TODO add image and example
-    \item Full State Simulation: Aims to obtain all amplitudes in the entire Hilbert space, with no restrictions on the final state, by computing the entire state vector of the circuit. While this approach allows to compute the tensor contraction only once, it has the drawback of needing to store the entire state vector, which grows exponentially to the number of qubits of the circuit (for n qubits, the state vector has dimension $2^n$). % TODO add image and example
-    \item Subspace Simulation: A middle ground approach, between single amplitude and full state simulation. It consists in choosing lanes which are not particularly relevant to the final bitstring computation and closing the bonds of the relative tensors, thus reducing the memory footprint while retaining the advantage of the single tensor contraction computation of the full state method. % TODO add image and example
+    \item Single Amplitude Simulation: Focuses on computing the amplitude of a single bitstring, with maximal restriction on the final state. Since all the tensors bonds are closed with the final bitstring, the result is directly its amplitude. Advantage of this method is the saving in memory complexity since by closing all tensors we avoid the need for the computation of the entire state vector of the circuit. The drawback is that the tensor constraction need to be repeated for each sampled bitstring.
+    \item Full State Simulation: Aims to obtain all amplitudes in the entire Hilbert space, with no restrictions on the final state, by computing the entire state vector of the circuit. While this approach allows to compute the tensor contraction only once, it has the drawback of needing to store the entire state vector, which grows exponentially to the number of qubits of the circuit (for n qubits, the state vector has dimension $2^n$).
+    \item Subspace Simulation: A middle ground approach, between single amplitude and full state simulation. It consists in choosing lanes which are not particularly relevant to the final bitstring computation and closing the bonds of the relative tensors, thus reducing the memory footprint while retaining the advantage of the single tensor contraction computation of the full state method.
 \end{enumerate}
+
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+    \includegraphics[width=\textwidth]{tn_single_amplitude.png}
+    \caption{Single Amplitude\footnotemark[1]}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+    \includegraphics[width=\textwidth]{tn_subspace.png}
+    \caption{Subspace\footnotemark[3]}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+    \includegraphics[width=\textwidth]{tn_full_state.png}
+    \caption{Full State\footnotemark[2]}
+    \end{subfigure}
+    \caption{Tensor Network Simulation Approaches}
+\end{figure}
+\footnotetext[1]{Single amplitude simulation example}
+\footnotetext[2]{Full state simulation example}
+\footnotetext[3]{Subspace simulation example}
+
 Our approach leans toward full state simulation; this was done because of multiple reasons. First of all, the single amplitude method requires the computation of the tensor contraction each time we need to simulate the circuit, which for large circuits becomes infeasible both computationally and economically. The subspace simulation method is was discarded due to the fact that we are devising a general method to simulate any quantum circuit, so we do not know a-prior what gates should be closed, because it depends on the specific quantum circuit. Because of that we went for the full state simulation approach, because of the following tradeoffs: even though there is the issue of storing the state vector in memory, we are dealing with highly sparse tensors, so although theorically the memory occupancy grows at $2^n$ w.r.t. the number of qubits, usually it will be much lower. Moreover, the modular structure and approach that we devised to tackle the problem (decomposing the circuit in tensors expansions and matrix multiplications) allows us to spread the memory load on multiple units both for storing and for computation (with techniques such as tiling).
 
 \subsection{Tensor Expansion}
