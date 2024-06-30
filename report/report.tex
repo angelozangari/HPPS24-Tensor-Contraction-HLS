@@ -10,6 +10,7 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage[section]{placeins}
 \lstdefinestyle{qasm}{
     belowcaptionskip=1\baselineskip,
     frame=top,frame=bottom,
@@ -424,6 +425,8 @@ Each instruction can be seen as a tensor operation, with the format:
 
 Where \texttt{<ID>} is the instruction identifier, \texttt{<T1>} and \texttt{<T2>} are the tensors involved in the operation, and \texttt{<OP>} is the operation to be performed (e.g., $\otimes$ for tensor expansion and $\odot$ for matrix multiplication). The tensor operands can be identified either directly by matrix dimensions or by the address, if the the operation has a dependency on a previous instruction.
 
+\FloatBarrier
+
 \subsubsection{Future Work and Optimizations}
 
 While the current implementation provides a robust foundation, several areas for future improvement have been identified:
@@ -444,7 +447,7 @@ By continually refining and expanding the frontend's capabilities, we aim to cre
 
 An Operation Plan (OP) can be compiled into a set of instructions described better in the following table:
 
-\begin{table}
+\begin{table}[t]
 	\caption{ISA for computations on the FPGA backend}
 	\centering
 	\resizebox{.7\textwidth}{!}{\begin{tabular}{cccc}
@@ -504,6 +507,8 @@ The Instruction Set Architecture (ISA) described in table~\ref{tab:isa} is desig
     \label{tab:coo-el-fmt}
 \end{table}
 
+\FloatBarrier
+
 \subsection{Back-End}
 
 % TODO highlight the implementation of the FPGA kernel from scratch
@@ -524,7 +529,7 @@ Our FPGA-based acceleration solution comprises two primary kernels, each tailore
 \end{enumerate}
 
 % - both kernels make use of COO sparse matrix representation
-Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, optimizing memory usage and computational efficiency for the typically sparse quantum operators. As show in the (name)\cite{FormatsHwSpMsurvey} paper, the COO format allows for storing a sparse matrix by using for each non-zero value three elements, its row, its column and the value itself. This is particularly important for the FPGA kernels because by storing the element in this format we can have the tensors both in row major and in column major by simply ordering them by the appropriate index (may it be row or column). 
+Both kernels are designed to operate on matrices represented in the Coordinate (COO) sparse format, optimizing memory usage and computational efficiency for the typically sparse quantum operators. As show in the (name)\cite{FormatsHwSpMsurvey} paper, the COO format allows for storing a sparse matrix by using for each non-zero value three elements, its row, its column and the value itself. This is particularly important for the FPGA kernels because by storing the element in this format we can have the tensors both in row major and in column major by simply ordering them by the appropriate index (may it be row or column).
 
 \subsubsection{Implementation Details}
 % TODO Provide detailed explanations of the implementation using Vitis HLS. Discuss any optimizations made for performance.
@@ -572,11 +577,11 @@ Several optimization techniques have been employed to maximize the performance o
 
 \begin{enumerate}
     \item \textbf{Dataflow Optimization}: Extensive use of the dataflow pragma enables pipelining and parallelism, significantly improving throughput.
-    
+
     \item \textbf{Memory Access Optimization}: The COO sparse matrix format reduces memory bandwidth requirements, crucial for handling large quantum circuits.
-    
+
     \item \textbf{Packet-Based Processing}: Implemented in the Matrix Multiplication kernel to efficiently handle sparse data structures and improve computational density.
-    
+
     \item \textbf{Producer-Consumer Pattern}: This design pattern enhances data flow between different stages of the computation, reducing overall latency.
 \end{enumerate}
 
