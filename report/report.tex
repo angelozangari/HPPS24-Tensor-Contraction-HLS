@@ -546,14 +546,9 @@ The Tensor Expansion kernel implements the Kronecker product of two arbitrarily 
 
 The Matrix Multiplication kernel performs the multiplication of two sparse matrices in COO format, this operation has to be interpreted as the equivalent gate from two gate in series. To efficiently operate on a stream of COO elements, the kernel is designed to accept left input elements by rows and right input elements by columns. This design choice ensures that the kernel can handle both row-major and column-major matrices transparently (by swapping the input order).
 
-Notable aspects of the Matrix Multiplication kernel include:
+A notable aspects of the Matrix Multiplication kernel is the implementation of a packet-based approach to efficiently handle sparse matrix multiplication. The kernel allows to change the packet size according to needs (with the preprocessor directive PACKET\_SIZE).
 
-\begin{itemize}
-    \item Implementation of a packet-based approach to efficiently handle sparse matrix multiplication. In particular, the kernel allows for read packets of non-zero values specified by the preprocessor directive PACKET\_SIZE.
-    % imperfect loop due to the nature of the problem (employing COO format)
-    \item Optimization for the inherently imperfect loop structures resulting from the COO format. This is because the storage method of the matrix guarantees that multiplication for zero values are avoided, so we just need to check the indexes on the non zero ones (all the ones present in the coo stream) and appropriately update the accumulator for each element of the output tensor.
-    \item Extensive use of the producer-consumer pattern to enhance data flow and reduce latency. This is done to maximize the efficiency of the dataflow pattern which feeds data to the fpga, it get quantized and used to compute the result. In particular, there is a double producer-consumer pattern; this is due to the fact that we perform the computation of the results in row major, and thus to guarantee an in-order result stream, we need to consume and temporarily store each row of the left tensor, while it gets multiplied by the entire right tensor. Likewise, we need to consume and produce the entire B tensor for each row that multiplies it.
-\end{itemize}
+% FIXME what do you mean by: " Optimization for the inherently imperfect loop structures resulting from the sparse COO format. " ?
 
 \subsubsection{Optimization Strategies}
 
