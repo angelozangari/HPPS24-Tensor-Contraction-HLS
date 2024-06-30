@@ -26,7 +26,6 @@ int main() {
 
     dim_t N = 1 << left.rank;
     size_t max_out_size = N * N;
-    dim_t real_size;
 
     float tmp_r[max_out_size];
     float tmp_i[max_out_size];
@@ -39,10 +38,17 @@ int main() {
     // Call the kernel
     matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
                           right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                          tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size,
+                          tmp_r, tmp_i, tmp_m, left.size(), right.size(),
                           left_row_format);
 
     // Compare the output
+    size_t real_size = 1;
+    for (size_t i = 0; i < max_out_size; i++) {
+      if (LAST_IN_TENSOR(tmp_m[i])) {
+        break;
+      }
+      real_size++;
+    }
     CooTens predicted_out{tmp_r, tmp_i, tmp_m, real_size, left.rank};
 
     if (real_size != real_out.size()) {
@@ -62,13 +68,12 @@ int main() {
         cout << "FAILED" << endl;
         cout << "Mismatch in data" << endl;
         // print_op_matrices(op);
-        cout << "Predicted output:"
-             << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-             << "i) at (" << X(predicted_out.data_m[i]) << ", "
+        cout << "Predicted output:" << "(" << predicted_out.data_r[i] << " + "
+             << predicted_out.data_i[i] << "i) at (" << X(predicted_out.data_m[i]) << ", "
              << Y(predicted_out.data_m[i]) << ")" << endl;
-        cout << "Real output:"
-             << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-             << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+        cout << "Real output:" << "(" << real_out.data_r[i] << " + " << real_out.data_i[i]
+             << "i) at (" << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")"
+             << endl;
         cout << "Full Real output:" << endl;
         real_out.print();
         cout << "Full Predicted output:" << endl;

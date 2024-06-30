@@ -187,7 +187,6 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   size_t right_coo_meta_bytes = right.size() * sizeof(coo_meta_t);
   size_t max_out_dim = 1 << left.rank;
   size_t max_out_size = max_out_dim * max_out_dim;
-  dim_t real_size;
   size_t out_float_bytes = max_out_size * sizeof(float); //
   size_t out_coo_meta_bytes = max_out_size * sizeof(coo_meta_t);
   flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
@@ -232,7 +231,6 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   OCL_CHECK(err, err = krnl.setArg(narg++, buffer_out_m));
   OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)left.size()));
   OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)right.size()));
-  OCL_CHECK(err, err = krnl.setArg(narg++, real_size));
   OCL_CHECK(err, err = krnl.setArg(narg++, (flag_t)left_row_format));
 
   // We then need to map our OpenCL buffers to get the pointers

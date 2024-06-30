@@ -41,7 +41,6 @@ CooTens compute_te(CooTens &left, CooTens &right, TeExecution *te_exe) {
 CooTens compute_matmul(CooTens &left, CooTens &right, MmExecution *mm_exe) {
   dim_t N = 1 << left.rank;
   size_t max_out_size = N * N;
-  dim_t real_size;
 
   float tmp_r[max_out_size];
   float tmp_i[max_out_size];
@@ -54,8 +53,7 @@ CooTens compute_matmul(CooTens &left, CooTens &right, MmExecution *mm_exe) {
   // Call the kernel
   matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
                         right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                        tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size,
-                        left_row_format);
+                        tmp_r, tmp_i, tmp_m, left.size(), right.size(), left_row_format);
 
   auto t2 = high_resolution_clock::now();
   mm_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
@@ -63,6 +61,14 @@ CooTens compute_matmul(CooTens &left, CooTens &right, MmExecution *mm_exe) {
   mm_exe->left_nz_size = left.size();
   mm_exe->right_nz_size = right.size();
   mm_exe->rank = left.rank;
+
+  dim_t real_size = 1;
+  for (size_t i = 0; i < max_out_size; i++) {
+    if (LAST_IN_TENSOR(tmp_m[i])) {
+      break;
+    }
+    real_size++;
+  }
 
   return CooTens{tmp_r, tmp_i, tmp_m, real_size, left.rank, left.format};
 }

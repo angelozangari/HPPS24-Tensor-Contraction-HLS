@@ -4,7 +4,7 @@
 
 void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi,
                            coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm,
-                           dim_t A_NZ, dim_t B_NZ, dim_t *CD, flag_t left_row_format) {
+                           dim_t A_NZ, dim_t B_NZ, flag_t left_row_format) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=128
 #pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=128
@@ -26,7 +26,6 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
 #pragma HLS INTERFACE s_axilite port=Cm bundle=control
 #pragma HLS INTERFACE s_axilite port=A_NZ bundle=control
 #pragma HLS INTERFACE s_axilite port=B_NZ bundle=control
-#pragma HLS INTERFACE s_axilite port=CD bundle=control
 #pragma HLS INTERFACE s_axilite port=left_row_format bundle=control
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
@@ -54,11 +53,11 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
   Matrix::Multiplication::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
   // Compute matrix multiplication
   Matrix::Multiplication::compute(Ar_stream, Ai_stream, Am_stream, Br_stream, Bi_stream,
-                                  Bm_stream, Cr_stream, Ci_stream, Cm_stream, CD,
+                                  Bm_stream, Cr_stream, Ci_stream, Cm_stream,
                                   left_row_format);
   // Store result
   // FIXME how to pass dimension of c stream
-  Matrix::Multiplication::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, *CD);
+  Matrix::Multiplication::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm);
 }
 
 namespace Matrix {
@@ -79,16 +78,18 @@ LOAD_LOOP:
 }
 
 void store(hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-           hls::stream<coo_meta_t> &Cm_stream, float *Cr, float *Ci, coo_meta_t *Cm,
-           dim_t C_size) {
+           hls::stream<coo_meta_t> &Cm_stream, float *Cr, float *Ci, coo_meta_t *Cm) {
 STORE_LOOP:
-  for (int i = 0; i < C_size; i++) {
+  for (int i = 0;; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
     // clang-format on
     Cr[i] = Cr_stream.read();
     Ci[i] = Ci_stream.read();
     Cm[i] = Cm_stream.read();
+    if (LAST_IN_TENSOR(Cm[i])) {
+      break;
+    }
   }
 }
 
@@ -96,12 +97,10 @@ void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
              hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
              hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
              hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-             hls::stream<coo_meta_t> &Cm_stream, dim_t *CD, flag_t left_row_format) {
+             hls::stream<coo_meta_t> &Cm_stream, flag_t left_row_format) {
 
   hls::stream<float> Ar_stream_buf, Ai_stream_buf;
   hls::stream<coo_meta_t> Am_stream_buf;
-
-  *CD = 0;
 
   float cr, ci;
   coo_meta_t cm;
@@ -225,7 +224,6 @@ LOOP_T:
         Cr_stream.write(old_c_r);
         Ci_stream.write(old_c_i);
         Cm_stream.write(old_c_m);
-        (*CD)++;
       }
       old_c_r = cr;
       old_c_i = ci;
@@ -264,7 +262,6 @@ LOOP_T:
     Cr_stream.write(old_c_r);
     Ci_stream.write(old_c_i);
     Cm_stream.write(old_c_m);
-    (*CD)++;
   }
 
   // FIXME check on all three ?
