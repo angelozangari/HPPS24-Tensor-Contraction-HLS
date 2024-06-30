@@ -4,6 +4,7 @@
 \usepackage{xcolor}
 \usepackage{todonotes}
 \usepackage{amsmath}
+\usepackage{braket}
 \usepackage{multicol}
 \usepackage{caption}
 \usepackage{hyperref}
@@ -155,14 +156,46 @@ The remainder of this report is organized as follows:
 
 \subsection{What is quantum computing}
 Quantum computing represents a revolutionary approach to information processing, fundamentally different from classical computing. It harnesses the principles of quantum mechanics to perform calculations, offering the potential to solve certain problems exponentially faster than traditional computers.
-At the heart of quantum computing are quantum bits, or qubits. Unlike classical bits that can only be in one of two states (0 or 1), qubits can exist in a superposition of states, effectively encoding multiple classical states simultaneously. This unique property allows quantum computers to process vast amounts of information in parallel.
-Quantum circuits, the building blocks of quantum computation, consist of quantum gates that manipulate qubits. These circuits differ significantly from classical circuits, which use high and low voltages to represent binary states. Instead, quantum circuits leverage quantum superposition to encode and process multiple states concurrently.
+First of all, we introduce the concept of quantum states, which are complex vectors and in quantum mechanics notation are represented by "kets". 
+\begin{equation}
+    \ket{\Psi} = \begin{bmatrix}
+        \alpha\\
+        \beta
+    \end{bmatrix},
+    \hspace{10 mm} \ket{\Psi} \in \mathbb{C}
+\end{equation}
+At the heart of quantum computing there are quantum bits, or qubits. 
+The qubit is the basic unit of quantum information; physically it's a two-state quantum-mechanical system, which simply means that it's an entity composed by two quantum states.
+Unlike classical bits that can only be in one of two states (0 or 1), qubits can exist in a superposition of states, effectively encoding multiple classical states simultaneously. The superposition property allows quantum computers to process vast amounts of information in parallel. To achieve superposition the quantum states must form an orthonormal basis, or equivalently, they need to be able to span the entire two-dimensional Hilbert space of the qubit. For example, we can consider the orthonormal "kets" $\ket{0}$, $\ket{1}$; the superposition is mathematically described by a linear combination: 
+\begin{equation}
+    \ket{\Psi} = \alpha \ket{0} + \beta \ket{1} = \alpha \begin{bmatrix} 1 \\ 0 \end{bmatrix} + \beta \begin{bmatrix} 0 \\ 1 \end{bmatrix} \ket{1},
+    \hspace{10 mm} \alpha, \beta, \ket{\Psi}, \ket{1}, \ket{0} \in \mathbb{C}
+\end{equation}
+
+Note that $\alpha$, $\beta$ are the complex probability amplitudes of the qubit.
+
+
+Quantum circuits, the building blocks of quantum computation, consist of quantum gates that manipulate qubits. These circuits differ significantly from classical circuits, which use high and low voltages to represent binary states. Instead, quantum circuits leverage quantum superposition to encode and process multiple states concurrently. In figure 1 we can see a quantum circuit with 5 qubits.
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.7\textwidth}
+    \includegraphics[width=\textwidth]{quantum_circuit.png}
+    \end{subfigure}
+    \caption{An example of quantum circuit}
+\end{figure}
 
 \subsection{What is a quantum gate}
 Quantum gates are fundamental components in quantum computing, serving as the building blocks of quantum circuits. These gates are mathematical representations of unitary operations that manipulate quantum states, analogous to logic gates in classical circuits but with significantly different properties and capabilities.
 Unlike classical gates that operate on definite binary states (0 or 1), quantum gates act on qubits, which can exist in superpositions of states. This key difference allows quantum gates to perform complex quantum operations that have no direct classical counterpart.
+Gates are mathematically linear forms, and in quantum mechanic notation are represented by "bras". 
+\begin{equation}
+    \bra{f} , \hspace{10 mm} f: V \rightarrow \mathbb{C}
+\end{equation}
+Gates can be applied to qubits using the braket notation, and the result is a complex number:
+\begin{equation}
+    \braket{f|v} \in \mathbb{C}
+\end{equation}
 The unitary nature of quantum gates ensures that the total probability of all possible outcomes remains conserved, a crucial property in maintaining the integrity of quantum information. These gates enable various transformations of quantum states, including rotations in the complex vector space, phase shifts, and entanglement operations between multiple qubits.
-% TODO add simple drawing + explanation
 Quantum circuits are constructed by combining these quantum gates in specific sequences. While classical circuits use high and low voltages to represent and process binary information, quantum circuits leverage the quantum superposition principle to encode and manipulate multiple states simultaneously. This parallel processing capability is a key factor in the potential computational advantage of quantum systems.
 The implementation of quantum gates allows for the execution of complex quantum algorithms. These algorithms can perform tasks such as quantum Fourier transforms, quantum error correction, and other operations that exploit the unique properties of quantum systems.
 In essence, quantum gates are the operators that drive quantum computation, enabling the manipulation and transformation of quantum information in ways that are fundamentally different from classical information processing. Their ability to act on superpositions and create entanglement is central to the power and promise of quantum computing.
@@ -638,13 +671,15 @@ Notes:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% APPENDICES
 \section{Appendices}
 An explanation of some technical terms used in the report.
-- bitstring : in quantum computing, it refers to
-- gate : in a quantum circuit,
-- lane :
-- sota : state of the art
-- state vector : in a quantum circuit,
-- tensor : math object that
-- tensor expansion : math operation that
-
+\begin{itemize}
+    \item bitstring : in quantum computing, it refers to
+    \item gate : in a quantum circuit,
+    \item lane :
+    \item sota : state of the art
+    \item hilbert space : 
+    \item state vector : in a quantum circuit,
+    \item tensor : math object that
+    \item tensor expansion : math operation that
+\end{itemize}
 
 \end{document}
