@@ -274,8 +274,8 @@ The principal objective of the frontend is to transform a high-level quantum cir
     \item \textbf{Conversion} of the quantum circuit into a \textbf{Tensor Network}, highlighting available tensor contractions
     \item \textbf{Generation} of an optimized contraction tree, packed in a \textbf{Contraction Plan} (\textbf{CP}) structure (for CPU backends, where each contraction can be executed as a single Einsum operation), or an \textbf{Operation Tree} (\textbf{OT}) realized in an \textbf{Operation Plan} (\textbf{OP}) structure (for FPGA backends, where the contraction is split into multiple operations).
     \item \textbf{Compilation} of the generated plan (CP/OP) in a set of instructions with explicit dependencies, based on a backend-specific \textbf{Instruction Set Architecture} (\textbf{ISA}).
-    \item \textbf{Scheduling} of instructions for optimal execution, exploiting independency between leaves of the contraction tree and maximizing instruction-level parallelism.
     \item \textbf{(QCF) Compilation} of the optimized instructions into a lightweight, portable binary format (\textbf{Q}uantum \textbf{C}omputation \textbf{F}ormat), ready for execution on the chosen backend.
+    \item \textbf{Scheduling} of instructions for optimal execution, exploiting independency between leaves of the contraction tree and maximizing instruction-level parallelism.
 \end{enumerate}
 
 \subsubsection{Circuit Parsing and Representation}
@@ -311,24 +311,17 @@ Our custom algorithm for generating the contraction tree is based on a heuristic
 
 Once the contraction tree is constructed, it is encapsulated in a Contraction Plan (CP) structure, which serves as the blueprint for subsequent compilation stages.
 
-\subsubsection{ISA Compilation and Instruction Scheduling}
+In case the backend is an FPGA, the contraction tree is transformed into an Operation Tree (OT) structure, subdividing the contractions into equivalent multiple operations that can be executed on the FPGA. This transformation is necessary to adapt the contraction tree to the specific capabilities and constraints of the FPGA backend. This further step led to a Operation Plan (OP), sharing the same interface as the CP.
 
-The contraction plan is subsequently converted to a set of instructions based on a backend-specific Instruction Set Architecture (ISA). This ISA is composed of two fundamental operations:
+\subsubsection{Compilation and Instruction Scheduling}
 
-\begin{enumerate}
-    \item \textbf{Tensor Expansion (TE):} Implements the Kronecker product to expand tensors for subsequent contractions. This operation is crucial for aligning tensor dimensions prior to multiplication.
-    \item \textbf{Matrix Multiplication (MM):} Performs the actual tensor contraction through optimized matrix multiplication operations.
-\end{enumerate}
-
-Both operations utilize sparse matrix representations in Coordinate (COO) format to optimize computations, particularly for FPGA backends. This format allows for efficient storage and manipulation of the typically sparse quantum operators.
+The generated plan is subsequently converted to a set of instructions based on a backend-specific Instruction Set Architecture (ISA) (see subsection~\ref{subsec:isa}). Then is compiled in a lightweight, portable binary format (QCF), ready for execution on the chosen backend.
 
 A scheduler is employed to optimize the order of instructions in the set derived from the contraction plan, maximizing instruction-level parallelism and minimizing computational overhead. This scheduling process controls the execution flow of the quantum circuit simulation, in a dynamic and adaptive manner by employing a dependency graph constructed from the contraction plan. The scheduler uses and updates this graph to determine the optimal instruction sequence.
 
 \subsubsection{Backend Interface}
 
-The frontend is architected to support multiple computational backends, while currently supporting only the CPU backend, FPGA and GPU backends are complete and lack only the OpenCL communication layer with the frontend.
-
-The final ISA instructions are transmitted to the chosen backend for execution, controlled by the scheduler and optimized for the specific hardware architecture.
+The frontend is architected to support multiple computational backends, while currently supporting a CPU executor and an prototypal FPGA accelerator. The final ISA instructions are transmitted to the chosen backend for execution, controlled by the scheduler and optimized for the specific hardware architecture.
 
 The communication between the Rust-based frontend and the FPGA backend is planned to be implemented using OpenCL Rust bindings. This communication layer is currently under development, while the link between the host and the FPGA is based on a custom binary file format read once and executed in order (without dynamic scheduling).
 
@@ -446,6 +439,70 @@ Potential optimization strategies include the implementation of a hybrid CPU-FPG
 
 By continually refining and expanding the frontend's capabilities, we aim to create a versatile and efficient quantum circuit simulation framework that can leverage various backend architectures and implementations.
 
+\subsection{Instruction Set Architecture (ISA) Design}
+\label{subsec:isa}
+
+An Operation Plan (OP) can be compiled into a set of instructions described better in the following table:
+
+\begin{table}
+	\caption{ISA for computations on the FPGA backend}
+	\centering
+	\resizebox{.7\textwidth}{!}{\begin{tabular}{cccc}
+		\toprule
+		\textbf{Instruction} & \textbf{Opcode} & \textbf{Left Operand} & \textbf{Right Operand}\\
+		\midrule
+		\texttt{TE(MxM)} & \texttt{0x01} & \texttt{CooMatrixFmt} & \texttt{CooMatrixFmt} \\
+        \texttt{TE(MxA)} & \texttt{0x02} & \texttt{CooMatrixFmt} & \texttt{AddressFmt} \\
+        \texttt{TE(AxM)} & \texttt{0x03} & \texttt{AddressFmt} & \texttt{CooMatrixFmt} \\
+        \texttt{TE(AxA)} & \texttt{0x04} & \texttt{AddressFmt} & \texttt{AddressFmt} \\
+        \texttt{MM(MxM)} & \texttt{0x05} & \texttt{CooMatrixFmt} & \texttt{CooMatrixFmt} \\
+        \texttt{MM(MxA)} & \texttt{0x06} & \texttt{CooMatrixFmt} & \texttt{AddressFmt} \\
+        \texttt{MM(AxM)} & \texttt{0x07} & \texttt{AddressFmt} & \texttt{CooMatrixFmt} \\
+        \texttt{MM(AxA)} & \texttt{0x08} & \texttt{AddressFmt} & \texttt{AddressFmt} \\
+		\bottomrule
+	\end{tabular}}
+	\label{tab:isa}
+\end{table}
+
+The Instruction Set Architecture (ISA) described in table~\ref{tab:isa} is designed to support the execution of tensor expansion (\texttt{TE}) and matrix multiplication (\texttt{MM}) operations on the FPGA backend. The ISA defines a set of opcodes that correspond to specific tensor operations, each with distinct operand formats. The operands are represented in custom formats:
+
+\begin{itemize}
+    \item \texttt{CooMatrixFmt}: Represents a matrix in Coordinate (COO) sparse format, containing non-zero values and their corresponding row and column indices. To see the full definition of the format, refer to the table~\ref{tab:coo-matrix-fmt}.
+    \item \texttt{AddressFmt}: Represents the memory address of a matrix in the FPGA memory space, by encoding a single 32-bit address in little-endian format.
+\end{itemize}
+
+\begin{table}
+    \caption{COO Matrix Format}
+    \centering
+    \resizebox{.9\textwidth}{!}{\begin{tabular}{lcc}
+        \toprule
+        \textbf{Value} & \textbf{Format} & \textbf{Amount} \\
+        \midrule
+        number of non zero elements (\texttt{NZ}) & \texttt{uint32\_t} & \texttt{1} \\
+        rank of the tensor & \texttt{uint8\_t} & \texttt{1} \\
+        format (col-major or row-major) & \texttt{uint8\_t} & \texttt{1} \\
+        element value & \texttt{CooElementFmt~\ref{tab:coo-el-fmt}} & \texttt{NZ} \\
+        \bottomrule
+    \end{tabular}}
+    \label{tab:coo-matrix-fmt}
+\end{table}
+
+
+\begin{table}
+    \caption{COO Element Format}
+    \centering
+    \resizebox{.5\textwidth}{!}{\begin{tabular}{lcc}
+        \toprule
+        \textbf{Value} & \textbf{Format} & \textbf{Amount} \\
+        \midrule
+        row index & \texttt{uint32\_t} & \texttt{1} \\
+        column index & \texttt{uint32\_t} & \texttt{1} \\
+        real & \texttt{float} & \texttt{1} \\
+        imaginary & \texttt{float} & \texttt{1} \\
+        \bottomrule
+    \end{tabular}}
+    \label{tab:coo-el-fmt}
+\end{table}
 
 \subsection{Back-End}
 
