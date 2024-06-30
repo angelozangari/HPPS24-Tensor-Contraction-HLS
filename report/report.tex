@@ -69,21 +69,15 @@
     \maketitle
 	\thispagestyle{empty}
 	\vspace*{1cm}
-    % FIXME remove this comments
-	% \includegraphics[width=4cm]{example.jpg} % qui mettete il vostro logo, o cancellate la linea
 	\vfill
 	\centering
-    % FIXME: choose 1 of the 2 footers below
-	% \includegraphics{footer.png}
 	\includegraphics{logo_polimi.png}\includegraphics{logo_NECST.png}
 \end{titlepage}
 
 
 \begin{abstract}
-
-    % FIXME review this and pay extra attention on the details
-	In the rapidly evolving field of quantum computing, the simulation of quantum circuits on classical computers has become increasingly crucial. This project focuses on developing an efficient simulation toolchain for quantum circuits, with particular emphasis on Field-Programmable Gate Array (FPGA) implementation. Our approach centers on two key innovations: First, we develop a general x86 Instruction Set Architecture (ISA) that decomposes quantum circuits into a series of schedulable instructions, utilizing two fundamental mathematical operators: tensor expansions and matrix multiplications. This abstraction allows for flexible and efficient representation of quantum operations. Second, we implement this ISA on FPGAs to perform quantum circuit simulations. Our implementation features two custom-designed kernels, developed from scratch, specifically optimized for tensor expansion and matrix multiplication operations. This tailored approach enables us to leverage the  processing capabilities of FPGAs, potentially offering significant performance improvements over traditional simulation methods. By focusing on these aspects, our work aims to advance the field of quantum circuit simulation, providing a powerful tool for researchers and developers in quantum computing.
-
+    In the rapidly evolving field of quantum computing, efficient simulation of quantum circuits on classical computers remains a critical challenge. This project focuses on developing a versatile and efficient simulation toolchain for quantum circuits, emphasizing compatibility with heterogeneous hardware architectures. Our approach centers on several key innovations that we believe can enhance the simulation process. At the core of our toolchain is a custom Instruction Set Architecture (ISA) that decomposes quantum circuits into a series of schedulable instructions, utilizing fundamental mathematical operators such as tensor expansions and matrix multiplications. This abstraction allows for flexible and efficient representation of quantum operations across various hardware platforms.
+    We developed a prototype FPGA accelerator with custom kernels written specifically for these two operators, as a proof-of-concept to demonstrate the potential performance benefits of our approach. Our work aims to advance the field of quantum circuit simulation by providing a novel approach, concretized in a comprehensive, extensible toolchain that can adapt to various classical computing accelerators. While our current proof-of-concept targets FPGA implementation, the architecture of our toolchain lays the groundwork for efficient quantum circuit simulation on heterogeneous computing platforms, offering a powerful tool for researchers and developers in quantum computing.
 \end{abstract}
 
 \newpage
