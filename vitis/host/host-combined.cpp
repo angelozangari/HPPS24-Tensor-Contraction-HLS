@@ -134,6 +134,7 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   // Launch the Kernel
   t1 = high_resolution_clock::now();
   OCL_CHECK(err, err = q.enqueueTask(krnl));
+  OCL_CHECK(err, q.finish());
   t2 = high_resolution_clock::now();
   te_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
 
@@ -289,6 +290,7 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
   // Launch the Kernel
   t1 = high_resolution_clock::now();
   OCL_CHECK(err, err = q.enqueueTask(krnl));
+  OCL_CHECK(err, q.finish());
   t2 = high_resolution_clock::now();
   mm_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
 
@@ -336,8 +338,7 @@ CooTens enqueue_matrix_multiplication(const CooTens &left, const CooTens &right,
 int main(int argc, char *argv[]) {
   // TARGET_DEVICE macro needs to be passed from gcc command line
   if (argc != 3) {
-    std::cout << "Usage: " << argv[0] << " <xclbin>"
-              << " <circuit.qcf>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <xclbin>" << " <circuit.qcf>" << std::endl;
     return EXIT_FAILURE;
   }
 
