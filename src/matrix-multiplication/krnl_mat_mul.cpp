@@ -33,19 +33,19 @@ void matrix_multiplication(float *Ar, float *Ai, coo_meta_t *Am, float *Br, floa
   // hls-streams for matrices
   hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream, Ci_stream;
   // clang-format off
-#pragma HLS STREAM variable=Ar_stream depth=1024
-#pragma HLS STREAM variable=Ai_stream depth=1024
-#pragma HLS STREAM variable=Br_stream depth=1024
-#pragma HLS STREAM variable=Bi_stream depth=1024
-#pragma HLS STREAM variable=Cr_stream depth=1024
-#pragma HLS STREAM variable=Ci_stream depth=1024
+#pragma HLS STREAM variable=Ar_stream depth=16384
+#pragma HLS STREAM variable=Ai_stream depth=16384
+#pragma HLS STREAM variable=Br_stream depth=16384
+#pragma HLS STREAM variable=Bi_stream depth=16384
+#pragma HLS STREAM variable=Cr_stream depth=16384
+#pragma HLS STREAM variable=Ci_stream depth=16384
   // clang-format on
 
   hls::stream<coo_meta_t> Am_stream, Bm_stream, Cm_stream;
   // clang-format off
-#pragma HLS STREAM variable=Am_stream depth=1024
-#pragma HLS STREAM variable=Bm_stream depth=1024
-#pragma HLS STREAM variable=Cm_stream depth=1024
+#pragma HLS STREAM variable=Am_stream depth=16384
+#pragma HLS STREAM variable=Bm_stream depth=16384
+#pragma HLS STREAM variable=Cm_stream depth=16384
   // clang-format on
 
   // Load matrices A, B
