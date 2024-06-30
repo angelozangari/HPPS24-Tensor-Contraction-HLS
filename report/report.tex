@@ -201,7 +201,7 @@ Can be though as a generalization of a matrix multiplication. It can be performe
 
 \subsection{Sampling and evaluating quality of obtained sample with LXEB}
 A note on circuit verification for completeness:\\
-Our work poses as objective the computation of the tensor representing the final and contracted quantum circuit. This allows us to obtain a sample of the output bitstring simply by multiplying it for the input vector. After having computed the output tensor, and having obtained the bitstring amplitudes (what the researchers call Random Circuit Sampling (RCS) experiments), we can use verification to evaluate the quality of the results. To do this we simply compute the Linear Cross-Entropy Benchmark (LXEB) which compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations. To do this we simply sum the products of the probability of each bitstring in a noise-free circuit pU with the probability in a real one q(x). 
+Our work poses as objective the computation of the tensor representing the final and contracted quantum circuit. This allows us to obtain a sample of the output bitstring simply by multiplying it for the input vector. After having computed the output tensor, and having obtained the bitstring amplitudes (what the researchers call Random Circuit Sampling (RCS) experiments), we can use verification to evaluate the quality of the results. To do this we simply compute the Linear Cross-Entropy Benchmark (LXEB) which compares the distribution of sampled bitstrings from the quantum device with the ideal theoretical distribution, providing a measure of how well the quantum computation aligns with expectations. To do this we simply sum the products of the probability of each bitstring in a noise-free circuit pU with the probability in a real one q(x).
 
 \begin{equation}
     F_l = 2^N \sum_x p_U(x)q(x) - 1 = 2^N E_{x \sim q(x)} p_U(x) - 1
@@ -249,7 +249,7 @@ The frontend is built with expandability and compatibility in mind, allowing for
 
 The Frontend is a fundamental component in the quantum circuit simulation process, serving as the interface between high-level quantum circuit descriptions and low-level computational backends. By reducing the quantum circuit to a tensor network and optimizing the contraction tree, the frontend prepares the circuit for efficient simulation with minimum number of operations. Without this crucial step, the computational backends would be unable to efficiently simulate quantum circuits, leading to significant performance degradation and resource wastage.
 
-All the code employed in the frontend is hosted on GitHub at the following \href{https://github.com/federico123579/HPPS24-Quantum-Simulation}{repository}.
+All the code employed in the frontend is hosted on GitHub at the following \href{https://github.com/federico123579/HPPS24-Quantum-Simulation}{repository}, feel free to contact the authors if you haven't access to it.
 
 This section presents the architecture, functionality, and implementation details of the frontend, presenting at the end a compilation example to illustrate the process.
 
@@ -498,8 +498,9 @@ The Instruction Set Architecture (ISA) described in table~\ref{tab:isa} is desig
 
 \subsection{Backend}
 
-% TODO - extensive use of producer-consumer pattern in kernel design
 This section provides an in-depth overview of the FPGA backend, focusing on the architectural design and optimization strategies employed in kernel design. Since the development of both the FPGA kernels has been done from scratch, after months of research and development devoted to the development and optimization of the frontend, the backend currently lacks the same level of maturity and polish. However, being the FPGA backend a crucial component of the toolchain, we focused on delivering a functional prototype that can be further refined and optimized in future iterations.
+
+All the code employed in the backend is hosted on GitHub at the following \href{https://github.com/angelozangari/HPPS24-Tensor-Contraction-HLS}{repository}, feel free to contact the authors if you haven't access to it.
 
 \subsubsection{Architectural Overview}
 
