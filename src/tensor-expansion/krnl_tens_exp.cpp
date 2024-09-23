@@ -61,7 +61,7 @@ namespace Expansion {
 namespace Chunked {
 
 void load_row(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read_info) {
-  dim_t is, ix;
+  size_t is, ix;
   complex_t tmp;
 
   // get the start index
@@ -86,7 +86,7 @@ LOAD_ROW_LOOP:
       read_info.elements_read = i + 1;
       read_info.offset_in_row += i + 1;
       read_info.row_consumed = 1;
-      break;
+      return;
     }
   }
 
@@ -113,7 +113,6 @@ void load_next(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read
 
 void load_prev(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read_info) {
   // reset read info and update offset of the new row
-  read_info.row_index -= read_info.offset_in_row;
   read_info.offset_in_row = 0;
   read_info.row_consumed = 0;
 
@@ -150,7 +149,7 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
   complex_t a, b, c;
   hls::stream<complex_t> B_cached;
   // clang-format off
-#pragma HLS STREAM variable=B_cached depth=8
+#pragma HLS STREAM variable=B_cached depth=16
   // clang-format on
   const dim_t BD = 1 << B_R;
 
@@ -207,48 +206,63 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
 
 void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A_R,
                               rank_t B_R) {
-  read_info_t A_ri, B_ri;
-  write_info_t C_wi;
-  compute_info_t ci;
+  read_info_t A_ri = {}, B_ri = {};
+  write_info_t C_wi = {};
+  compute_info_t ci = {};
 
   hls::stream<complex_t> A_row, B_row, C_row;
   // clang-format off
-#pragma HLS STREAM variable=A_row depth=8
-#pragma HLS STREAM variable=B_row depth=8
-#pragma HLS STREAM variable=C_row depth=8
+#pragma HLS STREAM variable=A_row depth=16
+#pragma HLS STREAM variable=B_row depth=16
+#pragma HLS STREAM variable=C_row depth=16
   // clang-format on
 
   // compute the number of rows expected (as 2^(rank / 2)) (e.g. with a single qubit gate
   // we have 2^1 = 2 rows, with a 2 qubit gate we have 2^2 = 4 rows)
-  dim_t A_num_rows = 1 << (A_R / 2);
-  dim_t B_num_rows = 1 << (B_R / 2);
-  dim_t num_rows = A_num_rows * B_num_rows;
-
-CHUNK_EXPANSION_LOOP:
-  // iterate over all rows of the output tensor
-  for (int i = 0; i < num_rows; i++) {
-    // clang-format off
-#pragma HLS PIPELINE II=1
-    // clang-format on
+  size_t A_num_rows = 1 << A_R;
+  size_t B_num_rows = 1 << B_R;
 
 #pragma HLS DATAFLOW
+CHUNK_EXPANSION_LOOP:
+  // iterate over all rows of the output tensor
+  for (int i = 0; i < A_num_rows; i++) {
     load_next(A, A_row, A_ri);
-    load_next(B, B_row, B_ri);
-    compute_chunked(A_row, A_ri, B_row, B_ri, C_row, C_wi, B_R, ci);
-    store_next(C_row, C, C_wi);
 
-    // if a read was partial, load next and compute again, until both are exhausted
-    while (ci.a_partial || ci.b_partial) {
-      if (ci.b_partial) {
-        // just load the next elements of B and keep A as it is
-        load_next(B, B_row, B_ri);
-      } else if (ci.a_partial) {
-        // then rewind B and load the next elements of A
-        load_next(A, A_row, A_ri);
-        load_prev(B, B_row, B_ri);
-      }
+    for (int j = 0; j < B_num_rows; j++) {
+      // clang-format off
+#pragma HLS PIPELINE II=1
+      // clang-format on
+
+      load_next(B, B_row, B_ri);
+
       compute_chunked(A_row, A_ri, B_row, B_ri, C_row, C_wi, B_R, ci);
       store_next(C_row, C, C_wi);
+
+      // if a read was partial, load next and compute again, until both are exhausted
+      while (ci.a_partial || ci.b_partial) {
+        if (ci.b_partial) {
+          // just load the next elements of B and keep A as it is
+          load_next(B, B_row, B_ri);
+        } else if (ci.a_partial) {
+          // then rewind B and load the next elements of A
+          load_next(A, A_row, A_ri);
+          load_prev(B, B_row, B_ri);
+        }
+        compute_chunked(A_row, A_ri, B_row, B_ri, C_row, C_wi, B_R, ci);
+        store_next(C_row, C, C_wi);
+      }
+
+      // if we are not at the end of B, rewind the same row of A
+      if (j < B_num_rows - 1) {
+        // load previous row of A
+        load_prev(A, A_row, A_ri);
+      }
+    }
+
+    // if we are not at the end of A, rewind completely B
+    if (i < A_num_rows - 1) {
+      // rewind B from the start
+      B_ri = {};
     }
   }
 }
