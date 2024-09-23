@@ -5,8 +5,10 @@
 
 #include "tensor-expansion/krnl_tens_exp.h"
 #include "tests/golden_reader.h"
+#include <types.h>
 
 using namespace std;
+using namespace Tensor::Expansion;
 
 int main() {
   GoldenReader reader("golden-vectors.dat");
@@ -28,12 +30,31 @@ int main() {
     std::vector<float> out_r(left.size() * right.size());
     std::vector<float> out_i(left.size() * right.size());
     std::vector<coo_meta_t> out_m(left.size() * right.size());
+
+    vector<Chunked::complex_t> A_vec(left.data_r.size());
+    vector<Chunked::complex_t> B_vec(right.data_r.size());
+    vector<Chunked::complex_t> C_vec(left.size() * right.size());
+
+    for (size_t i = 0; i < left.data_r.size(); i++) {
+      A_vec[i].r = left.data_r[i];
+      A_vec[i].i = left.data_i[i];
+      A_vec[i].m = left.data_m[i];
+    }
+    for (size_t i = 0; i < right.data_r.size(); i++) {
+      B_vec[i].r = right.data_r[i];
+      B_vec[i].i = right.data_i[i];
+      B_vec[i].m = right.data_m[i];
+    }
+
     cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
          << " -> " << real_out.rank << " ... " << flush;
-    tensor_expansion(left.data_r.data(), left.data_i.data(), left.data_m.data(),
-                     right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                     out_r.data(), out_i.data(), out_m.data(), left.size(), right.size(),
-                     left.rank, right.rank);
+    tensor_expansion(A_vec.data(), B_vec.data(), C_vec.data(), left.rank, right.rank);
+
+    for (size_t i = 0; i < C_vec.size(); i++) {
+      out_r[i] = C_vec[i].r;
+      out_i[i] = C_vec[i].i;
+      out_m[i] = C_vec[i].m;
+    }
 
     // Compare the output
     CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};

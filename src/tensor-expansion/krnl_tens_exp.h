@@ -7,9 +7,9 @@
 #include "hls_stream.h"
 
 extern "C" {
-void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi,
-                      coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm, dim_t A_NZ,
-                      dim_t B_NZ, rank_t A_R, rank_t B_R);
+void tensor_expansion(Tensor::Expansion::Chunked::complex_t *A,
+                      Tensor::Expansion::Chunked::complex_t *B,
+                      Tensor::Expansion::Chunked::complex_t *C, rank_t A_R, rank_t B_R);
 }
 
 namespace Tensor {

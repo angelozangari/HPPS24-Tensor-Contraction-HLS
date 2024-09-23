@@ -1,58 +1,18 @@
 #include "krnl_tens_exp.h"
 
-void tensor_expansion(float *Ar, float *Ai, coo_meta_t *Am, float *Br, float *Bi,
-                      coo_meta_t *Bm, float *Cr, float *Ci, coo_meta_t *Cm, dim_t A_NZ,
-                      dim_t B_NZ, rank_t A_R, rank_t B_R) {
+void tensor_expansion(Tensor::Expansion::Chunked::complex_t *A,
+                      Tensor::Expansion::Chunked::complex_t *B,
+                      Tensor::Expansion::Chunked::complex_t *C, rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=Ar bundle=gmem0 depth=8 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=Ai bundle=gmem1 depth=8 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=Am bundle=gmem2 depth=8 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=Br bundle=gmem3 depth=4 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=Bi bundle=gmem4 depth=4 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=Bm bundle=gmem5 depth=4 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=Cr bundle=gmem6 depth=32 max_write_burst_length=128
-#pragma HLS INTERFACE m_axi port=Ci bundle=gmem7 depth=32 max_write_burst_length=128
-#pragma HLS INTERFACE m_axi port=Cm bundle=gmem8 depth=32 max_write_burst_length=128
-#pragma HLS INTERFACE s_axilite port=Ar bundle=control
-#pragma HLS INTERFACE s_axilite port=Ai bundle=control
-#pragma HLS INTERFACE s_axilite port=Am bundle=control
-#pragma HLS INTERFACE s_axilite port=Br bundle=control
-#pragma HLS INTERFACE s_axilite port=Bi bundle=control
-#pragma HLS INTERFACE s_axilite port=Bm bundle=control
-#pragma HLS INTERFACE s_axilite port=Cr bundle=control
-#pragma HLS INTERFACE s_axilite port=Ci bundle=control
-#pragma HLS INTERFACE s_axilite port=Cm bundle=control
-#pragma HLS INTERFACE s_axilite port=A_NZ bundle=control
-#pragma HLS INTERFACE s_axilite port=B_NZ bundle=control
+#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=8 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=64 max_write_burst_length=128
 #pragma HLS INTERFACE s_axilite port=A_R bundle=control
 #pragma HLS INTERFACE s_axilite port=B_R bundle=control
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
 
-  dim_t C_NZ = A_NZ * B_NZ;
-  hls::stream<float> Ar_stream, Ai_stream, Br_stream, Bi_stream, Cr_stream, Ci_stream;
-  // clang-format off
-#pragma HLS STREAM variable=Ar_stream depth=1024
-#pragma HLS STREAM variable=Ai_stream depth=1024
-#pragma HLS STREAM variable=Br_stream depth=1024
-#pragma HLS STREAM variable=Bi_stream depth=1024
-#pragma HLS STREAM variable=Cr_stream depth=1024
-#pragma HLS STREAM variable=Ci_stream depth=1024
-  // clang-format on
-
-  hls::stream<coo_meta_t> Am_stream, Bm_stream, Cm_stream;
-  // clang-format off
-#pragma HLS STREAM variable=Am_stream depth=1024
-#pragma HLS STREAM variable=Bm_stream depth=1024
-#pragma HLS STREAM variable=Cm_stream depth=1024
-  // clang-format on
-
-#pragma HLS dataflow
-  Tensor::Expansion::load(Ar, Ai, Am, Ar_stream, Ai_stream, Am_stream, A_NZ);
-  Tensor::Expansion::load(Br, Bi, Bm, Br_stream, Bi_stream, Bm_stream, B_NZ);
-  Tensor::Expansion::compute(Ar_stream, Ai_stream, Am_stream, Br_stream, Bi_stream,
-                             Bm_stream, Cr_stream, Ci_stream, Cm_stream, B_R);
-  Tensor::Expansion::store(Cr_stream, Ci_stream, Cm_stream, Cr, Ci, Cm, C_NZ);
+  Tensor::Expansion::Chunked::tensor_expansion_chunked(A, B, C, A_R, B_R);
 }
 
 namespace Tensor {
