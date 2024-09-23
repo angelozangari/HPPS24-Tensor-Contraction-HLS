@@ -1,3 +1,5 @@
+set(CMAKE_BUILD_TYPE Debug)
+
 add_library(qcslib STATIC
     # Kernels
     src/tensor-expansion/krnl_tens_exp.cpp
