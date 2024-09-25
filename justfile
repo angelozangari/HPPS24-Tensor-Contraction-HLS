@@ -1,3 +1,5 @@
+mod vitis
+
 alias b := build-ninja
 alias c := clean
 alias rb := report-build
@@ -5,6 +7,9 @@ alias rc := report-clean
 
 _default:
   just --choose
+
+v ARGS="":
+    just vitis {{ARGS}}
 
 build-make:
     cmake -S . -B build
