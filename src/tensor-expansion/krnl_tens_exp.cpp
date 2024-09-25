@@ -21,7 +21,7 @@ namespace Expansion {
 namespace Chunked {
 
 void load_row(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read_info) {
-  size_t is, ix;
+  std::size_t is, ix;
   complex_t tmp;
 
   // get the start index
@@ -179,8 +179,8 @@ void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A
 
   // compute the number of rows expected (as 2^(rank / 2)) (e.g. with a single qubit gate
   // we have 2^1 = 2 rows, with a 2 qubit gate we have 2^2 = 4 rows)
-  size_t A_num_rows = 1 << A_R;
-  size_t B_num_rows = 1 << B_R;
+  std::size_t A_num_rows = 1 << A_R;
+  std::size_t B_num_rows = 1 << B_R;
 
 #pragma HLS DATAFLOW
 CHUNK_EXPANSION_LOOP:
