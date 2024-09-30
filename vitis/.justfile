@@ -36,6 +36,12 @@ sync-git:
 sync-rsync:
     #!/usr/bin/env bash
     rsync -avz --progress --exclude='.git' --exclude='build' ../src qcs-vm:{{remote_path}}/
+    rsync -avz --progress --exclude='.git' --exclude='build' ./host qcs-vm:{{remote_path}}/vitis/
+
+sync-logs:
+    #!/usr/bin/env bash
+    mkdir -p ../logs
+    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/*.log ../logs/ 
 
 cmd CMD MODE:
     #!/usr/bin/env bash
@@ -47,13 +53,13 @@ cmd CMD MODE:
     . {{xrt_setup_path}}
     # run CMD with MODE
     cd ./vitis
-    make {{CMD}} TARGET={{MODE}} > ./.{{CMD}}_{{MODE}}.log 2>&1 &
+    make {{CMD}} TARGET={{MODE}} > ./{{CMD}}_{{MODE}}.log 2>&1 &
     ENDSSH
 
 tail-log CMD MODE:
     #!/usr/bin/env bash
     ssh qcs-vm /bin/bash << 'ENDSSH'
-    tail -f {{remote_path}}/vitis/.{{CMD}}_{{MODE}}.log
+    tail -f {{remote_path}}/vitis/{{CMD}}_{{MODE}}.log
     ENDSSH
 
 # build software emulation
