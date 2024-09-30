@@ -3,6 +3,7 @@
 #include <cstdint>
 
 using namespace std;
+using namespace Tensor::Expansion::Chunked;
 
 // Helper function to check if the system is little-endian
 bool is_little_endian() {
@@ -123,6 +124,15 @@ CooTens::CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, 
     data_r.push_back(tens_r[i]);
     data_i.push_back(tens_i[i]);
     data_m.push_back(tens_m[i]);
+  }
+}
+
+CooTens::CooTens(complex_t *tens, size_t size, int rank, MatrixFormat format)
+    : rank(rank), format(format) {
+  for (size_t i = 0; i < size; i++) {
+    data_r.push_back(tens[i].r);
+    data_i.push_back(tens[i].i);
+    data_m.push_back(tens[i].m);
   }
 }
 

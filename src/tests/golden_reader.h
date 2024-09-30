@@ -34,11 +34,16 @@ public:
   CooTens(std::vector<float> tens_r, std::vector<float> tens_i,
           std::vector<coo_meta_t> tens_m, int rank,
           MatrixFormat format = MatrixFormat::RowMajor);
+  CooTens(Tensor::Expansion::Chunked::complex_t *tens, size_t size, int rank,
+          MatrixFormat format = MatrixFormat::RowMajor);
   CooTens(float *tens_r, float *tens_i, coo_meta_t *tens_m, size_t size, int rank,
           MatrixFormat format = MatrixFormat::RowMajor);
 
   void print() const;
   size_t size() const { return data_r.size(); }
+  Tensor::Expansion::Chunked::complex_t get(size_t i) const {
+    return {data_r[i], data_i[i], data_m[i]};
+  }
 
   MatrixFormat format;
   std::vector<float> data_r;
