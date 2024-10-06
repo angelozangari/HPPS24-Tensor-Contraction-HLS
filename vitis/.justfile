@@ -37,6 +37,8 @@ sync-rsync:
     #!/usr/bin/env bash
     rsync -avz --progress --exclude='.git' --exclude='build' ../src qcs-vm:{{remote_path}}/
     rsync -avz --progress --exclude='.git' --exclude='build' ./host qcs-vm:{{remote_path}}/vitis/
+    rsync -avz --progress --exclude='.git' --exclude='build' ./golden-vectors.dat qcs-vm:{{remote_path}}/vitis/
+    rsync -avz --progress --exclude='.git' --exclude='build' ./makefile_us_alveo.mk qcs-vm:{{remote_path}}/vitis/
 
 sync-logs:
     #!/usr/bin/env bash
@@ -109,3 +111,11 @@ tail-build-hardware:
 # tail hardware running log
 tail-run-hardware:
     just tail-log run hw
+
+# kill all running processes of cosim
+kill-cosim:
+    #!/usr/bin/env bash
+    ssh qcs-vm /bin/bash << 'ENDSSH'
+    pkill xsim
+    ENDSSH
+    echo "Killed all cosim processes"

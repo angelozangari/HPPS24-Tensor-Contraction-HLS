@@ -4,9 +4,9 @@ void tensor_expansion(Tensor::Expansion::Chunked::complex_t *A,
                       Tensor::Expansion::Chunked::complex_t *B,
                       Tensor::Expansion::Chunked::complex_t *C, rank_t A_R, rank_t B_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=8 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=8 max_read_burst_length=128
-#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=64 max_write_burst_length=128
+#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=4
+#pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=4
+#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=16
 #pragma HLS INTERFACE s_axilite port=A_R bundle=control
 #pragma HLS INTERFACE s_axilite port=B_R bundle=control
 #pragma HLS INTERFACE s_axilite port=return bundle=control

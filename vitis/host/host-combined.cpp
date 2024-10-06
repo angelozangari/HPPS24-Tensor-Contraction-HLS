@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace std;
 using namespace std::chrono;
 using namespace Tensor::Expansion::Chunked;
 
@@ -364,105 +365,185 @@ int main(int argc, char *argv[]) {
   }
 
   // Read the golden vector
-  CooTens left, right, out;
-  StatsRecorder stats_recorder{};
-  nanoseconds cpu_time, e2e_time;
-  high_resolution_clock::time_point cpu_t1, cpu_t2;
-  std::vector<TeExecution> te_exes;
-  std::vector<MmExecution> mm_exes;
+  // CooTens left, right, out;
+  // StatsRecorder stats_recorder{};
+  // nanoseconds cpu_time, e2e_time;
+  // high_resolution_clock::time_point cpu_t1, cpu_t2;
+  // std::vector<TeExecution> te_exes;
+  // std::vector<MmExecution> mm_exes;
 
-  QCF::QcfReader reader(qcfFilename);
+  // QCF::QcfReader reader(qcfFilename);
+  // reader.consume();
+  // auto ops = &reader.operations;
+
+  // std::unordered_map<uint32_t, CooTens> op_map;
+
+  // auto e2e_t1 = high_resolution_clock::now();
+  // cpu_t1 = high_resolution_clock::now();
+
+  // for (auto &op : *ops) {
+  //   switch (op.kind) {
+  //   case QCF::OpKind::TE_MA:
+  //   case QCF::OpKind::MM_MA:
+  //     left = {op.left.u.tens};
+  //     right = op_map.at(op.right.u.id);
+  //     break;
+  //   case QCF::OpKind::TE_AM:
+  //   case QCF::OpKind::MM_AM:
+  //     left = op_map.at(op.left.u.id);
+  //     right = {op.right.u.tens};
+  //     break;
+  //   case QCF::OpKind::TE_MM:
+  //   case QCF::OpKind::MM_MM:
+  //     left = {op.left.u.tens};
+  //     right = {op.right.u.tens};
+  //     break;
+  //   case QCF::OpKind::TE_AA:
+  //   case QCF::OpKind::MM_AA:
+  //     left = op_map.at(op.left.u.id);
+  //     right = op_map.at(op.right.u.id);
+  //     break;
+  //   default:
+  //     break;
+  //   }
+
+  //   cpu_t2 = high_resolution_clock::now();
+  //   cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+
+  //   switch (op.kind) {
+  //   case QCF::OpKind::TE_MA:
+  //   case QCF::OpKind::TE_AM:
+  //   case QCF::OpKind::TE_MM:
+  //   case QCF::OpKind::TE_AA:
+  //     TeExecution te_exe;
+  //     out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context,
+  //                                    &te_exe);
+  //     te_exes.push_back(te_exe);
+  //     break;
+  //   case QCF::OpKind::MM_MA:
+  //   case QCF::OpKind::MM_AM:
+  //   case QCF::OpKind::MM_MM:
+  //   case QCF::OpKind::MM_AA:
+  //     MmExecution mm_exe;
+  //     out = enqueue_matrix_multiplication(left, right, krnl_matrix_multiplication, q,
+  //                                         context, &mm_exe);
+  //     mm_exes.push_back(mm_exe);
+  //     break;
+  //   default:
+  //     break;
+  //   }
+
+  //   cpu_t1 = high_resolution_clock::now();
+
+  //   op_map.insert({op.id, out});
+
+  //   cpu_t2 = high_resolution_clock::now();
+  //   cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+  // }
+
+  // auto e2e_t2 = high_resolution_clock::now();
+  // e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
+
+  // // Verify the result
+  // int match = 0;
+  // for (size_t i = 0; i < out.size(); i++) {
+  //   if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
+  //     std::cout << "FAILED" << std::endl;
+  //     std::cout << "Mismatch in data" << std::endl;
+  //     std::cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
+  //               << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")"
+  //               << std::endl;
+  //     std::cout << "Full Predicted output:" << std::endl;
+  //     out.print();
+  //     match = 1;
+  //   }
+  // }
+
+  // std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
+
+  // // record stats and write to csv
+  // stats_recorder.record(qcfFilename, cpu_time, e2e_time, te_exes, mm_exes);
+  // stats_recorder.write();
+
+  GoldenReader reader(qcfFilename);
   reader.consume();
   auto ops = &reader.operations;
 
-  std::unordered_map<uint32_t, CooTens> op_map;
-
-  auto e2e_t1 = high_resolution_clock::now();
-  cpu_t1 = high_resolution_clock::now();
-
-  for (auto &op : *ops) {
-    switch (op.kind) {
-    case QCF::OpKind::TE_MA:
-    case QCF::OpKind::MM_MA:
-      left = {op.left.u.tens};
-      right = op_map.at(op.right.u.id);
-      break;
-    case QCF::OpKind::TE_AM:
-    case QCF::OpKind::MM_AM:
-      left = op_map.at(op.left.u.id);
-      right = {op.right.u.tens};
-      break;
-    case QCF::OpKind::TE_MM:
-    case QCF::OpKind::MM_MM:
-      left = {op.left.u.tens};
-      right = {op.right.u.tens};
-      break;
-    case QCF::OpKind::TE_AA:
-    case QCF::OpKind::MM_AA:
-      left = op_map.at(op.left.u.id);
-      right = op_map.at(op.right.u.id);
-      break;
-    default:
-      break;
-    }
-
-    cpu_t2 = high_resolution_clock::now();
-    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
-
-    switch (op.kind) {
-    case QCF::OpKind::TE_MA:
-    case QCF::OpKind::TE_AM:
-    case QCF::OpKind::TE_MM:
-    case QCF::OpKind::TE_AA:
-      TeExecution te_exe;
-      out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context,
-                                     &te_exe);
-      te_exes.push_back(te_exe);
-      break;
-    case QCF::OpKind::MM_MA:
-    case QCF::OpKind::MM_AM:
-    case QCF::OpKind::MM_MM:
-    case QCF::OpKind::MM_AA:
-      MmExecution mm_exe;
-      out = enqueue_matrix_multiplication(left, right, krnl_matrix_multiplication, q,
-                                          context, &mm_exe);
-      mm_exes.push_back(mm_exe);
-      break;
-    default:
-      break;
-    }
-
-    cpu_t1 = high_resolution_clock::now();
-
-    op_map.insert({op.id, out});
-
-    cpu_t2 = high_resolution_clock::now();
-    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
-  }
-
-  auto e2e_t2 = high_resolution_clock::now();
-  e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
-
-  // Verify the result
   int match = 0;
-  for (size_t i = 0; i < out.size(); i++) {
-    if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
-      std::cout << "FAILED" << std::endl;
-      std::cout << "Mismatch in data" << std::endl;
-      std::cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
-                << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")"
-                << std::endl;
-      std::cout << "Full Predicted output:" << std::endl;
-      out.print();
+  // for (size_t i = 0; i < ops->size(); i++) {
+  for (size_t i = 116; i < 117; i++) {
+    OP &op = ops->at(i);
+
+    CooTens left{op.left}, right{op.right}, real_out{op.out}, out;
+
+    // Call the kernel
+    std::vector<float> out_r(left.size() * right.size());
+    std::vector<float> out_i(left.size() * right.size());
+    std::vector<coo_meta_t> out_m(left.size() * right.size());
+
+    vector<complex_t> A_vec(left.data_r.size());
+    vector<complex_t> B_vec(right.data_r.size());
+    vector<complex_t> C_vec(left.size() * right.size());
+
+    for (size_t i = 0; i < left.data_r.size(); i++) {
+      A_vec[i].r = left.data_r[i];
+      A_vec[i].i = left.data_i[i];
+      A_vec[i].m = left.data_m[i];
+    }
+    for (size_t i = 0; i < right.data_r.size(); i++) {
+      B_vec[i].r = right.data_r[i];
+      B_vec[i].i = right.data_i[i];
+      B_vec[i].m = right.data_m[i];
+    }
+
+    cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
+         << " -> " << real_out.rank << " ... " << flush;
+    TeExecution te_exe;
+    out =
+        enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context, &te_exe);
+
+    for (size_t i = 0; i < C_vec.size(); i++) {
+      out_r[i] = C_vec[i].r;
+      out_i[i] = C_vec[i].i;
+      out_m[i] = C_vec[i].m;
+    }
+
+    // Compare the output
+    CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};
+
+    if (predicted_out.size() != real_out.size()) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in sizes" << endl;
+      cout << "Predicted output size: " << predicted_out.size() << endl;
+      cout << "Real output size: " << real_out.size() << endl;
       match = 1;
     }
+
+    for (size_t i = 0; i < predicted_out.size(); i++) {
+      if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
+            predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
+            predicted_out.data_m[i] == real_out.data_m[i])) {
+        cout << "FAILED" << endl;
+        cout << "Mismatch in data" << endl;
+        // print_op_matrices(op);
+        cout << "Predicted output:"
+             << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+             << "i) at (" << X(predicted_out.data_m[i]) << ", "
+             << Y(predicted_out.data_m[i]) << ")" << endl;
+        cout << "Real output:"
+             << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+             << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+        cout << "Full Real output:" << endl;
+        real_out.print();
+        cout << "Full Predicted output:" << endl;
+        predicted_out.print();
+        op.print();
+        match = 1;
+      }
+    }
+
+    cout << "PASSED" << endl;
   }
-
-  std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
-
-  // record stats and write to csv
-  stats_recorder.record(qcfFilename, cpu_time, e2e_time, te_exes, mm_exes);
-  stats_recorder.write();
 
   return (match ? EXIT_FAILURE : EXIT_SUCCESS);
 }

@@ -52,7 +52,7 @@ LINK_OUTPUT := $(BUILD_DIR)/krnl_qcs.link.xclbin
 PACKAGE_OUT = ./package.$(TARGET)
 
 VPP_PFLAGS := 
-CMD_ARGS = $(BUILD_DIR)/krnl_qcs.xclbin qft.qcf
+CMD_ARGS = $(BUILD_DIR)/krnl_qcs.xclbin golden-vectors.dat
 CXXFLAGS += -I$(XILINX_XRT)/include -I$(XILINX_VIVADO)/include -I$(XILINX_HLS)/include -Wall -O0 -g -std=c++1y
 LDFLAGS += -L$(XILINX_XRT)/lib -pthread -lOpenCL
 
