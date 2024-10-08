@@ -14,18 +14,31 @@
 
 using namespace std;
 using namespace std::chrono;
+using namespace Tensor::Expansion;
 
 CooTens compute_te(CooTens &left, CooTens &right, TeExecution *te_exe) {
   std::vector<float> out_r(left.size() * right.size());
   std::vector<float> out_i(left.size() * right.size());
   std::vector<coo_meta_t> out_m(left.size() * right.size());
 
+  vector<Chunked::complex_t> A_vec(left.data_r.size());
+  vector<Chunked::complex_t> B_vec(right.data_r.size());
+  vector<Chunked::complex_t> C_vec(left.size() * right.size());
+
+  for (size_t i = 0; i < left.data_r.size(); i++) {
+    A_vec[i].r = left.data_r[i];
+    A_vec[i].i = left.data_i[i];
+    A_vec[i].m = left.data_m[i];
+  }
+  for (size_t i = 0; i < right.data_r.size(); i++) {
+    B_vec[i].r = right.data_r[i];
+    B_vec[i].i = right.data_i[i];
+    B_vec[i].m = right.data_m[i];
+  }
+
   auto t1 = high_resolution_clock::now();
 
-  tensor_expansion(left.data_r.data(), left.data_i.data(), left.data_m.data(),
-                   right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                   out_r.data(), out_i.data(), out_m.data(), left.size(), right.size(),
-                   left.rank, right.rank);
+  tensor_expansion(A_vec.data(), B_vec.data(), C_vec.data(), left.rank, right.rank);
 
   auto t2 = high_resolution_clock::now();
   te_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
@@ -34,6 +47,12 @@ CooTens compute_te(CooTens &left, CooTens &right, TeExecution *te_exe) {
   te_exe->right_nz_size = right.size();
   te_exe->left_rank = left.rank;
   te_exe->right_rank = right.rank;
+
+  for (size_t i = 0; i < C_vec.size(); i++) {
+    out_r[i] = C_vec[i].r;
+    out_i[i] = C_vec[i].i;
+    out_m[i] = C_vec[i].m;
+  }
 
   return CooTens{out_r, out_i, out_m, left.rank + right.rank, left.format};
 }
