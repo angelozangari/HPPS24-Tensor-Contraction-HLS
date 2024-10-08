@@ -166,9 +166,9 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
 
 void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A_R,
                               rank_t B_R) {
-  read_info_t A_ri = {}, B_ri = {};
-  write_info_t C_wi = {};
-  compute_info_t ci = {};
+  read_info_t A_ri, B_ri;
+  write_info_t C_wi;
+  compute_info_t ci;
 
   hls::stream<complex_t> A_row, B_row, C_row;
   // clang-format off

@@ -34,7 +34,9 @@ namespace Expansion {
 namespace Chunked {
 
 /// @brief type indicating information about the read operation performed
-typedef struct {
+struct read_info_t {
+  read_info_t() : row_index(0), offset_in_row(0), elements_read(0), row_consumed(0) {}
+
   /// @brief offset of the row being read
   dim_t row_index;
   /// @brief number of elements already read
@@ -44,23 +46,27 @@ typedef struct {
   /// @brief flag indicating if the row has been consumed (can also be used to indicate if
   /// the read was partial)
   flag_t row_consumed;
-} read_info_t;
+};
 
 /// @brief type indicating information about the write operation performed
-typedef struct {
+struct write_info_t {
+  write_info_t() : writing_tail(0), elements_to_write(0) {}
+
   /// @brief offset of the element being written
   dim_t writing_tail;
   /// @brief number of elements to write
   edge_t elements_to_write;
-} write_info_t;
+};
 
 /// @brief type indicating information about the computation performed
-typedef struct {
+struct compute_info_t {
+  compute_info_t() : a_partial(0), b_partial(0) {}
+
   /// @brief flag indicating if the first operand is partial (not a full row)
   flag_t a_partial;
   /// @brief flag indicating if the second operand is partial (not a full row)
   flag_t b_partial;
-} compute_info_t;
+};
 
 /// @brief data type representing a complex number element in a COO tensor
 typedef struct {
