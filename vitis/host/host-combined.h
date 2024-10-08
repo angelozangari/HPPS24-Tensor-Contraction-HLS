@@ -8,14 +8,14 @@
 #include <CL/cl2.hpp>
 
 // Customized buffer allocation for 4K boundary alignment
-template <typename T> struct aligned_allocator {
-  using value_type = T;
-  T *allocate(std::size_t num) {
-    void *ptr = nullptr;
-    // FIXME ????
-    if (posix_memalign(&ptr, 4096, num * sizeof(T)))
-      throw std::bad_alloc();
-    return reinterpret_cast<T *>(ptr);
-  }
-  void deallocate(T *p, std::size_t num) { free(p); }
-};
+// template <typename T> struct aligned_allocator {
+//   using value_type = T;
+//   T *allocate(std::size_t num) {
+//     void *ptr = nullptr;
+//     // FIXME ????
+//     if (posix_memalign(&ptr, 4096, num * sizeof(T)))
+//       throw std::bad_alloc();
+//     return reinterpret_cast<T *>(ptr);
+//   }
+//   void deallocate(T *p, std::size_t num) { free(p); }
+// };
