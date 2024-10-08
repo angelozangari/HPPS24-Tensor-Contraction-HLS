@@ -481,31 +481,16 @@ int main(int argc, char *argv[]) {
     std::vector<float> out_i(left.size() * right.size());
     std::vector<coo_meta_t> out_m(left.size() * right.size());
 
-    vector<complex_t> A_vec(left.data_r.size());
-    vector<complex_t> B_vec(right.data_r.size());
-    vector<complex_t> C_vec(left.size() * right.size());
-
-    for (size_t i = 0; i < left.data_r.size(); i++) {
-      A_vec[i].r = left.data_r[i];
-      A_vec[i].i = left.data_i[i];
-      A_vec[i].m = left.data_m[i];
-    }
-    for (size_t i = 0; i < right.data_r.size(); i++) {
-      B_vec[i].r = right.data_r[i];
-      B_vec[i].i = right.data_i[i];
-      B_vec[i].m = right.data_m[i];
-    }
-
     cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
          << " -> " << real_out.rank << " ... " << flush;
     TeExecution te_exe;
     out =
         enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context, &te_exe);
 
-    for (size_t i = 0; i < C_vec.size(); i++) {
-      out_r[i] = C_vec[i].r;
-      out_i[i] = C_vec[i].i;
-      out_m[i] = C_vec[i].m;
+    for (size_t i = 0; i < out.size(); i++) {
+      out_r[i] = out.data_r[i];
+      out_i[i] = out.data_i[i];
+      out_m[i] = out.data_m[i];
     }
 
     // Compare the output
@@ -523,26 +508,29 @@ int main(int argc, char *argv[]) {
       if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
             predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
             predicted_out.data_m[i] == real_out.data_m[i])) {
-        cout << "FAILED" << endl;
-        cout << "Mismatch in data" << endl;
-        // print_op_matrices(op);
-        cout << "Predicted output:"
-             << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-             << "i) at (" << X(predicted_out.data_m[i]) << ", "
-             << Y(predicted_out.data_m[i]) << ")" << endl;
-        cout << "Real output:"
-             << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-             << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
-        cout << "Full Real output:" << endl;
-        real_out.print();
-        cout << "Full Predicted output:" << endl;
-        predicted_out.print();
-        op.print();
         match = 1;
       }
     }
 
-    cout << "PASSED" << endl;
+    if (match) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in data" << endl;
+      // print_op_matrices(op);
+      cout << "Predicted output:"
+           << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+           << "i) at (" << X(predicted_out.data_m[i]) << ", "
+           << Y(predicted_out.data_m[i]) << ")" << endl;
+      cout << "Real output:"
+           << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+           << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+      cout << "Full Real output:" << endl;
+      real_out.print();
+      cout << "Full Predicted output:" << endl;
+      predicted_out.print();
+      op.print();
+    } else {
+      cout << "PASSED" << endl;
+    }
   }
 
   return (match ? EXIT_FAILURE : EXIT_SUCCESS);
