@@ -7,3 +7,4 @@
 # HLS lib
 include
 build
+logs
