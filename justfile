@@ -11,6 +11,17 @@ _default:
 v ARGS="":
     just vitis {{ARGS}}
 
+sync-artifacts:
+    #!/usr/bin/env bash
+    rsync -avz build/artifacts/ --progress lynx-vm:~/Playground/
+
+pack-artifacts:
+    #!/usr/bin/env bash
+    mkdir -p build/artifacts
+    cp build/build_dir.hw.xilinx_u55c_gen3x16_xdma_3_202210_1/krnl_qcs.xclbin build/artifacts/krnl_qcs.xclbin
+    cp build/golden-vectors.dat build/artifacts/golden-vectors.dat
+    cp build/qcs_test_xrt build/artifacts/qcs_test_xrt
+
 build-make:
     cmake -S . -B build
     cmake --build build

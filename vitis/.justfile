@@ -45,6 +45,12 @@ sync-logs:
     mkdir -p ../logs
     rsync -avz --progress qcs-vm:{{remote_path}}/vitis/*.log ../logs/ 
 
+sync-build:
+    #!/usr/bin/env bash
+    mkdir -p ../build
+    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/* ../build/ \
+        --include='build_dir*' --include='qcs_test_xrt' --include='*.qcf' --include='*.dat' --exclude='*'
+
 cmd CMD MODE:
     #!/usr/bin/env bash
     ssh qcs-vm /bin/bash << 'ENDSSH'
