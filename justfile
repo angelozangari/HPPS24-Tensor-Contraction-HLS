@@ -22,6 +22,14 @@ pack-artifacts:
     cp build/golden-vectors.dat build/artifacts/golden-vectors.dat
     cp build/qcs_test_xrt build/artifacts/qcs_test_xrt
 
+# run-hw:
+#     ssh lynx-vm /bin/bash << 'ENDSSH'
+#     cd Playground
+#     . {{vitis_settings_path}}
+#     . {{xrt_setup_path}}
+#     ./qcs_test_xrt krnl_qcs.xclbin golden-vectors.dat
+#     ENDSSH
+
 build-make:
     cmake -S . -B build
     cmake --build build
