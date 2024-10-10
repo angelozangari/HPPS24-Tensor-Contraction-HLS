@@ -60,23 +60,26 @@ struct write_info_t {
 
 /// @brief type indicating information about the computation performed
 struct compute_info_t {
-  compute_info_t() : a_partial(0), b_partial(0) {}
+  compute_info_t() : a_exhausted(0), b_exhausted(0) {}
 
-  /// @brief flag indicating if the first operand is partial (not a full row)
-  flag_t a_partial;
-  /// @brief flag indicating if the second operand is partial (not a full row)
-  flag_t b_partial;
+  /// @brief flag indicating if A row has been exhausted after the computation
+  flag_t a_exhausted;
+  /// @brief flag indicating if B row has been exhausted after the computation
+  flag_t b_exhausted;
 };
 
 /// @brief data type representing a complex number element in a COO tensor
-typedef struct {
+struct complex_t {
+  complex_t() : r(0), i(0), m(0) {}
+  complex_t(float r, float i, coo_meta_t m) : r(r), i(i), m(m) {}
+
   /// @brief real part
   float r;
   /// @brief imaginary part
   float i;
   /// @brief metadata
   coo_meta_t m;
-} complex_t;
+};
 
 } // namespace Chunked
 } // namespace Expansion

@@ -108,16 +108,19 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
                      const rank_t B_R, compute_info_t &compute_info) {
   complex_t a, b, c;
   hls::stream<complex_t> B_cached;
+  flag_t a_partial, b_partial;
   // clang-format off
 #pragma HLS STREAM variable=B_cached depth=32
   // clang-format on
   const dim_t BD = 1 << B_R;
 
-  // update early on the compute info
-  compute_info.b_partial = !(B_read_info.row_consumed &&
-                             B_read_info.elements_read == B_read_info.offset_in_row);
-  compute_info.a_partial = !(A_read_info.row_consumed &&
-                             A_read_info.elements_read == A_read_info.offset_in_row);
+  // update partial flags early on
+  a_partial = !(A_read_info.row_consumed &&
+                (A_read_info.elements_read == A_read_info.offset_in_row));
+  b_partial = !(B_read_info.row_consumed &&
+                (B_read_info.elements_read == B_read_info.offset_in_row));
+  compute_info.a_exhausted = A_read_info.row_consumed;
+  compute_info.b_exhausted = B_read_info.row_consumed;
 
   // load B in a cache to rewind if needed
   for (int i = 0; i < B_read_info.elements_read; i++) {
@@ -140,7 +143,7 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
 
       // if B reading wasn't partial and A hasn't been exhausted yet, push back b
       // (this avoids filling B_cached and not using it)
-      if (!compute_info.b_partial && i < A_read_info.elements_read - 1) {
+      if (!b_partial && i < A_read_info.elements_read - 1) {
         B_cached.write(b);
       }
 
@@ -150,16 +153,14 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
     }
 
     // return early if B read was partial in order to trigger a read_next
-    if (compute_info.b_partial) {
-      compute_info.b_partial = 1;
+    if (b_partial) {
       return;
     }
   }
 
   // return early if A read was partial
   // (here for defensive programming)
-  if (compute_info.a_partial) {
-    compute_info.a_partial = 1;
+  if (a_partial) {
     return;
   }
 }
@@ -199,11 +200,11 @@ CHUNK_EXPANSION_LOOP:
       store_next(C_row, C, C_wi);
 
       // if a read was partial, load next and compute again, until both are exhausted
-      while (ci.a_partial || ci.b_partial) {
-        if (ci.b_partial) {
+      while (!ci.a_exhausted || !ci.b_exhausted) {
+        if (!ci.b_exhausted) {
           // just load the next elements of B and keep A as it is
           load_next(B, B_row, B_ri);
-        } else if (ci.a_partial) {
+        } else if (!ci.a_exhausted) {
           // then rewind B and load the next elements of A
           load_next(A, A_row, A_ri);
           load_prev(B, B_row, B_ri);
