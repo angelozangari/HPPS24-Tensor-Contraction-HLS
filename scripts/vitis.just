@@ -80,7 +80,9 @@ run-hardware:
     ssh {{lynx-vm}} /bin/bash << 'ENDSSH'
     cd {{lynx_deploy_dir}}
     . {{xrt_setup_path}}
-    ./qcs_test_xrt krnl_qcs.xclbin golden-vectors.dat
+    for f in *.dat; do
+        ./qcs_test_xrt krnl_qcs.xclbin $f
+    done
     ENDSSH
 
 # tail software emulation building log
@@ -103,10 +105,18 @@ tail-run-hardware-emulation:
 tail-build-hardware:
     just -f {{source_file()}} tail-log build hw
 
-# kill all running processes of cosim
-kill-cosim:
+# kill all running processes on nags
+nags-killall:
     #!/usr/bin/env bash
     ssh {{nags-vm}} /bin/bash << 'ENDSSH'
-    pkill xsim
+    pkill -u federico.lolli
     ENDSSH
     echo "Killed all cosim processes"
+
+# kill all running processes on lynx
+lynx-killall:
+    #!/usr/bin/env bash
+    ssh {{lynx-vm}} /bin/bash << 'ENDSSH'
+    pkill -u federico.lolli
+    ENDSSH
+    echo "Killed all lynx processes"

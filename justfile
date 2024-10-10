@@ -8,16 +8,15 @@ alias b := build-ninja
 alias c := clean
 
 
-# @just --choose
 [private]
 _default:
-    echo ${VAR}
+    @just --choose
 
 pack-artifacts:
     #!/usr/bin/env bash
     mkdir -p build/artifacts
     cp build/build_dir.hw.xilinx_u55c_gen3x16_xdma_3_202210_1/krnl_qcs.xclbin build/artifacts/krnl_qcs.xclbin
-    cp build/golden-vectors.dat build/artifacts/golden-vectors.dat
+    cp *.dat build/artifacts/
     cp build/qcs_test_xrt build/artifacts/qcs_test_xrt
 
 build-make:

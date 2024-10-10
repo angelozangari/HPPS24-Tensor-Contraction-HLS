@@ -36,7 +36,7 @@ up-rsync:
 
 up-artifacts:
     #!/usr/bin/env bash
-    rsync -avz ../build/artifacts/ --progress {{lynx-vm}}:{{lynx_deploy}}/
+    rsync -avz --delete ../build/artifacts/ --progress {{lynx-vm}}:{{lynx_deploy}}/
 
 down-logs:
     #!/usr/bin/env bash
