@@ -8,3 +8,9 @@
 include
 build
 logs
+
+# Environment
+.env
+
+# Results
+results

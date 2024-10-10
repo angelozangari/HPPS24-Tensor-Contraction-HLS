@@ -1,19 +1,17 @@
-mod vitis
+mod vitis 'scripts/vitis.just'
+mod sync 'scripts/sync.just'
+mod report 'scripts/report.just'
+
+set dotenv-load
 
 alias b := build-ninja
 alias c := clean
-alias rb := report-build
-alias rc := report-clean
 
+
+# @just --choose
+[private]
 _default:
-  just --choose
-
-v ARGS="":
-    just vitis {{ARGS}}
-
-sync-artifacts:
-    #!/usr/bin/env bash
-    rsync -avz build/artifacts/ --progress lynx-vm:~/Playground/
+    echo ${VAR}
 
 pack-artifacts:
     #!/usr/bin/env bash
@@ -21,14 +19,6 @@ pack-artifacts:
     cp build/build_dir.hw.xilinx_u55c_gen3x16_xdma_3_202210_1/krnl_qcs.xclbin build/artifacts/krnl_qcs.xclbin
     cp build/golden-vectors.dat build/artifacts/golden-vectors.dat
     cp build/qcs_test_xrt build/artifacts/qcs_test_xrt
-
-# run-hw:
-#     ssh lynx-vm /bin/bash << 'ENDSSH'
-#     cd Playground
-#     . {{vitis_settings_path}}
-#     . {{xrt_setup_path}}
-#     ./qcs_test_xrt krnl_qcs.xclbin golden-vectors.dat
-#     ENDSSH
 
 build-make:
     cmake -S . -B build
@@ -70,13 +60,3 @@ test-qft: build-ninja
 
 clean:
     rm -rf ./build
-
-report-build:
-    #!/usr/bin/env bash
-    cd report
-    make
-
-report-clean:
-    #!/usr/bin/env bash
-    cd report
-    make clean
