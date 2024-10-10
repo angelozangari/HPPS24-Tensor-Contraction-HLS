@@ -468,83 +468,87 @@ int main(int argc, char *argv[]) {
   StatsRecorder stats_recorder{};
   nanoseconds cpu_time, e2e_time;
   high_resolution_clock::time_point cpu_t1, cpu_t2, e2e_t1, e2e_t2;
+  vector<TeExecution> te_exes = {};
   GoldenReader reader(qcfFilename);
   reader.consume();
   auto ops = &reader.operations;
 
   int match = 0;
-  // for (size_t i = 0; i < ops->size(); i++) {
-  size_t i = 116;
-  OP &op = ops->at(i);
+  for (size_t i = 0; i < 134; i++) {
+    // size_t i = 116;
+    OP &op = ops->at(i);
 
-  CooTens left{op.left}, right{op.right}, real_out{op.out}, out;
+    CooTens left{op.left}, right{op.right}, real_out{op.out}, out;
 
-  // Call the kernel
-  std::vector<float> out_r(left.size() * right.size());
-  std::vector<float> out_i(left.size() * right.size());
-  std::vector<coo_meta_t> out_m(left.size() * right.size());
+    // Call the kernel
+    std::vector<float> out_r(left.size() * right.size());
+    std::vector<float> out_i(left.size() * right.size());
+    std::vector<coo_meta_t> out_m(left.size() * right.size());
 
-  e2e_t1 = high_resolution_clock::now();
-  cpu_t1 = high_resolution_clock::now();
+    e2e_t1 = high_resolution_clock::now();
+    cpu_t1 = high_resolution_clock::now();
 
-  cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
-       << " -> " << real_out.rank << " ... " << flush;
-  TeExecution te_exe;
-  cpu_t2 = high_resolution_clock::now();
-  cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
-  out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context, &te_exe);
-  cpu_t1 = high_resolution_clock::now();
+    cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
+         << " -> " << real_out.rank << " ... " << flush;
+    cpu_t2 = high_resolution_clock::now();
+    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+    TeExecution te_exe;
+    out =
+        enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context, &te_exe);
+    cpu_t1 = high_resolution_clock::now();
 
-  for (size_t i = 0; i < out.size(); i++) {
-    out_r[i] = out.data_r[i];
-    out_i[i] = out.data_i[i];
-    out_m[i] = out.data_m[i];
-  }
-  cpu_t2 = high_resolution_clock::now();
-  cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
-  e2e_t2 = high_resolution_clock::now();
-  e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
+    for (size_t i = 0; i < out.size(); i++) {
+      out_r[i] = out.data_r[i];
+      out_i[i] = out.data_i[i];
+      out_m[i] = out.data_m[i];
+    }
+    cpu_t2 = high_resolution_clock::now();
+    cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+    e2e_t2 = high_resolution_clock::now();
+    e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
 
-  // Compare the output
-  CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};
+    // Compare the output
+    CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};
 
-  if (predicted_out.size() != real_out.size()) {
-    cout << "FAILED" << endl;
-    cout << "Mismatch in sizes" << endl;
-    cout << "Predicted output size: " << predicted_out.size() << endl;
-    cout << "Real output size: " << real_out.size() << endl;
-    match = 1;
-  }
-
-  for (size_t i = 0; i < predicted_out.size(); i++) {
-    if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
-          predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
-          predicted_out.data_m[i] == real_out.data_m[i])) {
+    if (predicted_out.size() != real_out.size()) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in sizes" << endl;
+      cout << "Predicted output size: " << predicted_out.size() << endl;
+      cout << "Real output size: " << real_out.size() << endl;
       match = 1;
+    }
+
+    for (size_t i = 0; i < predicted_out.size(); i++) {
+      if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
+            predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
+            predicted_out.data_m[i] == real_out.data_m[i])) {
+        match = 1;
+      }
+    }
+
+    if (match) {
+      cout << "FAILED" << endl;
+      cout << "Mismatch in data" << endl;
+      // print_op_matrices(op);
+      cout << "Predicted output:"
+           << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+           << "i) at (" << X(predicted_out.data_m[i]) << ", "
+           << Y(predicted_out.data_m[i]) << ")" << endl;
+      cout << "Real output:"
+           << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+           << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+      cout << "Full Real output:" << endl;
+      real_out.print();
+      cout << "Full Predicted output:" << endl;
+      predicted_out.print();
+      op.print();
+    } else {
+      cout << "PASSED" << endl;
+      te_exes.push_back(te_exe);
     }
   }
 
-  if (match) {
-    cout << "FAILED" << endl;
-    cout << "Mismatch in data" << endl;
-    // print_op_matrices(op);
-    cout << "Predicted output:"
-         << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-         << "i) at (" << X(predicted_out.data_m[i]) << ", " << Y(predicted_out.data_m[i])
-         << ")" << endl;
-    cout << "Real output:"
-         << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-         << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
-    cout << "Full Real output:" << endl;
-    real_out.print();
-    cout << "Full Predicted output:" << endl;
-    predicted_out.print();
-    op.print();
-  } else {
-    cout << "PASSED" << endl;
-  }
-
-  stats_recorder.record(qcfFilename, cpu_time, e2e_time, {te_exe}, {});
+  stats_recorder.record(qcfFilename, cpu_time, e2e_time, te_exes, {});
   stats_recorder.write();
 
   return (match ? EXIT_FAILURE : EXIT_SUCCESS);
