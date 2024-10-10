@@ -48,8 +48,10 @@ sync-logs:
 sync-build:
     #!/usr/bin/env bash
     mkdir -p ../build
-    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/* ../build/ \
-        --include='build_dir*' --include='qcs_test_xrt' --include='*.qcf' --include='*.dat' --exclude='*'
+    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/build_dir* ../build/
+    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/qcs_test_xrt ../build/
+    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/*.qcf ../build/
+    rsync -avz --progress qcs-vm:{{remote_path}}/vitis/*.dat ../build/
 
 cmd CMD MODE:
     #!/usr/bin/env bash
