@@ -34,9 +34,15 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   size_t right_bytes = right.size() * sizeof(complex_t);
   size_t out_bytes = left.size() * right.size() * sizeof(complex_t);
 
+  te_exe->left_nz_size = left.size();
+  te_exe->right_nz_size = right.size();
+  te_exe->left_rank = left.rank;
+  te_exe->right_rank = right.rank;
+
+  auto t1 = high_resolution_clock::now();
+
   // These commands will allocate memory on the Device. The cl::Buffer objects
   // can be used to reference the memory locations on the device.
-  cout << "creating buffers" << endl;
   OCL_CHECK(err,
             cl::Buffer buffer_left(context, CL_MEM_READ_ONLY, left_bytes, NULL, &err));
   OCL_CHECK(err,
@@ -46,7 +52,6 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
 
   // set the kernel Arguments
   int narg = 0;
-  cout << "setting kernel arguments" << endl;
   OCL_CHECK(err, err = krnl.setArg(narg++, buffer_left));
   OCL_CHECK(err, err = krnl.setArg(narg++, buffer_right));
   OCL_CHECK(err, err = krnl.setArg(narg++, buffer_out));
@@ -55,7 +60,6 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
 
   // We then need to map our OpenCL buffers to get the pointers
   complex_t *ptr_left, *ptr_right, *ptr_out;
-  cout << "mapping buffers" << endl;
   OCL_CHECK(err,
             ptr_left = (complex_t *)q.enqueueMapBuffer(buffer_left, CL_TRUE, CL_MAP_WRITE,
                                                        0, left_bytes, NULL, NULL, &err));
@@ -66,7 +70,6 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
                      buffer_out, CL_TRUE, CL_MAP_READ, 0, out_bytes, NULL, NULL, &err));
 
   // Initialize the vectors used in the test
-  cout << "initializing vectors" << endl;
   for (int i = 0; i < left.size(); i++) {
     ptr_left[i] = left.get(i);
   }
@@ -75,36 +78,40 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   }
 
   // Data will be migrated to kernel space
-  cout << "migrating data" << endl;
   OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_left, buffer_right},
                                                   0 /* 0 means from host*/));
 
-  // Launch the Kernel
-  cout << "launching kernel" << endl;
-  OCL_CHECK(err, err = q.enqueueTask(krnl));
+  auto t2 = high_resolution_clock::now();
+  te_exe->transfer_time = duration_cast<nanoseconds>(t2 - t1);
 
+  // Launch the Kernel
+  t1 = high_resolution_clock::now();
+  OCL_CHECK(err, err = q.enqueueTask(krnl));
+  t2 = high_resolution_clock::now();
+  te_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
+
+  t1 = high_resolution_clock::now();
   // The result of the previous kernel execution will need to be retrieved in
   // order to view the results. This call will transfer the data from FPGA to
   // source_results vector
-  cout << "migrating data back" << endl;
   OCL_CHECK(err, q.enqueueMigrateMemObjects({buffer_out}, CL_MIGRATE_MEM_OBJECT_HOST));
 
-  cout << "waiting for kernel to finish" << endl;
   OCL_CHECK(err, q.finish());
 
   size_t out_size = left.size() * right.size();
   complex_t out[out_size];
 
-  cout << "copying data" << endl;
   for (int i = 0; i < out_size; i++) {
     out[i] = ptr_out[i];
   }
 
-  cout << "unmapping buffers" << endl;
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_left, ptr_left));
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_right, ptr_right));
   OCL_CHECK(err, err = q.enqueueUnmapMemObject(buffer_out, ptr_out));
   OCL_CHECK(err, err = q.finish());
+
+  t2 = high_resolution_clock::now();
+  te_exe->transfer_time += duration_cast<nanoseconds>(t2 - t1);
 
   return CooTens{out, out_size, left.rank + right.rank, left.format};
 }
@@ -357,73 +364,188 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  // Read the golden vector
+  // CooTens left, right, out;
+  // StatsRecorder stats_recorder{};
+  // nanoseconds cpu_time, e2e_time;
+  // high_resolution_clock::time_point cpu_t1, cpu_t2;
+  // std::vector<TeExecution> te_exes;
+  // std::vector<MmExecution> mm_exes;
+
+  // QCF::QcfReader reader(qcfFilename);
+  // reader.consume();
+  // auto ops = &reader.operations;
+
+  // std::unordered_map<uint32_t, CooTens> op_map;
+
+  // auto e2e_t1 = high_resolution_clock::now();
+  // cpu_t1 = high_resolution_clock::now();
+
+  // for (auto &op : *ops) {
+  //   switch (op.kind) {
+  //   case QCF::OpKind::TE_MA:
+  //   case QCF::OpKind::MM_MA:
+  //     left = {op.left.u.tens};
+  //     right = op_map.at(op.right.u.id);
+  //     break;
+  //   case QCF::OpKind::TE_AM:
+  //   case QCF::OpKind::MM_AM:
+  //     left = op_map.at(op.left.u.id);
+  //     right = {op.right.u.tens};
+  //     break;
+  //   case QCF::OpKind::TE_MM:
+  //   case QCF::OpKind::MM_MM:
+  //     left = {op.left.u.tens};
+  //     right = {op.right.u.tens};
+  //     break;
+  //   case QCF::OpKind::TE_AA:
+  //   case QCF::OpKind::MM_AA:
+  //     left = op_map.at(op.left.u.id);
+  //     right = op_map.at(op.right.u.id);
+  //     break;
+  //   default:
+  //     break;
+  //   }
+
+  //   cpu_t2 = high_resolution_clock::now();
+  //   cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+
+  //   switch (op.kind) {
+  //   case QCF::OpKind::TE_MA:
+  //   case QCF::OpKind::TE_AM:
+  //   case QCF::OpKind::TE_MM:
+  //   case QCF::OpKind::TE_AA:
+  //     TeExecution te_exe;
+  //     out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context,
+  //                                    &te_exe);
+  //     te_exes.push_back(te_exe);
+  //     break;
+  //   case QCF::OpKind::MM_MA:
+  //   case QCF::OpKind::MM_AM:
+  //   case QCF::OpKind::MM_MM:
+  //   case QCF::OpKind::MM_AA:
+  //     MmExecution mm_exe;
+  //     out = enqueue_matrix_multiplication(left, right, krnl_matrix_multiplication, q,
+  //                                         context, &mm_exe);
+  //     mm_exes.push_back(mm_exe);
+  //     break;
+  //   default:
+  //     break;
+  //   }
+
+  //   cpu_t1 = high_resolution_clock::now();
+
+  //   op_map.insert({op.id, out});
+
+  //   cpu_t2 = high_resolution_clock::now();
+  //   cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+  // }
+
+  // auto e2e_t2 = high_resolution_clock::now();
+  // e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
+
+  // // Verify the result
+  // int match = 0;
+  // for (size_t i = 0; i < out.size(); i++) {
+  //   if (abs(out.data_r[i]) - 0.25 > 1e-6 || abs(out.data_i[i]) > 1e-6) {
+  //     std::cout << "FAILED" << std::endl;
+  //     std::cout << "Mismatch in data" << std::endl;
+  //     std::cout << "Predicted output: (" << out.data_r[i] << " + " << out.data_i[i]
+  //               << "i) at (" << X(out.data_m[i]) << ", " << Y(out.data_m[i]) << ")"
+  //               << std::endl;
+  //     std::cout << "Full Predicted output:" << std::endl;
+  //     out.print();
+  //     match = 1;
+  //   }
+  // }
+
+  // std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
+
+  // // record stats and write to csv
+  // stats_recorder.record(qcfFilename, cpu_time, e2e_time, te_exes, mm_exes);
+  // stats_recorder.write();
+
+  StatsRecorder stats_recorder{};
+  nanoseconds cpu_time, e2e_time;
+  high_resolution_clock::time_point cpu_t1, cpu_t2, e2e_t1, e2e_t2;
   GoldenReader reader(qcfFilename);
   reader.consume();
   auto ops = &reader.operations;
 
   int match = 0;
   // for (size_t i = 0; i < ops->size(); i++) {
-  for (size_t i = 116; i < 117; i++) {
-    OP &op = ops->at(i);
+  size_t i = 116;
+  OP &op = ops->at(i);
 
-    CooTens left{op.left}, right{op.right}, real_out{op.out}, out;
+  CooTens left{op.left}, right{op.right}, real_out{op.out}, out;
 
-    // Call the kernel
-    std::vector<float> out_r(left.size() * right.size());
-    std::vector<float> out_i(left.size() * right.size());
-    std::vector<coo_meta_t> out_m(left.size() * right.size());
+  // Call the kernel
+  std::vector<float> out_r(left.size() * right.size());
+  std::vector<float> out_i(left.size() * right.size());
+  std::vector<coo_meta_t> out_m(left.size() * right.size());
 
-    cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
-         << " -> " << real_out.rank << " ... " << flush;
-    TeExecution te_exe;
-    out =
-        enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context, &te_exe);
+  e2e_t1 = high_resolution_clock::now();
+  cpu_t1 = high_resolution_clock::now();
 
-    for (size_t i = 0; i < out.size(); i++) {
-      out_r[i] = out.data_r[i];
-      out_i[i] = out.data_i[i];
-      out_m[i] = out.data_m[i];
-    }
+  cout << "Running test " << i << " with sizes " << left.rank << " x " << right.rank
+       << " -> " << real_out.rank << " ... " << flush;
+  TeExecution te_exe;
+  cpu_t2 = high_resolution_clock::now();
+  cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+  out = enqueue_tensor_expansion(left, right, krnl_tensor_expansion, q, context, &te_exe);
+  cpu_t1 = high_resolution_clock::now();
 
-    // Compare the output
-    CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};
+  for (size_t i = 0; i < out.size(); i++) {
+    out_r[i] = out.data_r[i];
+    out_i[i] = out.data_i[i];
+    out_m[i] = out.data_m[i];
+  }
+  cpu_t2 = high_resolution_clock::now();
+  cpu_time += duration_cast<nanoseconds>(cpu_t2 - cpu_t1);
+  e2e_t2 = high_resolution_clock::now();
+  e2e_time = duration_cast<nanoseconds>(e2e_t2 - e2e_t1);
 
-    if (predicted_out.size() != real_out.size()) {
-      cout << "FAILED" << endl;
-      cout << "Mismatch in sizes" << endl;
-      cout << "Predicted output size: " << predicted_out.size() << endl;
-      cout << "Real output size: " << real_out.size() << endl;
+  // Compare the output
+  CooTens predicted_out{out_r, out_i, out_m, left.rank * 2};
+
+  if (predicted_out.size() != real_out.size()) {
+    cout << "FAILED" << endl;
+    cout << "Mismatch in sizes" << endl;
+    cout << "Predicted output size: " << predicted_out.size() << endl;
+    cout << "Real output size: " << real_out.size() << endl;
+    match = 1;
+  }
+
+  for (size_t i = 0; i < predicted_out.size(); i++) {
+    if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
+          predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
+          predicted_out.data_m[i] == real_out.data_m[i])) {
       match = 1;
     }
-
-    for (size_t i = 0; i < predicted_out.size(); i++) {
-      if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
-            predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
-            predicted_out.data_m[i] == real_out.data_m[i])) {
-        match = 1;
-      }
-    }
-
-    if (match) {
-      cout << "FAILED" << endl;
-      cout << "Mismatch in data" << endl;
-      // print_op_matrices(op);
-      cout << "Predicted output:"
-           << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-           << "i) at (" << X(predicted_out.data_m[i]) << ", "
-           << Y(predicted_out.data_m[i]) << ")" << endl;
-      cout << "Real output:"
-           << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-           << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
-      cout << "Full Real output:" << endl;
-      real_out.print();
-      cout << "Full Predicted output:" << endl;
-      predicted_out.print();
-      op.print();
-    } else {
-      cout << "PASSED" << endl;
-    }
   }
+
+  if (match) {
+    cout << "FAILED" << endl;
+    cout << "Mismatch in data" << endl;
+    // print_op_matrices(op);
+    cout << "Predicted output:"
+         << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+         << "i) at (" << X(predicted_out.data_m[i]) << ", " << Y(predicted_out.data_m[i])
+         << ")" << endl;
+    cout << "Real output:"
+         << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+         << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+    cout << "Full Real output:" << endl;
+    real_out.print();
+    cout << "Full Predicted output:" << endl;
+    predicted_out.print();
+    op.print();
+  } else {
+    cout << "PASSED" << endl;
+  }
+
+  stats_recorder.record(qcfFilename, cpu_time, e2e_time, {te_exe}, {});
+  stats_recorder.write();
 
   return (match ? EXIT_FAILURE : EXIT_SUCCESS);
 }
