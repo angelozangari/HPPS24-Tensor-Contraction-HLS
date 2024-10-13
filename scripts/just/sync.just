@@ -58,11 +58,8 @@ down-logs:
 
 down-build:
     #!/usr/bin/env bash
-    mkdir -p ../build
-    rsync -avz --progress {{NAGS-VM}}:{{REMOTE_PATH}}/vitis/build_dir* {{ROOT_DIR}}/build/
-    rsync -avz --progress {{NAGS-VM}}:{{REMOTE_PATH}}/vitis/qcs_test_xrt {{ROOT_DIR}}/build/
-    rsync -avz --progress {{NAGS-VM}}:{{REMOTE_PATH}}/vitis/*.qcf {{ROOT_DIR}}/build/
-    rsync -avz --progress {{NAGS-VM}}:{{REMOTE_PATH}}/vitis/*.dat {{ROOT_DIR}}/build/
+    mkdir -p {{ROOT_DIR}}/build/vitis
+    rsync -avz --progress --exclude-from ./sync-filelists/exclude-build.txt {{NAGS-VM}}:{{REMOTE_PATH}}/build/vitis/ {{ROOT_DIR}}/build/vitis/
 
 down-csv:
     #!/usr/bin/env bash
