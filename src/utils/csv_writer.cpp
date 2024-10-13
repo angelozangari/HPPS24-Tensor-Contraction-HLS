@@ -9,11 +9,8 @@ CsvWriter::CsvWriter(const string &filename, bool append) : filename(filename) {
     {
       ifstream reader(filename);
 
-      //   check if file has first row by checking if it is empty
-      reader.seekg(0, ios::end);
-      if (reader.tellg() == 0) {
-        already_written_header = false;
-      } else {
+      // check if file has first row by checking if it is empty
+      if (reader.peek() != ifstream::traits_type::eof()) {
         already_written_header = true;
       }
     }
