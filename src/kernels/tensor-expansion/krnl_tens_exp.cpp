@@ -1,8 +1,7 @@
 #include "krnl_tens_exp.h"
 
-void tensor_expansion(Tensor::Expansion::Chunked::complex_t *A,
-                      Tensor::Expansion::Chunked::complex_t *B,
-                      Tensor::Expansion::Chunked::complex_t *C, rank_t A_R, rank_t B_R) {
+void tensor_expansion(Tensor::Expansion::complex_t *A, Tensor::Expansion::complex_t *B,
+                      Tensor::Expansion::complex_t *C, rank_t A_R, rank_t B_R) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=16
 #pragma HLS INTERFACE m_axi port=B bundle=gmem1 depth=16
@@ -12,13 +11,11 @@ void tensor_expansion(Tensor::Expansion::Chunked::complex_t *A,
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
 
-  Tensor::Expansion::Chunked::tensor_expansion_chunked(A, B, C, A_R, B_R);
+  Tensor::Expansion::tensor_expansion_chunked(A, B, C, A_R, B_R);
 }
 
 namespace Tensor {
 namespace Expansion {
-
-namespace Chunked {
 
 void load_row(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read_info) {
   std::size_t is, ix;
@@ -85,6 +82,7 @@ void store_next(hls::stream<complex_t> &M_stream, complex_t *M,
   complex_t tmp;
 
   // write the elements
+STORE_NEXT_LOOP:
   for (uint16_t i = 0; i < write_info.elements_to_write; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
@@ -123,13 +121,16 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
   compute_info.b_exhausted = B_read_info.row_consumed;
 
   // load B in a cache to rewind if needed
+COMPUTE_CHUNKED_LOAD_B:
   for (int i = 0; i < B_read_info.elements_read; i++) {
     B_cached.write(B_row.read());
   }
 
   // iterate and compute the row
+COMPUTE_CHUNKED_OUTER_LOOP:
   for (int i = 0; i < A_read_info.elements_read; i++) {
     a = A_row.read();
+  COMPUTE_CHUNKED_INNER_LOOP:
     for (int j = 0; j < B_read_info.elements_read; j++) {
       // read from the cached and then push back
       b = B_cached.read();
@@ -184,11 +185,12 @@ void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A
   std::size_t B_num_rows = 1 << B_R;
 
 #pragma HLS DATAFLOW
-CHUNK_EXPANSION_LOOP:
   // iterate over all rows of the output tensor
+TE_OUTER_LOOP:
   for (int i = 0; i < A_num_rows; i++) {
     load_next(A, A_row, A_ri);
 
+  TE_INNER_LOOP:
     for (int j = 0; j < B_num_rows; j++) {
       // clang-format off
 #pragma HLS PIPELINE II=1
@@ -200,6 +202,7 @@ CHUNK_EXPANSION_LOOP:
       store_next(C_row, C, C_wi);
 
       // if a read was partial, load next and compute again, until both are exhausted
+    TE_WHILE_INNERMOST_LOOP:
       while (!ci.a_exhausted || !ci.b_exhausted) {
         if (!ci.b_exhausted) {
           // just load the next elements of B and keep A as it is
@@ -224,160 +227,6 @@ CHUNK_EXPANSION_LOOP:
     if (i < A_num_rows - 1) {
       // rewind B from the start
       B_ri = {};
-    }
-  }
-}
-
-} // namespace Chunked
-
-void load(float *Ar, float *Ai, coo_meta_t *Am, hls::stream<float> &Ar_stream,
-          hls::stream<float> &Ai_stream, hls::stream<coo_meta_t> &Am_stream,
-          dim_t A_size) {
-LOAD_LOOP:
-  for (int i = 0; i < A_size; i++) {
-    // clang-format off
-#pragma HLS PIPELINE II=1
-    // clang-format on
-    Ar_stream.write(Ar[i]);
-    Ai_stream.write(Ai[i]);
-    Am_stream.write(Am[i]);
-  }
-}
-
-void store(hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-           hls::stream<coo_meta_t> &Cm_stream, float *Cr, float *Ci, coo_meta_t *Cm,
-           dim_t C_size) {
-STORE_LOOP:
-  for (int i = 0; i < C_size; i++) {
-    // clang-format off
-#pragma HLS PIPELINE II=1
-    // clang-format on
-    Cr[i] = Cr_stream.read();
-    Ci[i] = Ci_stream.read();
-    Cm[i] = Cm_stream.read();
-  }
-}
-
-void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
-             hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
-             hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
-             hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-             hls::stream<coo_meta_t> &Cm_stream, const rank_t B_R) {
-  hls::stream<float> Ar_stream_buffer, Ai_stream_buffer, Br_stream_buffer,
-      Bi_stream_buffer, Br_cycle_buffer, Bi_cycle_buffer;
-  // clang-format off
-#pragma HLS STREAM variable=Ar_stream_buffer depth=1024
-#pragma HLS STREAM variable=Ai_stream_buffer depth=1024
-#pragma HLS STREAM variable=Br_stream_buffer depth=1024
-#pragma HLS STREAM variable=Bi_stream_buffer depth=1024
-#pragma HLS STREAM variable=Br_cycle_buffer depth=1024
-#pragma HLS STREAM variable=Bi_cycle_buffer depth=1024
-  // clang-format on
-  hls::stream<coo_meta_t> Am_stream_buffer, Bm_stream_buffer, Bm_cycle_buffer;
-  // clang-format off
-#pragma HLS STREAM variable=Am_stream_buffer depth=1024
-#pragma HLS STREAM variable=Bm_stream_buffer depth=1024
-#pragma HLS STREAM variable=Bm_cycle_buffer depth=1024
-  // clang-format on
-  float ar, ai, br, bi, cr, ci, tmp_r, tmp_i;
-  coo_meta_t am, bm, cm, tmp_m;
-
-  const dim_t BD = 1 << B_R;
-
-LOOP_T:
-  for (;;) {
-    tmp_r = Br_stream.read();
-    tmp_i = Bi_stream.read();
-    tmp_m = Bm_stream.read();
-    Br_cycle_buffer.write(tmp_r);
-    Bi_cycle_buffer.write(tmp_i);
-    Bm_cycle_buffer.write(tmp_m);
-    if (LAST_IN_TENSOR(tmp_m)) {
-      break;
-    }
-  }
-
-LOOP_N: // iterate over all rows of A
-  while (!Ar_stream.empty()) {
-
-  LOOP_M: // store in a stream the first row of A
-    for (;;) {
-      tmp_r = Ar_stream.read();
-      tmp_i = Ai_stream.read();
-      tmp_m = Am_stream.read();
-      Ar_stream_buffer.write(tmp_r);
-      Ai_stream_buffer.write(tmp_i);
-      Am_stream_buffer.write(tmp_m);
-      if (LAST_IN_ROW(tmp_m)) {
-        break;
-      }
-    }
-
-  LOOP_L: // iter for all the rows of B
-    for (;;) {
-
-    LOOP_Q: // store in a stream the first row of B
-      for (;;) {
-        tmp_r = Br_cycle_buffer.read();
-        tmp_i = Bi_cycle_buffer.read();
-        tmp_m = Bm_cycle_buffer.read();
-        Br_stream_buffer.write(tmp_r);
-        Bi_stream_buffer.write(tmp_i);
-        Bm_stream_buffer.write(tmp_m);
-        if (LAST_IN_ROW(tmp_m)) {
-          break;
-        }
-      }
-
-    LOOP_I: // compute the entire line of C
-      for (;;) {
-        ar = Ar_stream_buffer.read();
-        ai = Ai_stream_buffer.read();
-        am = Am_stream_buffer.read();
-      LOOP_J:
-        for (;;) {
-#pragma HLS PIPELINE II = 1
-          br = Br_stream_buffer.read();
-          bi = Bi_stream_buffer.read();
-          bm = Bm_stream_buffer.read();
-          cr = ar * br - ai * bi;
-          ci = ar * bi + ai * br;
-          X(cm) = X(am) * BD + X(bm);
-          Y(cm) = Y(am) * BD + Y(bm);
-          LAST_IN_ROW(cm) = LAST_IN_ROW(bm) & LAST_IN_ROW(am);
-          LAST_IN_TENSOR(cm) = LAST_IN_TENSOR(bm) & LAST_IN_TENSOR(am);
-          Cr_stream.write(cr);
-          Ci_stream.write(ci);
-          Cm_stream.write(cm);
-          if (!LAST_IN_ROW(am)) {
-            // reiterate the first row of B if As are not finished
-            Br_stream_buffer.write(br);
-            Bi_stream_buffer.write(bi);
-            Bm_stream_buffer.write(bm);
-          } else if (!Ar_stream.empty()) {
-            // recharge the first row of B
-            Br_cycle_buffer.write(br);
-            Bi_cycle_buffer.write(bi);
-            Bm_cycle_buffer.write(bm);
-          }
-
-          if (LAST_IN_ROW(bm)) {
-            break;
-          }
-        }
-        if (!LAST_IN_TENSOR(bm)) {
-          Ar_stream_buffer.write(ar);
-          Ai_stream_buffer.write(ai);
-          Am_stream_buffer.write(am);
-        }
-        if (LAST_IN_ROW(am)) {
-          break;
-        }
-      }
-
-      if (LAST_IN_TENSOR(bm)) {
-        break;
-      }
     }
   }
 }

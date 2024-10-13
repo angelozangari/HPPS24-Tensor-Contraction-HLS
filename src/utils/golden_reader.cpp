@@ -3,7 +3,7 @@
 #include <cstdint>
 
 using namespace std;
-using namespace Tensor::Expansion::Chunked;
+using namespace Tensor::Expansion;
 
 // Helper function to check if the system is little-endian
 bool is_little_endian() {

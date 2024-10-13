@@ -19,7 +19,7 @@
 
 using namespace std;
 using namespace std::chrono;
-using namespace Tensor::Expansion::Chunked;
+using namespace Tensor::Expansion;
 
 static const std::string error_message = "Error: Result mismatch:\n"
                                          "i = %d CPU result = %d Device result = %d\n";

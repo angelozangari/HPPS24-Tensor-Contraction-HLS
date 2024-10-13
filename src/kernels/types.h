@@ -31,7 +31,6 @@ typedef ap_uint<1> flag_t;
 
 namespace Tensor {
 namespace Expansion {
-namespace Chunked {
 
 /// @brief type indicating information about the read operation performed
 struct read_info_t {
@@ -81,6 +80,5 @@ struct complex_t {
   coo_meta_t m;
 };
 
-} // namespace Chunked
 } // namespace Expansion
 } // namespace Tensor

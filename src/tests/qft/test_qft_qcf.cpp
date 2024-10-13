@@ -21,9 +21,9 @@ CooTens compute_te(CooTens &left, CooTens &right, TeExecution *te_exe) {
   std::vector<float> out_i(left.size() * right.size());
   std::vector<coo_meta_t> out_m(left.size() * right.size());
 
-  vector<Chunked::complex_t> A_vec(left.data_r.size());
-  vector<Chunked::complex_t> B_vec(right.data_r.size());
-  vector<Chunked::complex_t> C_vec(left.size() * right.size());
+  vector<complex_t> A_vec(left.data_r.size());
+  vector<complex_t> B_vec(right.data_r.size());
+  vector<complex_t> C_vec(left.size() * right.size());
 
   for (size_t i = 0; i < left.data_r.size(); i++) {
     A_vec[i].r = left.data_r[i];

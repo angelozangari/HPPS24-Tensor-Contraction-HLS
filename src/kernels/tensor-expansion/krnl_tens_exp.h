@@ -2,20 +2,17 @@
 
 #include <cstdint>
 
-#include "kernels/types.h"
 #include "ap_int.h"
 #include "hls_stream.h"
+#include "kernels/types.h"
 
 extern "C" {
-void tensor_expansion(Tensor::Expansion::Chunked::complex_t *A,
-                      Tensor::Expansion::Chunked::complex_t *B,
-                      Tensor::Expansion::Chunked::complex_t *C, rank_t A_R, rank_t B_R);
+void tensor_expansion(Tensor::Expansion::complex_t *A, Tensor::Expansion::complex_t *B,
+                      Tensor::Expansion::complex_t *C, rank_t A_R, rank_t B_R);
 }
 
 namespace Tensor {
 namespace Expansion {
-
-namespace Chunked {
 
 // if CHUNK_SIZE is changed, the compute function must be updated accordingly (stream
 // depths, etc.)
@@ -82,25 +79,6 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
  */
 void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A_R,
                               rank_t B_R);
-
-} // namespace Chunked
-
-void load(float *Ar, float *Ai, coo_meta_t *Am, hls::stream<float> &Ar_stream,
-          hls::stream<float> &Ai_stream, hls::stream<coo_meta_t> &Am_stream,
-          dim_t A_size);
-
-void store(hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-           hls::stream<coo_meta_t> &Cm_stream, float *Cr, float *Ci, coo_meta_t *Cm,
-           dim_t C_size);
-
-/**
- * @brief Compute the tensor expansion of two tensors
- */
-void compute(hls::stream<float> &Ar_stream, hls::stream<float> &Ai_stream,
-             hls::stream<coo_meta_t> &Am_stream, hls::stream<float> &Br_stream,
-             hls::stream<float> &Bi_stream, hls::stream<coo_meta_t> &Bm_stream,
-             hls::stream<float> &Cr_stream, hls::stream<float> &Ci_stream,
-             hls::stream<coo_meta_t> &Cm_stream, const rank_t B_R);
 
 } // namespace Expansion
 } // namespace Tensor
