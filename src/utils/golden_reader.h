@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../types.h"
+#include "kernels/types.h"
 #include <fstream>
 #include <iostream>
 #include <memory>

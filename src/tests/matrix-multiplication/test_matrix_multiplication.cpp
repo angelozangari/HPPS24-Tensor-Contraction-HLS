@@ -3,8 +3,8 @@
 #include <fstream>
 #include <stdlib.h>
 
-#include "matrix-multiplication/krnl_mat_mul.h"
-#include "tests/golden_reader.h"
+#include "kernels/matrix-multiplication/krnl_mat_mul.h"
+#include "utils/golden_reader.h"
 
 using namespace std;
 

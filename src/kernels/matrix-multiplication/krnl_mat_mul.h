@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "../types.h"
+#include "kernels/types.h"
 #include "ap_int.h"
 #include "hls_stream.h"
 

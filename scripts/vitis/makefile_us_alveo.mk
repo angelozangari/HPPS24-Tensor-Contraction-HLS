@@ -61,7 +61,7 @@ PLATFORM_BLOCKLIST += nodma
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
 CXXFLAGS += -I$(XF_PROJ_ROOT)/src
-HOST_SRCS += host/host-combined.cpp $(XF_PROJ_ROOT)/src/tests/golden_reader.cpp $(XF_PROJ_ROOT)/src/tests/qcf_reader.cpp $(XF_PROJ_ROOT)/src/tests/csv_writer.cpp
+HOST_SRCS += $(XF_PROJ_ROOT)/src/host/host-combined.cpp $(XF_PROJ_ROOT)/src/utils/golden_reader.cpp $(XF_PROJ_ROOT)/src/utils/qcf_reader.cpp $(XF_PROJ_ROOT)/src/utils/csv_writer.cpp
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 
@@ -89,11 +89,11 @@ build: check-vitis check-device $(BUILD_DIR)/krnl_qcs.xclbin
 xclbin: build
 
 ############################## Setting Rules for Binary Containers (Building Kernels) ##############################
-$(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/tensor-expansion/krnl_tens_exp.cpp
+$(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_tens_exp.cpp
 	mkdir -p $(TEMP_DIR)
 	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k tensor_expansion --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
-$(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/matrix-multiplication/krnl_mat_mul.cpp
+$(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/kernels/matrix-multiplication/krnl_mat_mul.cpp
 	mkdir -p $(TEMP_DIR)
 	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k matrix_multiplication --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 

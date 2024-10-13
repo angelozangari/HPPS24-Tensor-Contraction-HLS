@@ -11,12 +11,13 @@ alias tbhe := tail-build-hardware-emulation
 alias trhe := tail-run-hardware-emulation
 alias tbha := tail-build-hardware
 
-remote_path := env('HLS_WORKDIR_REMOTE_PATH')
-vitis_settings_path := env('HLS_VITIS_SETTINGS_PATH')
-xrt_setup_path := env('HLS_XRT_SETUP_PATH')
-nags-vm := env('HLS_NAGS21_HOST')
-lynx-vm := env('HLS_LYNX_HOST')
-lynx_deploy_dir := env('HLS_LYNX_DEPLOY_DIR')
+USER := env('HLS_USER')
+REMOTE_PATH := env('HLS_WORKDIR_REMOTE_PATH')
+VITIS_SETTINGS_PATH := env('HLS_VITIS_SETTINGS_PATH')
+XRT_SETUP_PATH := env('HLS_XRT_SETUP_PATH')
+NAGS-VM := USER + "@nags21.local.necst.it"
+LYNX-VM := USER + "@lynx.local.necst.it"
+LYNX_DEPLOY_DIR := env('HLS_LYNX_DEPLOY_DIR')
 
 [private]
 _default:
@@ -24,33 +25,36 @@ _default:
 
 cmd CMD MODE:
     #!/usr/bin/env bash
-    ssh {{nags-vm}} /bin/bash << 'ENDSSH'
+    ssh {{NAGS-VM}} /bin/bash << 'ENDSSH'
     # change directory to project
-    cd {{remote_path}}
+    cd {{REMOTE_PATH}}
+    # create build directory and copy makefiles
+    mkdir -p ./build/vitis/logs/
+    cp ./scripts/vitis/* ./build/vitis/
     # source the correct settings files
-    . {{vitis_settings_path}}
-    . {{xrt_setup_path}}
+    . {{VITIS_SETTINGS_PATH}}
+    . {{XRT_SETUP_PATH}}
     # run CMD with MODE
-    cd ./vitis
-    make {{CMD}} TARGET={{MODE}} > ./{{CMD}}_{{MODE}}.log 2>&1 &
+    cd ./build/vitis
+    make {{CMD}} TARGET={{MODE}} > ./logs/{{CMD}}_{{MODE}}.log 2>&1 &
     ENDSSH
 
 tail-log CMD MODE:
     #!/usr/bin/env bash
-    ssh {{nags-vm}} /bin/bash << 'ENDSSH'
-    tail -f {{remote_path}}/vitis/{{CMD}}_{{MODE}}.log
+    ssh {{NAGS-VM}} /bin/bash << 'ENDSSH'
+    tail -f {{REMOTE_PATH}}/build/vitis/logs/{{CMD}}_{{MODE}}.log
     ENDSSH
 
 # build host
 build-host:
     #!/usr/bin/env bash
-    ssh {{nags-vm}} /bin/bash << 'ENDSSH'
+    ssh {{NAGS-VM}} /bin/bash << 'ENDSSH'
     # change directory to project
-    cd {{remote_path}}
+    cd {{REMOTE_PATH}}
     # source the correct settings files
-    . {{vitis_settings_path}}
-    . {{xrt_setup_path}}
-    cd ./vitis
+    . {{VITIS_SETTINGS_PATH}}
+    . {{XRT_SETUP_PATH}}
+    cd ./build/vitis
     make host
     ENDSSH
 
@@ -77,9 +81,9 @@ run-hardware-emulation:
 # run hardware
 run-hardware:
     #!/usr/bin/env bash
-    ssh {{lynx-vm}} /bin/bash << 'ENDSSH'
-    cd {{lynx_deploy_dir}}
-    . {{xrt_setup_path}}
+    ssh {{LYNX-VM}} /bin/bash << 'ENDSSH'
+    cd {{LYNX_DEPLOY_DIR}}
+    . {{XRT_SETUP_PATH}}
     for f in *.dat; do
         ./qcs_test_xrt krnl_qcs.xclbin $f
     done
@@ -108,15 +112,15 @@ tail-build-hardware:
 # kill all running processes on nags
 nags-killall:
     #!/usr/bin/env bash
-    ssh {{nags-vm}} /bin/bash << 'ENDSSH'
-    pkill -u federico.lolli
+    ssh {{NAGS-VM}} /bin/bash << 'ENDSSH'
+    pkill -u {{USER}}
     ENDSSH
     echo "Killed all cosim processes"
 
 # kill all running processes on lynx
 lynx-killall:
     #!/usr/bin/env bash
-    ssh {{lynx-vm}} /bin/bash << 'ENDSSH'
-    pkill -u federico.lolli
+    ssh {{LYNX-VM}} /bin/bash << 'ENDSSH'
+    pkill -u {{USER}}
     ENDSSH
     echo "Killed all lynx processes"

@@ -1,6 +1,6 @@
-mod vitis 'scripts/vitis.just'
-mod sync 'scripts/sync.just'
-mod report 'scripts/report.just'
+mod vitis 'scripts/just/vitis.just'
+mod sync 'scripts/just/sync.just'
+mod report 'scripts/just/report.just'
 
 set dotenv-load
 

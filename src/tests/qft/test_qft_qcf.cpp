@@ -3,11 +3,11 @@
 #include <fstream>
 #include <stdlib.h>
 
-#include "matrix-multiplication/krnl_mat_mul.h"
-#include "tensor-expansion/krnl_tens_exp.h"
-#include "tests/csv_writer.h"
-#include "tests/golden_reader.h"
-#include "tests/qcf_reader.h"
+#include "kernels/matrix-multiplication/krnl_mat_mul.h"
+#include "kernels/tensor-expansion/krnl_tens_exp.h"
+#include "utils/csv_writer.h"
+#include "utils/golden_reader.h"
+#include "utils/qcf_reader.h"
 #include <chrono>
 #include <unordered_map>
 #include <vector>

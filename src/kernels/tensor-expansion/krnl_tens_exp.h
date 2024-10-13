@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "../types.h"
+#include "kernels/types.h"
 #include "ap_int.h"
 #include "hls_stream.h"
 
@@ -19,7 +19,7 @@ namespace Chunked {
 
 // if CHUNK_SIZE is changed, the compute function must be updated accordingly (stream
 // depths, etc.)
-constexpr uint16_t CHUNK_SIZE = 8;
+constexpr uint16_t CHUNK_SIZE = 128;
 
 /** @brief load operation for a row of a COO tensor. This can result in a partial read if
  * `CHUNK_SIZE` is smaller than the elements in a row (pointed out by

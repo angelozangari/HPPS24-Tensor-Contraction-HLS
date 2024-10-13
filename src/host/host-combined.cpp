@@ -7,9 +7,9 @@
   }
 
 #include "host-combined.h"
-#include "tests/csv_writer.h"
-#include "tests/golden_reader.h"
-#include "tests/qcf_reader.h"
+#include "utils/csv_writer.h"
+#include "utils/golden_reader.h"
+#include "utils/qcf_reader.h"
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -80,6 +80,7 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   // Data will be migrated to kernel space
   OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_left, buffer_right},
                                                   0 /* 0 means from host*/));
+  OCL_CHECK(err, q.finish());
 
   auto t2 = high_resolution_clock::now();
   te_exe->transfer_time = duration_cast<nanoseconds>(t2 - t1);
@@ -87,6 +88,7 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   // Launch the Kernel
   t1 = high_resolution_clock::now();
   OCL_CHECK(err, err = q.enqueueTask(krnl));
+  OCL_CHECK(err, q.finish());
   t2 = high_resolution_clock::now();
   te_exe->kernel_time = duration_cast<nanoseconds>(t2 - t1);
 
@@ -95,7 +97,6 @@ CooTens enqueue_tensor_expansion(const CooTens &left, const CooTens &right,
   // order to view the results. This call will transfer the data from FPGA to
   // source_results vector
   OCL_CHECK(err, q.enqueueMigrateMemObjects({buffer_out}, CL_MIGRATE_MEM_OBJECT_HOST));
-
   OCL_CHECK(err, q.finish());
 
   size_t out_size = left.size() * right.size();

@@ -1,0 +1,17 @@
+../../src/host/host-combined.cpp
+../../src/host/host-combined.h
+../../src/kernels/matrix-multiplication/krnl_mat_mul.cpp
+../../src/kernels/matrix-multiplication/krnl_mat_mul.h
+../../src/kernels/tensor-expansion/krnl_tens_exp.cpp
+../../src/kernels/tensor-expansion/krnl_tens_exp.h
+../../src/kernels/types.h
+../../src/utils/csv_writer.cpp
+../../src/utils/csv_writer.h
+../../src/utils/golden_reader.cpp
+../../src/utils/golden_reader.h
+../../src/utils/qcf_reader.cpp
+../../src/utils/qcf_reader.h
+../../scripts/vitis/Makefile
+../../scripts/vitis/makefile_us_alveo.mk
+../../scripts/vitis/utils.mk
+../../scripts/vitis/xrt.ini

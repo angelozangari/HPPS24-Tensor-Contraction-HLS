@@ -3,9 +3,9 @@
 #include <fstream>
 #include <stdlib.h>
 
-#include "tensor-expansion/krnl_tens_exp.h"
-#include "tests/golden_reader.h"
-#include <types.h>
+#include "kernels/tensor-expansion/krnl_tens_exp.h"
+#include "kernels/types.h"
+#include "utils/golden_reader.h"
 
 using namespace std;
 using namespace Tensor::Expansion;
