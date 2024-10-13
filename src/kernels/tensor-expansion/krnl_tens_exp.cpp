@@ -18,39 +18,43 @@ namespace Tensor {
 namespace Expansion {
 
 void load_row(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read_info) {
-  std::size_t is, ix;
-  complex_t tmp;
+  std::size_t is;
+  complex_t tmp, buffer[CHUNK_SIZE];
+
+  // reset elements read
+  read_info.elements_read = 0;
 
   // get the start index
   is = read_info.row_index + read_info.offset_in_row;
 
-LOAD_ROW_LOOP:
-  // read the row
+  // this loop serves as a flushable buffer to avoid increasing the latency of the
+  // following loop
+LOAD_ROW_BUFFER:
   for (uint16_t i = 0; i < CHUNK_SIZE; i++) {
-    // clang-format off
-#pragma HLS PIPELINE II=1
-    // clang-format on
-
-    // update the index
-    ix = is + i;
-
-    // update the stream
-    tmp = M[ix];
-    M_stream.write(M[ix]);
-
-    // update the read info and terminate early if the row is consumed
-    if (LAST_IN_ROW(tmp.m)) {
-      read_info.elements_read = i + 1;
-      read_info.offset_in_row += i + 1;
-      read_info.row_consumed = 1;
-      return;
-    }
+    // load the buffer
+    buffer[i] = M[is + i];
   }
 
-  // update the read info
-  read_info.elements_read = CHUNK_SIZE;
-  read_info.offset_in_row += CHUNK_SIZE;
-  read_info.row_consumed = 0;
+  // pipelined loop to write the buffer to the stream until the end of the row
+LOAD_ROW_STREAM:
+  for (uint16_t i = 0; i < CHUNK_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=2
+    // clang-format on
+
+    // update the stream
+    tmp = buffer[i];
+    M_stream.write(tmp);
+
+    // update the read info
+    read_info.elements_read++;
+    read_info.offset_in_row++;
+    read_info.row_consumed = LAST_IN_ROW(tmp.m);
+
+    if (LAST_IN_ROW(tmp.m)) {
+      break;
+    }
+  }
 }
 
 void load_next(complex_t *M, hls::stream<complex_t> &M_stream, read_info_t &read_info) {
@@ -123,6 +127,9 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
   // load B in a cache to rewind if needed
 COMPUTE_CHUNKED_LOAD_B:
   for (int i = 0; i < B_read_info.elements_read; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     B_cached.write(B_row.read());
   }
 
@@ -132,6 +139,9 @@ COMPUTE_CHUNKED_OUTER_LOOP:
     a = A_row.read();
   COMPUTE_CHUNKED_INNER_LOOP:
     for (int j = 0; j < B_read_info.elements_read; j++) {
+      // clang-format off
+#pragma HLS PIPELINE II=1
+      // clang-format on
       // read from the cached and then push back
       b = B_cached.read();
       c.r = a.r * b.r - a.i * b.i;
@@ -184,7 +194,6 @@ void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A
   std::size_t A_num_rows = 1 << A_R;
   std::size_t B_num_rows = 1 << B_R;
 
-#pragma HLS DATAFLOW
   // iterate over all rows of the output tensor
 TE_OUTER_LOOP:
   for (int i = 0; i < A_num_rows; i++) {
@@ -192,18 +201,11 @@ TE_OUTER_LOOP:
 
   TE_INNER_LOOP:
     for (int j = 0; j < B_num_rows; j++) {
-      // clang-format off
-#pragma HLS PIPELINE II=1
-      // clang-format on
-
-      load_next(B, B_row, B_ri);
-
-      compute_chunked(A_row, A_ri, B_row, B_ri, C_row, C_wi, B_R, ci);
-      store_next(C_row, C, C_wi);
 
       // if a read was partial, load next and compute again, until both are exhausted
     TE_WHILE_INNERMOST_LOOP:
       while (!ci.a_exhausted || !ci.b_exhausted) {
+#pragma HLS DATAFLOW
         if (!ci.b_exhausted) {
           // just load the next elements of B and keep A as it is
           load_next(B, B_row, B_ri);
@@ -215,6 +217,9 @@ TE_OUTER_LOOP:
         compute_chunked(A_row, A_ri, B_row, B_ri, C_row, C_wi, B_R, ci);
         store_next(C_row, C, C_wi);
       }
+
+      // reset the compute info
+      ci.reset();
 
       // if we are not at the end of B, rewind the same row of A
       if (j < B_num_rows - 1) {

@@ -34,7 +34,9 @@ namespace Expansion {
 
 /// @brief type indicating information about the read operation performed
 struct read_info_t {
-  read_info_t() : row_index(0), offset_in_row(0), elements_read(0), row_consumed(0) {}
+  read_info_t() : row_index(0), offset_in_row(0), elements_read(0), row_consumed(0) {
+#pragma HLS inline
+  }
 
   /// @brief offset of the row being read
   dim_t row_index;
@@ -49,7 +51,9 @@ struct read_info_t {
 
 /// @brief type indicating information about the write operation performed
 struct write_info_t {
-  write_info_t() : writing_tail(0), elements_to_write(0) {}
+  write_info_t() : writing_tail(0), elements_to_write(0) {
+#pragma HLS inline
+  }
 
   /// @brief offset of the element being written
   dim_t writing_tail;
@@ -59,7 +63,14 @@ struct write_info_t {
 
 /// @brief type indicating information about the computation performed
 struct compute_info_t {
-  compute_info_t() : a_exhausted(0), b_exhausted(0) {}
+  compute_info_t() : a_exhausted(0), b_exhausted(0) {
+#pragma HLS inline
+  }
+  void reset() {
+#pragma HLS inline
+    a_exhausted = 0;
+    b_exhausted = 0;
+  }
 
   /// @brief flag indicating if A row has been exhausted after the computation
   flag_t a_exhausted;
@@ -69,8 +80,12 @@ struct compute_info_t {
 
 /// @brief data type representing a complex number element in a COO tensor
 struct complex_t {
-  complex_t() : r(0), i(0), m(0) {}
-  complex_t(float r, float i, coo_meta_t m) : r(r), i(i), m(m) {}
+  complex_t() : r(0), i(0), m(0) {
+#pragma HLS inline
+  }
+  complex_t(float r, float i, coo_meta_t m) : r(r), i(i), m(m) {
+#pragma HLS inline
+  }
 
   /// @brief real part
   float r;
