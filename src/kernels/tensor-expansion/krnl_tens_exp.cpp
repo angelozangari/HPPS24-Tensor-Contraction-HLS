@@ -110,7 +110,7 @@ void compute_chunked(hls::stream<complex_t> &A_row, read_info_t &A_read_info,
   hls::stream<complex_t> B_cached;
   flag_t a_partial, b_partial;
   // clang-format off
-#pragma HLS STREAM variable=B_cached depth=256
+#pragma HLS STREAM variable=B_cached depth=16
   // clang-format on
   const dim_t BD = 1 << B_R;
 
@@ -173,9 +173,9 @@ void tensor_expansion_chunked(complex_t *A, complex_t *B, complex_t *C, rank_t A
 
   hls::stream<complex_t> A_row, B_row, C_row;
   // clang-format off
-#pragma HLS STREAM variable=A_row depth=256
-#pragma HLS STREAM variable=B_row depth=256
-#pragma HLS STREAM variable=C_row depth=256
+#pragma HLS STREAM variable=A_row depth=16
+#pragma HLS STREAM variable=B_row depth=16
+#pragma HLS STREAM variable=C_row depth=16
   // clang-format on
 
   // compute the number of rows expected (as 2^(rank / 2)) (e.g. with a single qubit gate
