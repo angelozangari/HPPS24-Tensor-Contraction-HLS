@@ -59,7 +59,7 @@ down-logs:
 down-build:
     #!/usr/bin/env bash
     mkdir -p {{ROOT_DIR}}/build/vitis
-    rsync -avz --progress --exclude-from ./sync-filelists/exclude-build.txt {{NAGS-VM}}:{{REMOTE_PATH}}/build/vitis/ {{ROOT_DIR}}/build/vitis/
+    rsync -arvz --progress --filter='merge ./sync-filelists/filter-build.txt' {{NAGS-VM}}:{{REMOTE_PATH}}/build/vitis/ {{ROOT_DIR}}/build/vitis/
 
 down-csv:
     #!/usr/bin/env bash

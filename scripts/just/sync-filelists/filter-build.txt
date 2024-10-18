@@ -1,0 +1,5 @@
++ *.log
++ logs/
++ build_dir*/
++ _x.*/logs/
++ _x.*/reports/
