@@ -1,3 +1,16 @@
+// This file includes code from SpMM_TCAD licensed under the
+// Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+// 
+// Original author(s): Shiqing Li, Shuo Huai, Weichen Liu
+// Source: [https://github.com/lsq314/SpMM_TCAD
+// License: https://creativecommons.org/licenses/by-nc-sa/4.0/
+//
+// Modifications made: 
+// 
+// Note: This code may not be used for commercial purposes as per the
+// Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+
+
 #ifndef UTIL
 #define UTIL
 
