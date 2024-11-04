@@ -93,12 +93,13 @@ $(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_
 	mkdir -p $(TEMP_DIR)
 	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k tensor_expansion --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
-$(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/kernels/matrix-multiplication/krnl_mat_mul.cpp
-	mkdir -p $(TEMP_DIR)
-	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k matrix_multiplication --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
+# $(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/kernels/matrix-multiplication/krnl_mat_mul.cpp
+# 	mkdir -p $(TEMP_DIR)
+# 	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k matrix_multiplication --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
 
-$(BUILD_DIR)/krnl_qcs.xclbin: $(TEMP_DIR)/krnl_tens_exp.xo $(TEMP_DIR)/krnl_mat_mul.xo
+# $(BUILD_DIR)/krnl_qcs.xclbin: $(TEMP_DIR)/krnl_tens_exp.xo $(TEMP_DIR)/krnl_mat_mul.xo
+$(BUILD_DIR)/krnl_qcs.xclbin: $(TEMP_DIR)/krnl_tens_exp.xo
 	mkdir -p $(BUILD_DIR)
 	v++ -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(LINK_OUTPUT)' $(+)
 	v++ -p $(LINK_OUTPUT) $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $(BUILD_DIR)/krnl_qcs.xclbin
