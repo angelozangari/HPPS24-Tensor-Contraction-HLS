@@ -3,7 +3,6 @@ add_compile_options(-Wno-unknown-warning-option)
 
 add_library(qcslib STATIC
     # Kernels
-    # src/kernels/tensor-expansion/krnl_tens_exp.cpp
     src/kernels/tensor-expansion/krnl_left_tp.cpp
     # src/kernels/matrix-multiplication/krnl_mat_mul.cpp
 
