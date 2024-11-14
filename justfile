@@ -27,17 +27,17 @@ build-ninja:
     cmake -S . -B build -G Ninja
     cmake --build build
 
-test-tensor-expansion: build-ninja
+test-tensor-product: build-ninja
     #!/usr/bin/env bash
     set -euo pipefail
     cd src/tests/tensor-expansion
-    ../../../build/test-tensor-expansion
+    ../../../build/test-tensor-product
 
-debug-tensor-expansion: build-ninja
+debug-tensor-product: build-ninja
     #!/usr/bin/env bash
     set -euo pipefail
     cd src/tests/tensor-expansion
-    gdb ../../../build/test-tensor-expansion
+    gdb ../../../build/test-tensor-product
 
 test-matrix-multiplication: build-ninja
     #!/usr/bin/env bash

@@ -13,10 +13,10 @@ include(scripts/cmake/dependencies.cmake)
 ##########################################################################
 
 # expansion
-add_executable(test-tensor-expansion src/tests/tensor-expansion/test_tensor_expansion.cpp)
-target_compile_definitions(test-tensor-expansion PRIVATE TEST_ALL)
-target_include_directories(test-tensor-expansion PUBLIC include)
-target_link_libraries(test-tensor-expansion PUBLIC qcslib)
+add_executable(test-tensor-product src/tests/tensor-expansion/test_tensor_product.cpp)
+target_compile_definitions(test-tensor-product PRIVATE TEST_ALL)
+target_include_directories(test-tensor-product PUBLIC include)
+target_link_libraries(test-tensor-product PUBLIC qcslib)
 
 # matmul
 # add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)

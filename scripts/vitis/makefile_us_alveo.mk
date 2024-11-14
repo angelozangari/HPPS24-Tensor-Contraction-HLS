@@ -43,16 +43,15 @@ endif
 ############################## Setting up Project Variables ##############################
 TARGET := hw
 VPP_LDFLAGS :=
+KRNL := tp
+INPUTF_FILE := golden-vectors.dat
 include ./utils.mk
 
 TEMP_DIR := ./_x.$(TARGET).$(XSA)
 BUILD_DIR := ./build_dir.$(TARGET).$(XSA)
-
-LINK_OUTPUT := $(BUILD_DIR)/krnl_qcs.link.xclbin
 PACKAGE_OUT = ./package.$(TARGET)
 
-VPP_PFLAGS := 
-CMD_ARGS = $(BUILD_DIR)/krnl_qcs.xclbin golden-vectors.dat
+CMD_ARGS = $(BUILD_DIR)/krnl_$(KRNL).xclbin $(INPUTF_FILE)
 CXXFLAGS += -I$(XILINX_XRT)/include -I$(XILINX_VIVADO)/include -I$(XILINX_HLS)/include -Wall -O0 -g -std=c++1y
 LDFLAGS += -L$(XILINX_XRT)/lib -pthread -lOpenCL
 
@@ -61,7 +60,7 @@ PLATFORM_BLOCKLIST += nodma
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
 CXXFLAGS += -I$(XF_PROJ_ROOT)/src
-HOST_SRCS += $(XF_PROJ_ROOT)/src/host/host-combined.cpp $(XF_PROJ_ROOT)/src/utils/golden_reader.cpp $(XF_PROJ_ROOT)/src/utils/qcf_reader.cpp $(XF_PROJ_ROOT)/src/utils/csv_writer.cpp
+HOST_SRCS += $(XF_PROJ_ROOT)/src/host/host-$(KRNL).cpp $(XF_PROJ_ROOT)/src/host/common.cpp $(XF_PROJ_ROOT)/src/utils/golden_reader.cpp $(XF_PROJ_ROOT)/src/utils/qcf_reader.cpp $(XF_PROJ_ROOT)/src/utils/csv_writer.cpp
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 
@@ -72,7 +71,7 @@ LDFLAGS += -pthread
 VPP_FLAGS += --save-temps 
 
 
-EXECUTABLE = ./qcs_test_xrt
+EXECUTABLE = ./host-$(KRNL)-xrt
 EMCONFIG_DIR = $(TEMP_DIR)
 
 ############################## Setting Targets ##############################
@@ -89,9 +88,13 @@ build: check-vitis check-device $(BUILD_DIR)/krnl_qcs.xclbin
 xclbin: build
 
 ############################## Setting Rules for Binary Containers (Building Kernels) ##############################
-$(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_tens_exp.cpp
+$(TEMP_DIR)/krnl_left_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_left_tp.cpp
 	mkdir -p $(TEMP_DIR)
-	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k tensor_expansion --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
+	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k krnl_left_tp --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
+
+$(TEMP_DIR)/krnl_right_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_right_tp.cpp
+	mkdir -p $(TEMP_DIR)
+	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k krnl_right_tp --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
 # $(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/kernels/matrix-multiplication/krnl_mat_mul.cpp
 # 	mkdir -p $(TEMP_DIR)
@@ -101,8 +104,13 @@ $(TEMP_DIR)/krnl_tens_exp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_
 # $(BUILD_DIR)/krnl_qcs.xclbin: $(TEMP_DIR)/krnl_tens_exp.xo $(TEMP_DIR)/krnl_mat_mul.xo
 $(BUILD_DIR)/krnl_qcs.xclbin: $(TEMP_DIR)/krnl_tens_exp.xo
 	mkdir -p $(BUILD_DIR)
-	v++ -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(LINK_OUTPUT)' $(+)
-	v++ -p $(LINK_OUTPUT) $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $(BUILD_DIR)/krnl_qcs.xclbin
+	v++ -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_qcs.link.xclbin' $(+)
+	v++ -p $(BUILD_DIR)/krnl_qcs.link.xclbin $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $(BUILD_DIR)/krnl_qcs.xclbin
+
+$(BUILD_DIR)/krnl_tp.xclbin: $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
+	mkdir -p $(BUILD_DIR)
+	v++ -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(+)
+	v++ -p $(BUILD_DIR)/krnl_tp.link.xclbin $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $@
 
 ############################## Setting Rules for Host (Building Host Executable) ##############################
 $(EXECUTABLE): $(HOST_SRCS) | check-xrt
