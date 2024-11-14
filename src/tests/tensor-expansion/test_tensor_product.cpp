@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "kernels/tensor-expansion/krnl_left_tp.h"
-// #include "kernels/tensor-expansion/krnl_right_tp.h"
+#include "kernels/tensor-expansion/krnl_right_tp.h"
 #include "kernels/types.h"
 #include "utils/golden_reader.h"
 
@@ -50,9 +50,7 @@ int main() {
       } else if (op.kind == OpKind::TensProdRight) {
         cout << "Running unary test (TPR) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
-        // krnl_right_tp(A_vec.data(), C_vec.data(), input.rank);
-        cout << "SKIPPED" << endl;
-        continue;
+        krnl_right_tp(A_vec.data(), C_vec.data(), input.rank);
       } else {
         cout << "ERROR: Unsupported unary operation kind" << endl;
         return 1;

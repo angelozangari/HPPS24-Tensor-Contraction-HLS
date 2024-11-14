@@ -19,16 +19,6 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R);
 }
 
 namespace Tensor {
-
-/**
- * @brief Load a tensor row from DDR to a stream.
- * @param M pointer to the tensor in DDR
- * @param index index of element to start reading from
- * @param M_stream stream to write the row to
- * @return number of elements read
- */
-// size_t load_tensor_row(complex_t *M, size_t index, hls::stream<complex_t> &M_stream);
-
 namespace Product {
 namespace Left {
 
