@@ -30,12 +30,12 @@ int main() {
       CooTens real_out{unary_op.out};
 
       // Call the appropriate kernel based on the operation kind
-      std::vector<float> out_r(input.size());
-      std::vector<float> out_i(input.size());
-      std::vector<coo_meta_t> out_m(input.size());
+      std::vector<float> out_r(real_out.size());
+      std::vector<float> out_i(real_out.size());
+      std::vector<coo_meta_t> out_m(real_out.size());
 
       vector<complex_t> A_vec(input.data_r.size());
-      vector<complex_t> C_vec(input.size());
+      vector<complex_t> C_vec(real_out.size());
 
       for (size_t i = 0; i < input.data_r.size(); i++) {
         A_vec[i].r = input.data_r[i];
@@ -44,13 +44,15 @@ int main() {
       }
 
       if (op.kind == OpKind::TensProdLeft) {
-        cout << "Running unary test (TensProdLeft) " << i << " with size " << input.rank
-             << " -> " << real_out.rank << " ... " << flush;
+        cout << "Running unary test (TPL) " << i << " with size " << input.rank << " -> "
+             << real_out.rank << " ... " << flush;
         krnl_left_tp(A_vec.data(), C_vec.data(), input.rank);
       } else if (op.kind == OpKind::TensProdRight) {
-        cout << "Running unary test (TensProdRight) " << i << " with size " << input.rank
-             << " -> " << real_out.rank << " ... " << flush;
+        cout << "Running unary test (TPR) " << i << " with size " << input.rank << " -> "
+             << real_out.rank << " ... " << flush;
         // krnl_right_tp(A_vec.data(), C_vec.data(), input.rank);
+        cout << "SKIPPED" << endl;
+        continue;
       } else {
         cout << "ERROR: Unsupported unary operation kind" << endl;
         return 1;
@@ -70,6 +72,12 @@ int main() {
         cout << "Mismatch in sizes" << endl;
         cout << "Predicted output size: " << predicted_out.size() << endl;
         cout << "Real output size: " << real_out.size() << endl;
+        cout << "Input: " << endl;
+        input.print();
+        cout << "Predicted output:" << endl;
+        predicted_out.print();
+        cout << "Real output:" << endl;
+        real_out.print();
         return 1;
       }
 

@@ -205,9 +205,13 @@ CooTens::CooTens(complex_t *tens, size_t size, int rank, MatrixFormat format)
 void CooTens::print() const {
   printf("%s\n", format == MatrixFormat::RowMajor ? "Row-major: " : "Col-major: ");
   for (size_t i = 0; i < size(); i++) {
-    printf("(%f + %fi) at (%lu, %lu) - (%d, %d)\n", data_r[i], data_i[i],
-           X(data_m[i]).to_long(), Y(data_m[i]).to_long(), (int)LAST_IN_ROW(data_m[i]),
-           (int)LAST_IN_TENSOR(data_m[i]));
+    printf("(%f + %fi) at (%lu, %lu)", data_r[i], data_i[i], X(data_m[i]).to_long(),
+           Y(data_m[i]).to_long());
+    if (LAST_IN_TENSOR(data_m[i]))
+      printf(" - (LiT)");
+    else if (LAST_IN_ROW(data_m[i]))
+      printf(" - (LiR)");
+    printf("\n");
   }
 }
 
