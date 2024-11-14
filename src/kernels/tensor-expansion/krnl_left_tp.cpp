@@ -25,6 +25,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
   // clang-format on
 
   while (!tensor_exhausted) {
+    // First pass: compute the first part of the tensor product
     for (i = 0; !row_exhausted; i++) {
       fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
       cache_write(A_row, CACHE);
@@ -33,23 +34,24 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
       store(C_row, C, writing_head);
     }
 
-    // if a single iteration was performed, hence the first row size is less than
+    // If a single iteration was performed, hence the first row size is less than
     // the cache size, then the cache is valid and the reading index can be kept as is,
     // otherwise the reading index needs to be reset to row start index (subtracting the
     // elements read in the row)
     if (i == 1) {
-      first_row_cached = true;
+      first_row_cached = true; // Cache is valid for the next pass
     } else {
-      first_row_cached = false;
+      first_row_cached = false; // Cache is not valid, reset reading head
       CACHE.reset_head();
       reading_head -= elements_in_row_read;
     }
 
-    // reset row-wise information
+    // Reset row-wise information for the next pass
     CACHE.reset_tail();
     row_exhausted = false;
     elements_in_row_read = 0;
 
+    // Second pass: compute the second part of the tensor product
     for (i = 0; !row_exhausted; i++) {
       fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
       cache_write(A_row, CACHE);
@@ -58,7 +60,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
       store(C_row, C, writing_head);
     }
 
-    // reset row-wise information
+    // Reset row-wise information for the next iteration
     first_row_cached = false;
     row_exhausted = false;
     elements_in_row_read = 0;
@@ -70,11 +72,14 @@ namespace Tensor {
 namespace Product {
 namespace Left {
 
-// EXECUTION PATH OPTIONS:
-// - first pass, cache valid, ready for second pass from cache
-// - first pass, cache is too small, second pass is from the first stopped,
-//   then again from the start with two passes.
-
+/**
+ * @brief Fetch elements from tensor A and write them to a stream.
+ * @param A Pointer to the tensor in DDR.
+ * @param first_row_cached Flag indicating if the first row is cached.
+ * @param A_row Stream to write the fetched elements.
+ * @param reading_head Index to start reading from.
+ * @param elements_in_row_read Number of elements read in the current row.
+ */
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
                  size_t &reading_head, size_t &elements_in_row_read) {
   size_t ix;
@@ -96,6 +101,11 @@ void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_
   }
 }
 
+/**
+ * @brief Write elements from a stream to the cache.
+ * @param A_row Stream containing the elements to be cached.
+ * @param cache Circular buffer cache to write the elements.
+ */
 void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
   complex_t tmp;
 
@@ -109,6 +119,13 @@ void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
   }
 }
 
+/**
+ * @brief Read elements from the cache and write them to a stream.
+ * @param cache Circular buffer cache to read the elements.
+ * @param A_cached Stream to write the cached elements.
+ * @param row_exhausted Flag indicating if the current row is exhausted.
+ * @param tensor_exhausted Flag indicating if the entire tensor is exhausted.
+ */
 void cache_read(cache_t &cache, hls::stream<complex_t> &A_cached, bool &row_exhausted,
                 bool &tensor_exhausted) {
   complex_t tmp;
@@ -128,6 +145,11 @@ void cache_read(cache_t &cache, hls::stream<complex_t> &A_cached, bool &row_exha
   }
 }
 
+/**
+ * @brief Compute the first pass of the tensor product.
+ * @param A_cached Stream containing the cached elements.
+ * @param C_row Stream to write the computed elements.
+ */
 void compute_first(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_row) {
   complex_t a;
 
@@ -142,6 +164,11 @@ void compute_first(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_r
   }
 }
 
+/**
+ * @brief Compute the second pass of the tensor product.
+ * @param A_cached Stream containing the cached elements.
+ * @param C_row Stream to write the computed elements.
+ */
 void compute_second(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_row) {
   complex_t a;
 
@@ -155,6 +182,12 @@ void compute_second(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_
   }
 }
 
+/**
+ * @brief Store the computed elements to the output tensor.
+ * @param C_row Stream containing the computed elements.
+ * @param C Pointer to the output tensor in DDR.
+ * @param writing_head Index to start writing to.
+ */
 void store(hls::stream<complex_t> &C_row, complex_t *C, size_t &writing_head) {
   complex_t tmp;
 
