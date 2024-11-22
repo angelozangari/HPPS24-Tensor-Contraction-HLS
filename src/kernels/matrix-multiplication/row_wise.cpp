@@ -218,7 +218,9 @@ void pe_rw(block_stream* B_cids, block_stream* B_vals, pe_stream* task, partial_
 				val_t data3 = Reinterpret<val_t>(static_cast<ap_uint<32> >(temp_v.data(95, 64)));
 				val_t data4 = Reinterpret<val_t>(static_cast<ap_uint<32> >(temp_v.data(127, 96)));
 
-				val_t psum1 = data1 * curr_job.val;
+
+// implement complex mult
+/*				val_t psum1 = data1 * curr_job.val;
 			#pragma HLS BIND_OP variable=psum1 op=fmul impl=fulldsp
 				val_t psum2 = data2 * curr_job.val;
 			#pragma HLS BIND_OP variable=psum2 op=fmul impl=fulldsp
@@ -226,6 +228,31 @@ void pe_rw(block_stream* B_cids, block_stream* B_vals, pe_stream* task, partial_
 			#pragma HLS BIND_OP variable=psum3 op=fmul impl=fulldsp
 				val_t psum4 = data4 * curr_job.val;
 			#pragma HLS BIND_OP variable=psum4 op=fmul impl=fulldsp
+*/
+				// psum = a + ib; curr_job.val = c + di
+				// Real = (ac - bd)
+				// Imag = (ad + bc)*i
+				// Perform complex multiplication
+				val_t psum1;
+				#pragma HLS BIND_OP variable=psum1 op=fmul impl=fulldsp
+				psum1.r = data1.r * curr_job.val.r - data1.i * curr_job.val.i; // Real part
+				psum1.i = data1.r * curr_job.val.i + data1.i * curr_job.val.r; // Imaginary part
+
+				val_t psum2;
+				#pragma HLS BIND_OP variable=psum2 op=fmul impl=fulldsp
+				psum2.r = data2.r * curr_job.val.r - data2.i * curr_job.val.i; // Real part
+				psum2.i = data2.r * curr_job.val.i + data2.i * curr_job.val.r; // Imaginary part
+
+				val_t psum3;
+				#pragma HLS BIND_OP variable=psum3 op=fmul impl=fulldsp
+				psum3.r = data3.r * curr_job.val.r - data3.i * curr_job.val.i; // Real part
+				psum3.i = data3.r * curr_job.val.i + data3.i * curr_job.val.r; // Imaginary part
+
+				val_t psum4;
+				#pragma HLS BIND_OP variable=psum4 op=fmul impl=fulldsp
+				psum4.r = data4.r * curr_job.val.r - data4.i * curr_job.val.i; // Real part
+				psum4.i = data4.r * curr_job.val.i + data4.i * curr_job.val.r; // Imaginary part
+
 
 				ap_uint<128> result;
 				result(31, 0) = Reinterpret<ap_uint<32> >(psum1);

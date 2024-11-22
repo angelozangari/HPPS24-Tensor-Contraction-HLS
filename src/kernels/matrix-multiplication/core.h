@@ -19,8 +19,11 @@
 #include <hls_stream.h>
 #include <ap_fixed.h>
 #include <string.h>
+#include "types.h"
 
-typedef float val_t;
+//typedef float val_t;
+typedef complex_t val_t;
+
 typedef uint32_t id_t;
 
 #define CACHE_FIRST_HIT 1
@@ -60,6 +63,8 @@ struct Avc {
 	id_t cid;
 	id_t rid;
 };
+
+// packed to explicitely tell the compiler to avoid putting padding bytes between the struct fields
 
 struct __attribute__ ((packed)) pe_job {
 	val_t val;
