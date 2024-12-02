@@ -93,12 +93,11 @@ void compute_first(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_s
   complex_t a;
 
 TPR_COMPUTE_FIRST_LOOP:
-  // TODO: do not use empty, use a read non-blocking
-  while (!A_stream.empty()) {
+  // INFO: co-sim will block if errors are present, use a pessimistic approach
+  while (A_stream.read_nb(a)) {
     // clang-format off
 #pragma HLS PIPELINE II=1
     // clang-format on
-    a = A_stream.read();
     LAST_IN_TENSOR(a.m) = false;
     C_stream.write(a);
   }
@@ -110,12 +109,11 @@ void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_
   dim_t skip = 1 << A_R;
 
 TPR_COMPUTE_SECOND_LOOP:
-  // TODO: do not use empty, use a read non-blocking
-  while (!A_stream.empty()) {
+  // INFO: co-sim will block if errors are present, use a pessimistic approach
+  while (A_stream.read_nb(a)) {
     // clang-format off
 #pragma HLS PIPELINE II=1
     // clang-format on
-    a = A_stream.read();
     X(a.m) = X(a.m) + skip;
     Y(a.m) = Y(a.m) + skip;
     C_stream.write(a);
@@ -126,12 +124,11 @@ void store(hls::stream<complex_t> &C_stream, complex_t *C, size_t &writing_head)
   complex_t c;
 
 TPR_STORE_LOOP:
-  // TODO: do not use empty, use a read non-blocking
-  while (!C_stream.empty()) {
+  // INFO: co-sim will block if errors are present, use a pessimistic approach
+  while (C_stream.read_nb(c)) {
     // clang-format off
 #pragma HLS PIPELINE II=1
     // clang-format on
-    c = C_stream.read();
     C[writing_head++] = c;
   }
 }

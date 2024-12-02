@@ -159,13 +159,9 @@ TLP_CACHE_WRITE_LOOP:
 #pragma HLS PIPELINE II=1
     // clang-format on
     // exit prematurely if stream is consumed
-    // TODO: do not use empty, use a read non-blocking
-    // INFO: co-sim will block if errors are present, use a pessimistic approach
-    if (A_row.empty())
-      break;
     // write to cache from stream
-    tmp = A_row.read();
-    cache.write(tmp);
+    if (A_row.read_nb(tmp))
+      cache.write(tmp);
   }
 }
 
