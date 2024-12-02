@@ -1,5 +1,6 @@
 set(CMAKE_BUILD_TYPE Debug)
 add_compile_options(-Wno-unknown-warning-option)
+add_compile_definitions(QCS_HLS_CSIM)
 
 add_library(qcslib STATIC
     # Kernels

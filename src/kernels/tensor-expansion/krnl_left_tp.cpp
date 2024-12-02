@@ -108,27 +108,46 @@ namespace Left {
  */
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
                  size_t &reading_head, size_t &elements_in_row_read) {
-  size_t ix;
+  bool end_of_row_reached = false;
   complex_t tmp;
+  hls::stream<complex_t> burst_stream;
 
-  // TODO: add a NZ count and use it to size the loop
-  // TODO: split the loop in two, load in a stream (burst_stream) and then check for the
-  // last element, if last element is reached then spin. Use a while outer loop of
-  // NZ/STREAM_SIZE
-
+LTP_FETCH_READ_BURST:
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     if (!first_row_cached) {
       // read from head index and update to the next one
-      ix = reading_head++;
-      tmp = A[ix]; // read from DDR
+      tmp = A[reading_head++]; // read from DDR
       // increase elements read in this row
       elements_in_row_read++;
 
-      A_row.write(tmp);
+      burst_stream.write(tmp);
+      // A_row.write(tmp);
 
-      // TODO: move this up, and make it spin, not break
+#ifdef QCS_HLS_CSIM
+      // this is introduced to avoid the CSIM to access the DDR out of bounds
+      // TODO COSIM: check if it's proper
       if (LAST_IN_ROW(tmp.m))
         break;
+#endif
+    }
+  }
+
+LTP_FETCH_CHECK_BOUNDARY:
+  for (size_t i = 0; i < CACHE_SIZE; i++) {
+    if (!first_row_cached) {
+      tmp = burst_stream.read();
+      if (!end_of_row_reached)
+        A_row.write(tmp);
+
+      if (LAST_IN_ROW(tmp.m))
+        end_of_row_reached = true;
+
+#ifdef QCS_HLS_CSIM
+      // this is introduced to avoid the CSIM to access the DDR out of bounds
+      // TODO COSIM: check if it's proper
+      if (LAST_IN_ROW(tmp.m))
+        break;
+#endif
     }
   }
 }
