@@ -32,17 +32,55 @@ namespace Tensor {
 namespace Product {
 namespace Right {
 
-void load(complex_t *A, hls::stream<complex_t> &A_stream) {
-  complex_t tmp;
+// TODO COSIM: size this buffer according to the latency reports in burst read
+constexpr uint8_t DDR_BURST_BUFFER_SIZE = 8;
 
-  for (size_t i = 0;; i++) {
-    tmp = A[i];
-    A_stream.write(tmp);
-    if (LAST_IN_TENSOR(tmp.m)) {
+void load(complex_t *A, hls::stream<complex_t> &A_stream) {
+  bool end_of_tensor_reached = false;
+  size_t read_head = 0;
+  complex_t tmp;
+  hls::stream<complex_t> burst_stream;
+  // clang-format off
+#pragma HLS STREAM variable=burst_stream depth=DDR_BURST_BUFFER_SIZE
+  // clang-format on
+
+  // TODO COSIM: check if this is a bottleneck
+
+LOAD_LOOP:
+  for (;;) {
+
+#pragma HLS DATAFLOW
+
+    // this loop read from DDR in bursts to avoid the latency of checking element-wise the
+    // boundary of the tensor, though it introduces the issue of Memory Safety
+  LOAD_READ_BURST:
+    for (size_t i = 0; i < DDR_BURST_BUFFER_SIZE; i++) {
+      // clang-format off
+#pragma HLS PIPELINE II=1
+      // clang-format on
+      tmp = A[read_head + i];
+      burst_stream.write(tmp);
+    }
+    read_head += DDR_BURST_BUFFER_SIZE;
+
+    // this loop checks the boundary of the tensor
+    // and set a flag to stop reading from DDR when the end of the tensor is reached
+    // otherwise spins as a free-running pipeline
+  LOAD_CHECK_BOUNDARY:
+    for (size_t i = 0; i < DDR_BURST_BUFFER_SIZE; i++) {
+      // clang-format off
+#pragma HLS PIPELINE II=1
+      // clang-format on
+      tmp = burst_stream.read();
+      if (!end_of_tensor_reached)
+        A_stream.write(tmp);
+
+      if (LAST_IN_TENSOR(tmp.m))
+        end_of_tensor_reached = true;
+    }
+
+    if (end_of_tensor_reached) {
       break;
-  // TODO remove these breaks
-  // TODO: instead, take a look online and use a buffer, split this loop in two, first
-  // load, then read
     }
   }
 }
