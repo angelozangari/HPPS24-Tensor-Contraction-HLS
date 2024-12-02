@@ -53,11 +53,9 @@ public:
     reset_tail();
   }
 
-private:
   complex_t elems[SIZE];
-  // clang-format off
-#pragma HLS array_partition variable=elems type=cyclic factor=2
-  // clang-format on
+
+private:
   std::size_t head;
   std::size_t tail;
 };
