@@ -20,7 +20,9 @@ void krnl_right_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
 #pragma HLS STREAM variable=C_stream depth=STREAM_SIZE
   // clang-format on
 
-#pragma HLS DATAFLOW
+  // TODO how to implement this DATAFLOW pragma?
+  // multiple access to A (same gmem)
+  // #pragma HLS DATAFLOW
 
   load(A, A_stream);
   compute_first(A_stream, C_stream);
@@ -40,7 +42,7 @@ constexpr uint8_t DDR_BURST_BUFFER_SIZE = 8;
 void load(complex_t *A, hls::stream<complex_t> &A_stream) {
   bool end_of_tensor_reached = false;
   size_t read_head = 0;
-  complex_t tmp;
+  complex_t tmp1, tmp2;
   hls::stream<complex_t> burst_stream;
   // clang-format off
 #pragma HLS STREAM variable=burst_stream depth=DDR_BURST_BUFFER_SIZE
@@ -54,7 +56,9 @@ TPR_LOAD_LOOP:
 #pragma HLS PIPELINE II=1
     // clang-format on
 
-#pragma HLS DATAFLOW
+    // TODO how to implement this DATAFLOW pragma?
+    // not in the same scope of pipeline and missing bundled functions
+    // #pragma HLS DATAFLOW
 
     // this loop read from DDR in bursts to avoid the latency of checking element-wise the
     // boundary of the tensor, though it introduces the issue of Memory Safety
@@ -63,8 +67,8 @@ TPR_LOAD_LOOP:
       // clang-format off
 #pragma HLS PIPELINE II=1
       // clang-format on
-      tmp = A[read_head++];
-      burst_stream.write(tmp);
+      tmp1 = A[read_head++];
+      burst_stream.write(tmp1);
     }
 
     // this loop checks the boundary of the tensor
@@ -75,11 +79,11 @@ TPR_LOAD_LOOP:
       // clang-format off
 #pragma HLS PIPELINE II=1
       // clang-format on
-      tmp = burst_stream.read();
+      tmp2 = burst_stream.read();
       if (!end_of_tensor_reached)
-        A_stream.write(tmp);
+        A_stream.write(tmp2);
 
-      if (LAST_IN_TENSOR(tmp.m))
+      if (LAST_IN_TENSOR(tmp2.m))
         end_of_tensor_reached = true;
     }
 

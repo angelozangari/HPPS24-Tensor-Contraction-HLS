@@ -81,16 +81,16 @@ void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE
                       size_t &elements_in_row_read, bool first_row_cached,
                       bool compute_fist_pass, bool &row_exhausted,
                       bool &tensor_exhausted) {
-#pragma HLS INLINE
-
   hls::stream<complex_t> A_row, A_cached, C_row;
   // clang-format off
 #pragma HLS STREAM variable=A_row depth=STREAM_SIZE
 #pragma HLS STREAM variable=A_cached depth=STREAM_SIZE
 #pragma HLS STREAM variable=C_row depth=STREAM_SIZE
-  // clang-format off
-    
-#pragma HLS dataflow
+  // clang-format on
+
+  // TODO how to implement this DATAFLOW pragma?
+  // CACHE is external to the dataflow pragma
+  // #pragma HLS dataflow
   fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
   cache_write(A_row, CACHE);
   cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
