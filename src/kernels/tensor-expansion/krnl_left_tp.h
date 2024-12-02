@@ -54,8 +54,10 @@ public:
   }
 
 private:
-  // TODO: array partitioning (cycle 2)
   complex_t elems[SIZE];
+  // clang-format off
+#pragma HLS array_partition variable=elems type=cyclic factor=2
+  // clang-format on
   size_t head;
   size_t tail;
 };
