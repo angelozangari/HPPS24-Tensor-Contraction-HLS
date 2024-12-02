@@ -72,6 +72,32 @@ namespace Tensor {
 namespace Product {
 namespace Left {
 
+// TODO: make a single dataflow function
+// TODO: merge the two independent loop together as a single loop
+// TODO: merge compute_first and compute_second into a single function (with a if block
+// inside)
+// TODO: add pipeline pragmas
+// TODO: array partitioning (cycle 2)
+// void krnl_left_dataflow(Tensor::complex_t *A, Tensor::complex_t *C) {
+//   cache_t CACHE;
+//   size_t i = 0, reading_head = 0, writing_head = 0, elements_in_row_read = 0;
+//   bool first_row_cached = false, row_exhausted = false, tensor_exhausted = false;
+//   hls::stream<complex_t> A_row, A_cached, C_row;
+//   // clang-format off
+// #pragma HLS STREAM variable=A_row depth=STREAM_SIZE
+// #pragma HLS STREAM variable=A_cached depth=STREAM_SIZE
+// #pragma HLS STREAM variable=C_row depth=STREAM_SIZE
+// #pragma HLS ARRAY_PARTITION variable=H complete dim=1
+//   // clang-format on
+
+// #pragma HLS dataflow
+//   fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
+//   cache_write(A_row, CACHE);
+//   cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
+//   compute_first(A_cached, C_row);
+//   store(C_row, C, writing_head);
+// }
+
 /**
  * @brief Fetch elements from tensor A and write them to a stream.
  * @param A Pointer to the tensor in DDR.
@@ -85,6 +111,11 @@ void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_
   size_t ix;
   complex_t tmp;
 
+  // TODO: add a NZ count and use it to size the loop
+  // TODO: split the loop in two, load in a stream (burst_stream) and then check for the
+  // last element, if last element is reached then spin. Use a while outer loop of
+  // NZ/STREAM_SIZE
+
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     if (!first_row_cached) {
       // read from head index and update to the next one
@@ -95,6 +126,7 @@ void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_
 
       A_row.write(tmp);
 
+      // TODO: move this up, and make it spin, not break
       if (LAST_IN_ROW(tmp.m))
         break;
     }
@@ -111,6 +143,8 @@ void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
 
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     // exit prematurely if stream is consumed
+    // TODO: do not use empty, use a read non-blocking
+    // INFO: co-sim will block if errors are present, use a pessimistic approach
     if (A_row.empty())
       break;
     // write to cache from stream

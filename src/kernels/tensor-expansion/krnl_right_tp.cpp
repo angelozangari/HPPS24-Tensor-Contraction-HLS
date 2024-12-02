@@ -40,6 +40,9 @@ void load(complex_t *A, hls::stream<complex_t> &A_stream) {
     A_stream.write(tmp);
     if (LAST_IN_TENSOR(tmp.m)) {
       break;
+  // TODO remove these breaks
+  // TODO: instead, take a look online and use a buffer, split this loop in two, first
+  // load, then read
     }
   }
 }
