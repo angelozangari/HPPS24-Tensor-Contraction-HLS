@@ -19,7 +19,7 @@ int main() {
 #ifdef TEST_ALL
   for (size_t i = 0; i < ops.size(); i++) {
 #else
-  for (size_t i = 95; i < 96; i++) {
+  for (size_t i = 116; i < 118; i++) {
 #endif
     OP &op = *ops[i];
 
