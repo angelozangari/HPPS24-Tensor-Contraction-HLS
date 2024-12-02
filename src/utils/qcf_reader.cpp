@@ -47,9 +47,9 @@ CooTens parse_coo_tens(istream &inp) {
   uint8_t rank = read_from_stream<uint8_t>(inp);
   // 0 for row-major, 1 for col-major
   MatrixFormat format = parse_matrix_format(inp);
-  real_t d_data_r[size];
-  imag_t d_data_i[size];
-  coo_meta_t data_m[size];
+  std::vector<real_t> d_data_r(size);
+  std::vector<imag_t> d_data_i(size);
+  std::vector<coo_meta_t> data_m(size);
 
   for (size_t i = 0; i < size; i++) {
     X(data_m[i]) = read_from_stream<x_t>(inp);
@@ -59,8 +59,8 @@ CooTens parse_coo_tens(istream &inp) {
   }
 
   // convert from double to float
-  float data_r[size];
-  float data_i[size];
+  std::vector<float> data_r(size);
+  std::vector<float> data_i(size);
   for (size_t i = 0; i < size; i++) {
     data_r[i] = (float)d_data_r[i];
     data_i[i] = (float)d_data_i[i];
@@ -86,7 +86,7 @@ CooTens parse_coo_tens(istream &inp) {
   LAST_IN_ROW(data_m[size - 1]) = true;
   LAST_IN_TENSOR(data_m[size - 1]) = true;
 
-  return CooTens{data_r, data_i, data_m, size, rank, format};
+  return CooTens{data_r, data_i, data_m, rank, format};
 }
 
 Operand parse_operand(istream &inp, bool is_tens) {
