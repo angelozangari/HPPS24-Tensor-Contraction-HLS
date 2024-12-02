@@ -24,13 +24,35 @@ namespace Right {
 
 constexpr uint16_t STREAM_SIZE = 8;
 
+/**
+ * @brief Load elements from tensor A to a stream.
+ * @param A Pointer to the tensor in DDR.
+ * @param A_stream Stream to write the fetched elements.
+ */
 void load(complex_t *A, hls::stream<complex_t> &A_stream);
 
+/**
+ * @brief Compute the first pass of the tensor product.
+ * @param A_stream Stream containing the elements.
+ * @param C_stream Stream to write the computed elements.
+ */
 void compute_first(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream);
 
+/**
+ * @brief Compute the second pass of the tensor product.
+ * @param A_stream Stream containing the elements.
+ * @param C_stream Stream to write the computed elements.
+ * @param A_R rank of the tensor A
+ */
 void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream,
                     rank_t A_R);
 
+/**
+ * @brief Store the computed elements to the output tensor.
+ * @param C_stream Stream containing the computed elements.
+ * @param C Pointer to the output tensor in DDR.
+ * @param writing_head Index to start writing to.
+ */
 void store(hls::stream<complex_t> &C_stream, complex_t *C, size_t &writing_head);
 
 } // namespace Right
