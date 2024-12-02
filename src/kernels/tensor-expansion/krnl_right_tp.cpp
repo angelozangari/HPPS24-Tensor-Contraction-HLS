@@ -20,6 +20,8 @@ void krnl_right_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
 #pragma HLS STREAM variable=C_stream depth=STREAM_SIZE
   // clang-format on
 
+#pragma HLS DATAFLOW
+
   load(A, A_stream);
   compute_first(A_stream, C_stream);
   store(C_stream, C, writing_head);
@@ -46,27 +48,26 @@ void load(complex_t *A, hls::stream<complex_t> &A_stream) {
 
   // TODO COSIM: check if this is a bottleneck
 
-LOAD_LOOP:
+RTP_LOAD_LOOP:
   for (;;) {
 
 #pragma HLS DATAFLOW
 
     // this loop read from DDR in bursts to avoid the latency of checking element-wise the
     // boundary of the tensor, though it introduces the issue of Memory Safety
-  LOAD_READ_BURST:
+  RTP_LOAD_READ_BURST:
     for (size_t i = 0; i < DDR_BURST_BUFFER_SIZE; i++) {
       // clang-format off
 #pragma HLS PIPELINE II=1
       // clang-format on
-      tmp = A[read_head + i];
+      tmp = A[read_head++];
       burst_stream.write(tmp);
     }
-    read_head += DDR_BURST_BUFFER_SIZE;
 
     // this loop checks the boundary of the tensor
     // and set a flag to stop reading from DDR when the end of the tensor is reached
     // otherwise spins as a free-running pipeline
-  LOAD_CHECK_BOUNDARY:
+  RTP_LOAD_CHECK_BOUNDARY:
     for (size_t i = 0; i < DDR_BURST_BUFFER_SIZE; i++) {
       // clang-format off
 #pragma HLS PIPELINE II=1
