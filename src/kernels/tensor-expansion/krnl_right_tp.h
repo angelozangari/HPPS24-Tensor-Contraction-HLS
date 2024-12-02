@@ -53,7 +53,7 @@ void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_
  * @param C Pointer to the output tensor in DDR.
  * @param writing_head Index to start writing to.
  */
-void store(hls::stream<complex_t> &C_stream, complex_t *C, size_t &writing_head);
+void store(hls::stream<complex_t> &C_stream, complex_t *C, std::size_t &writing_head);
 
 } // namespace Right
 } // namespace Product

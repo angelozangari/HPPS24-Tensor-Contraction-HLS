@@ -29,7 +29,7 @@ constexpr uint16_t STREAM_SIZE = CACHE_SIZE;
  * @brief Circular buffer implementation for caching tensor elements.
  * @tparam SIZE Size of the circular buffer.
  */
-template <size_t SIZE> class CircularBuffer {
+template <std::size_t SIZE> class CircularBuffer {
 public:
   CircularBuffer() : head(0), tail(0) {}
 
@@ -58,8 +58,8 @@ private:
   // clang-format off
 #pragma HLS array_partition variable=elems type=cyclic factor=2
   // clang-format on
-  size_t head;
-  size_t tail;
+  std::size_t head;
+  std::size_t tail;
 };
 
 using cache_t = CircularBuffer<CACHE_SIZE>;
@@ -78,8 +78,8 @@ using cache_t = CircularBuffer<CACHE_SIZE>;
  * @param tensor_exhausted Flag indicating if the entire tensor is exhausted.
  */
 void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE,
-                      size_t &reading_head, size_t &writing_head,
-                      size_t &elements_in_row_read, bool first_row_cached,
+                      std::size_t &reading_head, std::size_t &writing_head,
+                      std::size_t &elements_in_row_read, bool first_row_cached,
                       bool compute_fist_pass, bool &row_exhausted,
                       bool &tensor_exhausted);
 
@@ -92,7 +92,7 @@ void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE
  * @param elements_in_row_read Number of elements read in the current row.
  */
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
-                 size_t &reading_head, size_t &elements_in_row_read);
+                 std::size_t &reading_head, std::size_t &elements_in_row_read);
 
 /**
  * @brief Write elements from a stream to the cache.
@@ -126,7 +126,7 @@ void compute(hls::stream<complex_t> &A_cached, bool first_pass,
  * @param C Pointer to the output tensor in DDR.
  * @param writing_head Index to start writing to.
  */
-void store(hls::stream<complex_t> &C_row, complex_t *C, size_t &writing_head);
+void store(hls::stream<complex_t> &C_row, complex_t *C, std::size_t &writing_head);
 
 } // namespace Left
 } // namespace Product

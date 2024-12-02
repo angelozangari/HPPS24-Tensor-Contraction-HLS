@@ -16,9 +16,6 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
   cache_t CACHE;
   size_t i = 0, reading_head = 0, writing_head = 0, elements_in_row_read = 0;
   bool first_row_cached = false, row_exhausted = false, tensor_exhausted = false;
-  // clang-format off
-#pragma HLS ARRAY_PARTITION variable=H complete dim=1
-  // clang-format on
 
   // TODO: merge the two independent loop together as a single loop
 
