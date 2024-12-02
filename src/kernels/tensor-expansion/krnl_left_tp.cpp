@@ -16,22 +16,25 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
   cache_t CACHE;
   size_t i = 0, reading_head = 0, writing_head = 0, elements_in_row_read = 0;
   bool first_row_cached = false, row_exhausted = false, tensor_exhausted = false;
-  hls::stream<complex_t> A_row, A_cached, C_row;
   // clang-format off
-#pragma HLS STREAM variable=A_row depth=STREAM_SIZE
-#pragma HLS STREAM variable=A_cached depth=STREAM_SIZE
-#pragma HLS STREAM variable=C_row depth=STREAM_SIZE
 #pragma HLS ARRAY_PARTITION variable=H complete dim=1
   // clang-format on
 
+  // TODO: merge the two independent loop together as a single loop
+
+TPL_MAIN_LOOP:
   while (!tensor_exhausted) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     // First pass: compute the first part of the tensor product
+  TPL_FIRST_PASS_LOOP:
     for (i = 0; !row_exhausted; i++) {
-      fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
-      cache_write(A_row, CACHE);
-      cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
-      compute(A_cached, true, C_row);
-      store(C_row, C, writing_head);
+      // clang-format off
+#pragma HLS PIPELINE II=1
+      // clang-format on
+      left_tp_dataflow(A, C, CACHE, reading_head, writing_head, elements_in_row_read,
+                       first_row_cached, true, row_exhausted, tensor_exhausted);
     }
 
     // If a single iteration was performed, hence the first row size is less than
@@ -52,12 +55,13 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
     elements_in_row_read = 0;
 
     // Second pass: compute the second part of the tensor product
+  TPL_SECOND_PASS_LOOP:
     for (i = 0; !row_exhausted; i++) {
-      fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
-      cache_write(A_row, CACHE);
-      cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
-      compute(A_cached, false, C_row);
-      store(C_row, C, writing_head);
+      // clang-format off
+#pragma HLS PIPELINE II=1
+      // clang-format on
+      left_tp_dataflow(A, C, CACHE, reading_head, writing_head, elements_in_row_read,
+                       first_row_cached, false, row_exhausted, tensor_exhausted);
     }
 
     // Reset row-wise information for the next iteration
@@ -72,20 +76,27 @@ namespace Tensor {
 namespace Product {
 namespace Left {
 
-// TODO: make a single dataflow function
-// TODO: merge the two independent loop together as a single loop
-// TODO: merge compute_first and compute_second into a single function (with a if block
-// inside)
-// TODO: add pipeline pragmas
-// TODO: array partitioning (cycle 2)
-// void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C) {
-// #pragma HLS dataflow
-//   fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
-//   cache_write(A_row, CACHE);
-//   cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
-//   compute(A_cached, C_row);
-//   store(C_row, C, writing_head);
-// }
+void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE,
+                      size_t &reading_head, size_t &writing_head,
+                      size_t &elements_in_row_read, bool first_row_cached,
+                      bool compute_fist_pass, bool &row_exhausted,
+                      bool &tensor_exhausted) {
+#pragma HLS INLINE
+
+  hls::stream<complex_t> A_row, A_cached, C_row;
+  // clang-format off
+#pragma HLS STREAM variable=A_row depth=STREAM_SIZE
+#pragma HLS STREAM variable=A_cached depth=STREAM_SIZE
+#pragma HLS STREAM variable=C_row depth=STREAM_SIZE
+  // clang-format off
+    
+#pragma HLS dataflow
+  fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
+  cache_write(A_row, CACHE);
+  cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
+  compute(A_cached, compute_fist_pass, C_row);
+  store(C_row, C, writing_head);
+}
 
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
                  size_t &reading_head, size_t &elements_in_row_read) {
@@ -94,8 +105,10 @@ void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_
   hls::stream<complex_t> burst_stream;
 
 LTP_FETCH_READ_BURST:
-  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     if (!first_row_cached) {
       // read from head index and update to the next one
       tmp = A[reading_head++]; // read from DDR
@@ -115,8 +128,10 @@ LTP_FETCH_READ_BURST:
   }
 
 LTP_FETCH_CHECK_BOUNDARY:
-  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     if (!first_row_cached) {
       tmp = burst_stream.read();
       if (!end_of_row_reached)
@@ -138,8 +153,11 @@ LTP_FETCH_CHECK_BOUNDARY:
 void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
   complex_t tmp;
 
-  // TODO: add pipeline pragma
+TLP_CACHE_WRITE_LOOP:
   for (size_t i = 0; i < CACHE_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     // exit prematurely if stream is consumed
     // TODO: do not use empty, use a read non-blocking
     // INFO: co-sim will block if errors are present, use a pessimistic approach
@@ -155,8 +173,11 @@ void cache_read(cache_t &cache, hls::stream<complex_t> &A_cached, bool &row_exha
                 bool &tensor_exhausted) {
   complex_t tmp;
 
-  // TODO: add pipeline pragma
+TLP_CACHE_READ_LOOP:
   for (size_t i = 0; i < CACHE_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     // read from cache and write to stream
     tmp = cache.read();
     A_cached.write(tmp);
@@ -175,8 +196,11 @@ void compute(hls::stream<complex_t> &A_cached, bool first_pass,
              hls::stream<complex_t> &C_row) {
   complex_t a;
 
-  // TODO: add pipeline pragma
+TLP_COMPUTE_LOOP:
   for (size_t i = 0; i < CACHE_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     a = A_cached.read();
     if (first_pass) {
       X(a.m) = X(a.m) << 1;
@@ -195,8 +219,11 @@ void compute(hls::stream<complex_t> &A_cached, bool first_pass,
 void store(hls::stream<complex_t> &C_row, complex_t *C, size_t &writing_head) {
   complex_t tmp;
 
-  // TODO: add pipeline pragma
+TPL_STORE_LOOP:
   for (size_t i = 0; i < CACHE_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     if (C_row.empty())
       break;
     tmp = C_row.read();

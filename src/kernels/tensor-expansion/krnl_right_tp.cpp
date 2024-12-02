@@ -48,14 +48,17 @@ void load(complex_t *A, hls::stream<complex_t> &A_stream) {
 
   // TODO COSIM: check if this is a bottleneck
 
-RTP_LOAD_LOOP:
+TPR_LOAD_LOOP:
   for (;;) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
 
 #pragma HLS DATAFLOW
 
     // this loop read from DDR in bursts to avoid the latency of checking element-wise the
     // boundary of the tensor, though it introduces the issue of Memory Safety
-  RTP_LOAD_READ_BURST:
+  TPR_LOAD_READ_BURST:
     for (size_t i = 0; i < DDR_BURST_BUFFER_SIZE; i++) {
       // clang-format off
 #pragma HLS PIPELINE II=1
@@ -67,7 +70,7 @@ RTP_LOAD_LOOP:
     // this loop checks the boundary of the tensor
     // and set a flag to stop reading from DDR when the end of the tensor is reached
     // otherwise spins as a free-running pipeline
-  RTP_LOAD_CHECK_BOUNDARY:
+  TPR_LOAD_CHECK_BOUNDARY:
     for (size_t i = 0; i < DDR_BURST_BUFFER_SIZE; i++) {
       // clang-format off
 #pragma HLS PIPELINE II=1
@@ -89,9 +92,12 @@ RTP_LOAD_LOOP:
 void compute_first(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream) {
   complex_t a;
 
+TPR_COMPUTE_FIRST_LOOP:
   // TODO: do not use empty, use a read non-blocking
-  // TODO: add pipeline pragma
   while (!A_stream.empty()) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     a = A_stream.read();
     LAST_IN_TENSOR(a.m) = false;
     C_stream.write(a);
@@ -103,9 +109,12 @@ void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_
   complex_t a;
   dim_t skip = 1 << A_R;
 
+TPR_COMPUTE_SECOND_LOOP:
   // TODO: do not use empty, use a read non-blocking
-  // TODO: add pipeline pragma
   while (!A_stream.empty()) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     a = A_stream.read();
     X(a.m) = X(a.m) + skip;
     Y(a.m) = Y(a.m) + skip;
@@ -116,9 +125,12 @@ void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_
 void store(hls::stream<complex_t> &C_stream, complex_t *C, size_t &writing_head) {
   complex_t c;
 
+TPR_STORE_LOOP:
   // TODO: do not use empty, use a read non-blocking
-  // TODO: add pipeline pragma
   while (!C_stream.empty()) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+    // clang-format on
     c = C_stream.read();
     C[writing_head++] = c;
   }

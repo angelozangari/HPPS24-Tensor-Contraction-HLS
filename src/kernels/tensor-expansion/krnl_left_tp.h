@@ -54,12 +54,32 @@ public:
   }
 
 private:
+  // TODO: array partitioning (cycle 2)
   complex_t elems[SIZE];
   size_t head;
   size_t tail;
 };
 
 using cache_t = CircularBuffer<CACHE_SIZE>;
+
+/**
+ * @brief Dataflow for the tensor product of a tensor A and an Identity gate (of rank 1).
+ * @param A Pointer to the tensor in DDR.
+ * @param C Pointer to the output tensor in DDR.
+ * @param CACHE Circular buffer cache to store the elements.
+ * @param reading_head Index to start reading from.
+ * @param writing_head Index to start writing to.
+ * @param elements_in_row_read Number of elements read in the current row.
+ * @param first_row_cached Flag indicating if the first row is cached.
+ * @param compute_fist_pass Flag indicating if the first pass should be computed.
+ * @param row_exhausted Flag indicating if the current row is exhausted.
+ * @param tensor_exhausted Flag indicating if the entire tensor is exhausted.
+ */
+void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE,
+                      size_t &reading_head, size_t &writing_head,
+                      size_t &elements_in_row_read, bool first_row_cached,
+                      bool compute_fist_pass, bool &row_exhausted,
+                      bool &tensor_exhausted);
 
 /**
  * @brief Fetch elements from tensor A and write them to a stream.
