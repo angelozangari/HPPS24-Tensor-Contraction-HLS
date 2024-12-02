@@ -3,6 +3,7 @@
 ../../src/host/host-combined.cpp
 ../../src/host/host-combined.h
 ../../src/host/host-tp.cpp
+../../src/host/host-tp-cosim.cpp
 ../../src/kernels/tensor-expansion/krnl_left_tp.cpp
 ../../src/kernels/tensor-expansion/krnl_left_tp.h
 ../../src/kernels/tensor-expansion/krnl_right_tp.cpp
