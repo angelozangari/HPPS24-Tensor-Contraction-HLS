@@ -89,6 +89,8 @@ RTP_LOAD_LOOP:
 void compute_first(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream) {
   complex_t a;
 
+  // TODO: do not use empty, use a read non-blocking
+  // TODO: add pipeline pragma
   while (!A_stream.empty()) {
     a = A_stream.read();
     LAST_IN_TENSOR(a.m) = false;
@@ -101,6 +103,8 @@ void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_
   complex_t a;
   dim_t skip = 1 << A_R;
 
+  // TODO: do not use empty, use a read non-blocking
+  // TODO: add pipeline pragma
   while (!A_stream.empty()) {
     a = A_stream.read();
     X(a.m) = X(a.m) + skip;
@@ -112,6 +116,8 @@ void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_
 void store(hls::stream<complex_t> &C_stream, complex_t *C, size_t &writing_head) {
   complex_t c;
 
+  // TODO: do not use empty, use a read non-blocking
+  // TODO: add pipeline pragma
   while (!C_stream.empty()) {
     c = C_stream.read();
     C[writing_head++] = c;
