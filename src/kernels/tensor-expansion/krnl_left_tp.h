@@ -90,18 +90,13 @@ void cache_read(cache_t &cache, hls::stream<complex_t> &A_cached, bool &row_exha
                 bool &tensor_exhausted);
 
 /**
- * @brief Compute the first pass of the tensor product.
+ * @brief Compute the pass described by the flag provided of the tensor product.
  * @param A_cached Stream containing the cached elements.
+ * @param first_pass True if the first pass should be computed, false if the second pass.
  * @param C_row Stream to write the computed elements.
  */
-void compute_first(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_row);
-
-/**
- * @brief Compute the second pass of the tensor product.
- * @param A_cached Stream containing the cached elements.
- * @param C_row Stream to write the computed elements.
- */
-void compute_second(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_row);
+void compute(hls::stream<complex_t> &A_cached, bool first_pass,
+             hls::stream<complex_t> &C_row);
 
 /**
  * @brief Store the computed elements to the output tensor.

@@ -30,7 +30,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
       fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
       cache_write(A_row, CACHE);
       cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
-      compute_first(A_cached, C_row);
+      compute(A_cached, true, C_row);
       store(C_row, C, writing_head);
     }
 
@@ -56,7 +56,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
       fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
       cache_write(A_row, CACHE);
       cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
-      compute_second(A_cached, C_row);
+      compute(A_cached, false, C_row);
       store(C_row, C, writing_head);
     }
 
@@ -78,34 +78,15 @@ namespace Left {
 // inside)
 // TODO: add pipeline pragmas
 // TODO: array partitioning (cycle 2)
-// void krnl_left_dataflow(Tensor::complex_t *A, Tensor::complex_t *C) {
-//   cache_t CACHE;
-//   size_t i = 0, reading_head = 0, writing_head = 0, elements_in_row_read = 0;
-//   bool first_row_cached = false, row_exhausted = false, tensor_exhausted = false;
-//   hls::stream<complex_t> A_row, A_cached, C_row;
-//   // clang-format off
-// #pragma HLS STREAM variable=A_row depth=STREAM_SIZE
-// #pragma HLS STREAM variable=A_cached depth=STREAM_SIZE
-// #pragma HLS STREAM variable=C_row depth=STREAM_SIZE
-// #pragma HLS ARRAY_PARTITION variable=H complete dim=1
-//   // clang-format on
-
+// void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C) {
 // #pragma HLS dataflow
 //   fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
 //   cache_write(A_row, CACHE);
 //   cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
-//   compute_first(A_cached, C_row);
+//   compute(A_cached, C_row);
 //   store(C_row, C, writing_head);
 // }
 
-/**
- * @brief Fetch elements from tensor A and write them to a stream.
- * @param A Pointer to the tensor in DDR.
- * @param first_row_cached Flag indicating if the first row is cached.
- * @param A_row Stream to write the fetched elements.
- * @param reading_head Index to start reading from.
- * @param elements_in_row_read Number of elements read in the current row.
- */
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
                  size_t &reading_head, size_t &elements_in_row_read) {
   bool end_of_row_reached = false;
@@ -113,6 +94,7 @@ void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_
   hls::stream<complex_t> burst_stream;
 
 LTP_FETCH_READ_BURST:
+  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     if (!first_row_cached) {
       // read from head index and update to the next one
@@ -133,6 +115,7 @@ LTP_FETCH_READ_BURST:
   }
 
 LTP_FETCH_CHECK_BOUNDARY:
+  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     if (!first_row_cached) {
       tmp = burst_stream.read();
@@ -152,14 +135,10 @@ LTP_FETCH_CHECK_BOUNDARY:
   }
 }
 
-/**
- * @brief Write elements from a stream to the cache.
- * @param A_row Stream containing the elements to be cached.
- * @param cache Circular buffer cache to write the elements.
- */
 void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
   complex_t tmp;
 
+  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     // exit prematurely if stream is consumed
     // TODO: do not use empty, use a read non-blocking
@@ -172,17 +151,11 @@ void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
   }
 }
 
-/**
- * @brief Read elements from the cache and write them to a stream.
- * @param cache Circular buffer cache to read the elements.
- * @param A_cached Stream to write the cached elements.
- * @param row_exhausted Flag indicating if the current row is exhausted.
- * @param tensor_exhausted Flag indicating if the entire tensor is exhausted.
- */
 void cache_read(cache_t &cache, hls::stream<complex_t> &A_cached, bool &row_exhausted,
                 bool &tensor_exhausted) {
   complex_t tmp;
 
+  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     // read from cache and write to stream
     tmp = cache.read();
@@ -198,52 +171,31 @@ void cache_read(cache_t &cache, hls::stream<complex_t> &A_cached, bool &row_exha
   }
 }
 
-/**
- * @brief Compute the first pass of the tensor product.
- * @param A_cached Stream containing the cached elements.
- * @param C_row Stream to write the computed elements.
- */
-void compute_first(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_row) {
+void compute(hls::stream<complex_t> &A_cached, bool first_pass,
+             hls::stream<complex_t> &C_row) {
   complex_t a;
 
+  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     a = A_cached.read();
-    X(a.m) = X(a.m) << 1;
-    Y(a.m) = Y(a.m) << 1;
-    LAST_IN_TENSOR(a.m) = false;
+    if (first_pass) {
+      X(a.m) = X(a.m) << 1;
+      Y(a.m) = Y(a.m) << 1;
+      LAST_IN_TENSOR(a.m) = false;
+    } else {
+      X(a.m) = (X(a.m) << 1) + 1;
+      Y(a.m) = (Y(a.m) << 1) + 1;
+    }
     C_row.write(a);
     if (A_cached.empty())
       break;
   }
 }
 
-/**
- * @brief Compute the second pass of the tensor product.
- * @param A_cached Stream containing the cached elements.
- * @param C_row Stream to write the computed elements.
- */
-void compute_second(hls::stream<complex_t> &A_cached, hls::stream<complex_t> &C_row) {
-  complex_t a;
-
-  for (size_t i = 0; i < CACHE_SIZE; i++) {
-    a = A_cached.read();
-    X(a.m) = (X(a.m) << 1) + 1;
-    Y(a.m) = (Y(a.m) << 1) + 1;
-    C_row.write(a);
-    if (A_cached.empty())
-      break;
-  }
-}
-
-/**
- * @brief Store the computed elements to the output tensor.
- * @param C_row Stream containing the computed elements.
- * @param C Pointer to the output tensor in DDR.
- * @param writing_head Index to start writing to.
- */
 void store(hls::stream<complex_t> &C_row, complex_t *C, size_t &writing_head) {
   complex_t tmp;
 
+  // TODO: add pipeline pragma
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     if (C_row.empty())
       break;
