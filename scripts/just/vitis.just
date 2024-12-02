@@ -51,6 +51,9 @@ build-host:
     ssh {{NAGS-VM}} /bin/bash << 'ENDSSH'
     # change directory to project
     cd {{REMOTE_PATH}}
+    # create build directory and copy makefiles
+    mkdir -p ./build/vitis/logs/
+    cp ./scripts/vitis/* ./build/vitis/
     # source the correct settings files
     . {{VITIS_SETTINGS_PATH}}
     . {{XRT_SETUP_PATH}}
