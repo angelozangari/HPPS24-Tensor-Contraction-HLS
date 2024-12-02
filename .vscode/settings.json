@@ -5,7 +5,9 @@
         "bitstrings",
         "BRAM",
         "captionpos",
+        "COSIM",
         "cphase",
+        "CSIM",
         "framexleftmargin",
         "globaldata",
         "gmem",
@@ -28,6 +30,7 @@
         "Vitis"
     ],
     "files.associations": {
+        "*.just": "just",
         "__bit_reference": "cpp",
         "__config": "cpp",
         "__debug": "cpp",
@@ -114,7 +117,17 @@
         "codecvt": "cpp",
         "fstream": "cpp",
         "any": "cpp",
-        "semaphore": "cpp"
+        "semaphore": "cpp",
+        "hash_map": "cpp",
+        "csignal": "cpp",
+        "forward_list": "cpp",
+        "future": "cpp",
+        "ranges": "cpp",
+        "shared_mutex": "cpp",
+        "stdfloat": "cpp",
+        "text_encoding": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp"
     },
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/include",
