@@ -1,9 +1,12 @@
+../../src/host/common.cpp
+../../src/host/common.h
 ../../src/host/host-combined.cpp
 ../../src/host/host-combined.h
-../../src/kernels/matrix-multiplication/krnl_mat_mul.cpp
-../../src/kernels/matrix-multiplication/krnl_mat_mul.h
-../../src/kernels/tensor-expansion/krnl_tens_exp.cpp
-../../src/kernels/tensor-expansion/krnl_tens_exp.h
+../../src/host/host-tp.cpp
+../../src/kernels/tensor-expansion/krnl_left_tp.cpp
+../../src/kernels/tensor-expansion/krnl_left_tp.h
+../../src/kernels/tensor-expansion/krnl_right_tp.cpp
+../../src/kernels/tensor-expansion/krnl_right_tp.h
 ../../src/kernels/types.h
 ../../src/utils/csv_writer.cpp
 ../../src/utils/csv_writer.h
