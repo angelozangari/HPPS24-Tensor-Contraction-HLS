@@ -4,8 +4,8 @@ using namespace std;
 
 void krnl_right_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=16 // TODO change depth
-#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=256 // TODO change depth
+#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=16
+#pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=32
 #pragma HLS INTERFACE s_axilite port=A_R bundle=control
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
