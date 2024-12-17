@@ -46,11 +46,11 @@ int main() {
       if (op.kind == OpKind::TensProdLeft) {
         cout << "Running unary test (TPL) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
-        krnl_left_tp(A_vec.data(), C_vec.data(), input.rank);
+        krnl_left_tp(A_vec.data(), C_vec.data(), input.rank, A_vec.size());
       } else if (op.kind == OpKind::TensProdRight) {
         cout << "Running unary test (TPR) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
-        krnl_right_tp(A_vec.data(), C_vec.data(), input.rank);
+        krnl_right_tp(A_vec.data(), C_vec.data(), input.rank, A_vec.size());
       } else {
         cout << "ERROR: Unsupported unary operation kind" << endl;
         return 1;
