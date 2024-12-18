@@ -26,25 +26,16 @@ namespace Right {
 constexpr uint16_t STREAM_SIZE = 8;
 
 /**
- * @brief Compute the first pass of the tensor product.
+ * @brief Compute a pass of the tensor product.
  * @param A Pointer to the tensor in DDR.
  * @param C Pointer to the output tensor in DDR.
  * @param writing_head Index to start writing to.
+ * @param A_R Rank of the tensor A.
  * @param size Size of the tensor.
+ * @param is_first Flag indicating if it is the first pass.
  */
-void first_block_dataflow(complex_t *A, complex_t *C, std::size_t &writing_head,
-                          dim_t size);
-
-/**
- * @brief Compute the second pass of the tensor product.
- * @param A Pointer to the tensor in DDR.
- * @param C Pointer to the output tensor in DDR.
- * @param A_R rank of the tensor A
- * @param writing_head Index to start writing to.
- * @param size Size of the tensor.
- */
-void second_block_dataflow(complex_t *A, complex_t *C, rank_t A_R,
-                           std::size_t &writing_head, dim_t size);
+void block_dataflow(complex_t *A, complex_t *C, std::size_t &writing_head, rank_t A_R,
+                    dim_t size, bool is_first);
 
 /**
  * @brief Load elements from tensor A to a stream.
@@ -55,23 +46,15 @@ void second_block_dataflow(complex_t *A, complex_t *C, rank_t A_R,
 void load(complex_t *A, hls::stream<complex_t> &A_stream, dim_t size);
 
 /**
- * @brief Compute the first pass of the tensor product.
- * @param A_stream Stream containing the elements.
- * @param C_stream Stream to write the computed elements.
- * @param size Size of the tensor.
- */
-void compute_first(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream,
-                   dim_t size);
-
-/**
- * @brief Compute the second pass of the tensor product.
+ * @brief Compute a pass of the tensor product.
  * @param A_stream Stream containing the elements.
  * @param C_stream Stream to write the computed elements.
  * @param A_R rank of the tensor A
  * @param size Size of the tensor.
+ * @param is_first Flag indicating if it is the first pass.
  */
-void compute_second(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream,
-                    rank_t A_R, dim_t size);
+void compute(hls::stream<complex_t> &A_stream, hls::stream<complex_t> &C_stream,
+             rank_t A_R, dim_t size, bool is_first);
 
 /**
  * @brief Store the computed elements to the output tensor.
