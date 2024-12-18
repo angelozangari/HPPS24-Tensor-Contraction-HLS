@@ -45,7 +45,7 @@ purge-nags:
     ENDSSH
 
 up-rsync:
-    rsync -avz --progress --files-from ./sync-filelists/up-rsync.txt {{ROOT_DIR}} {{NAGS-VM}}:{{REMOTE_PATH}}/
+    rsync -avzc --progress --files-from ./sync-filelists/up-rsync.txt {{ROOT_DIR}} {{NAGS-VM}}:{{REMOTE_PATH}}/
 
 up-artifacts:
     #!/usr/bin/env bash
@@ -54,7 +54,16 @@ up-artifacts:
 down-logs:
     #!/usr/bin/env bash
     mkdir -p {{ROOT_DIR}}/logs
-    rsync -avz --progress {{NAGS-VM}}:{{REMOTE_PATH}}/vitis/*.log {{ROOT_DIR}}/logs/ 
+    ssh {{NAGS-VM}} /bin/bash << 'ENDSSH'
+    set -euxo pipefail
+    cd {{REMOTE_PATH}}
+    find ./build/vitis | grep -i "summary" | cut -d / -f 4- | awk -F/ '{print; while(/\//) {sub("/[^/]*$", ""); print}}' | sort | uniq > tmp_list.txt
+    find ./build/vitis | grep -i "log" | cut -d / -f 4- | awk -F/ '{print; while(/\//) {sub("/[^/]*$", ""); print}}' | sort | uniq >> tmp_list.txt
+    cat tmp_list.txt | sort | uniq > logs_list.txt
+    ENDSSH
+
+    rsync -avz --progress {{NAGS-VM}}:{{REMOTE_PATH}}/logs_list.txt {{ROOT_DIR}}/scripts/just/sync-filelists/
+    rsync -avz --include-from={{ROOT_DIR}}/scripts/just/sync-filelists/logs_list.txt --exclude='*' {{NAGS-VM}}:{{REMOTE_PATH}}/build/vitis/* {{ROOT_DIR}}/logs
 
 down-build:
     #!/usr/bin/env bash
