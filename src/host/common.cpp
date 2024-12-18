@@ -42,6 +42,7 @@ CooTens enqueue_tensor_product(const CooTens &tensor, cl::Kernel &krnl,
   OCL_CHECK(err, err = krnl.setArg(narg++, buffer_in));
   OCL_CHECK(err, err = krnl.setArg(narg++, buffer_out));
   OCL_CHECK(err, err = krnl.setArg(narg++, (rank_t)tensor.rank));
+  OCL_CHECK(err, err = krnl.setArg(narg++, (dim_t)tensor.size()));
 
   // We then need to map our OpenCL buffers to get the pointers
   complex_t *ptr_in, *ptr_right, *ptr_out;

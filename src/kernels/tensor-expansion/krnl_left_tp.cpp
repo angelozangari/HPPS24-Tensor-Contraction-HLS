@@ -2,11 +2,12 @@
 
 using namespace std;
 
-void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R) {
+void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t size) {
   // clang-format off
 #pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=16
 #pragma HLS INTERFACE m_axi port=C bundle=gmem2 depth=32
 #pragma HLS INTERFACE s_axilite port=A_R bundle=control
+#pragma HLS INTERFACE s_axilite port=size bundle=control
 #pragma HLS INTERFACE s_axilite port=return bundle=control
   // clang-format on
 
@@ -99,7 +100,7 @@ void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE
 }
 
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
-                 size_t &reading_head, size_t &elements_in_row_read) {
+                 size_t &reading_head, size_t &elements_in_row_read, size_t to_read) {
   bool end_of_row_reached = false;
   complex_t tmp;
   hls::stream<complex_t> burst_stream;
@@ -118,12 +119,8 @@ LTP_FETCH_READ_BURST:
       burst_stream.write(tmp);
       // A_row.write(tmp);
 
-#ifdef QCS_HLS_CSIM
-      // this is introduced to avoid the CSIM to access the DDR out of bounds
-      // TODO COSIM: check if it's proper
-      if (LAST_IN_ROW(tmp.m))
+      if (i + 1 >= to_read)
         break;
-#endif
     }
   }
 
@@ -140,12 +137,8 @@ LTP_FETCH_CHECK_BOUNDARY:
       if (LAST_IN_ROW(tmp.m))
         end_of_row_reached = true;
 
-#ifdef QCS_HLS_CSIM
-      // this is introduced to avoid the CSIM to access the DDR out of bounds
-      // TODO COSIM: check if it's proper
-      if (LAST_IN_ROW(tmp.m))
+      if (i + 1 >= to_read)
         break;
-#endif
     }
   }
 }

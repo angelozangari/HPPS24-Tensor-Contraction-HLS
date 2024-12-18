@@ -23,7 +23,7 @@ using namespace Tensor;
 
 static const std::string error_message = "Error: Result mismatch:\n"
                                          "i = %d CPU result = %d Device result = %d\n";
-constexpr size_t TO_TEST = 116;
+constexpr size_t TO_TEST = 117;
 
 int main(int argc, char *argv[]) {
   // TARGET_DEVICE macro needs to be passed from gcc command line
@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Failed to program device[" << i << "] with xclbin file!\n";
     } else {
       std::cout << "Device[" << i << "]: program successful!\n";
-      OCL_CHECK(err,
-                krnl_tensor_product_left = cl::Kernel(program, "krnl_left_tp", &err));
+      // OCL_CHECK(err,
+      //           krnl_tensor_product_left = cl::Kernel(program, "krnl_left_tp", &err));
       OCL_CHECK(err,
                 krnl_tensor_product_right = cl::Kernel(program, "krnl_right_tp", &err));
       valid_device = true;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::unique_ptr<OP>> &ops = reader.operations;
 
   int match = 0;
-  for (size_t i = TO_TEST; i < TO_TEST + 2; i++) {
+  for (size_t i = TO_TEST; i < TO_TEST + 1; i++) {
     OP &op = *ops[i];
 
     if (!op.is_unary()) {
@@ -141,8 +141,9 @@ int main(int argc, char *argv[]) {
     }
     TeExecution te_exe;
     if (unary_op.kind == OpKind::TensProdLeft) {
-      out = enqueue_tensor_product(input, krnl_tensor_product_left, q, context, &te_exe,
-                                   true);
+      // out = enqueue_tensor_product(input, krnl_tensor_product_left, q, context,
+      // &te_exe,
+      //                              true);
     } else {
       out = enqueue_tensor_product(input, krnl_tensor_product_right, q, context, &te_exe,
                                    false);

@@ -15,7 +15,7 @@ extern "C" {
  * @param C pointer to the output tensor in DDR
  * @param A_R rank of the tensor A
  */
-void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R);
+void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t size);
 }
 
 namespace Tensor {
@@ -88,9 +88,11 @@ void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE
  * @param A_row Stream to write the fetched elements.
  * @param reading_head Index to start reading from.
  * @param elements_in_row_read Number of elements read in the current row.
+ * @param to_read Number of elements to read.
  */
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
-                 std::size_t &reading_head, std::size_t &elements_in_row_read);
+                 std::size_t &reading_head, std::size_t &elements_in_row_read,
+                 size_t to_read);
 
 /**
  * @brief Write elements from a stream to the cache.
