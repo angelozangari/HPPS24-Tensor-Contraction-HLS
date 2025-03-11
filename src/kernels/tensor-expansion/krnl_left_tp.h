@@ -78,8 +78,8 @@ using cache_t = CircularBuffer<CACHE_SIZE>;
 void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE,
                       std::size_t &reading_head, std::size_t &writing_head,
                       std::size_t &elements_in_row_read, bool first_row_cached,
-                      bool compute_fist_pass, bool &row_exhausted,
-                      bool &tensor_exhausted);
+                      bool compute_fist_pass, bool &row_exhausted, bool &tensor_exhausted,
+                      dim_t size);
 
 /**
  * @brief Fetch elements from tensor A and write them to a stream.

@@ -35,7 +35,7 @@ TPL_MAIN_LOOP:
 #pragma HLS PIPELINE II=1
       // clang-format on
       left_tp_dataflow(A, C, CACHE, reading_head, writing_head, elements_in_row_read,
-                       first_row_cached, true, row_exhausted, tensor_exhausted);
+                       first_row_cached, true, row_exhausted, tensor_exhausted, size);
     }
 
     // If a single iteration was performed, hence the first row size is less than
@@ -62,7 +62,7 @@ TPL_MAIN_LOOP:
 #pragma HLS PIPELINE II=1
       // clang-format on
       left_tp_dataflow(A, C, CACHE, reading_head, writing_head, elements_in_row_read,
-                       first_row_cached, false, row_exhausted, tensor_exhausted);
+                       first_row_cached, false, row_exhausted, tensor_exhausted, size);
     }
 
     // Reset row-wise information for the next iteration
@@ -80,8 +80,8 @@ namespace Left {
 void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE,
                       size_t &reading_head, size_t &writing_head,
                       size_t &elements_in_row_read, bool first_row_cached,
-                      bool compute_fist_pass, bool &row_exhausted,
-                      bool &tensor_exhausted) {
+                      bool compute_fist_pass, bool &row_exhausted, bool &tensor_exhausted,
+                      dim_t size) {
   hls::stream<complex_t> A_row, A_cached, C_row;
   // clang-format off
 #pragma HLS STREAM variable=A_row depth=STREAM_SIZE
@@ -92,7 +92,7 @@ void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE
   // TODO how to implement this DATAFLOW pragma?
   // CACHE is external to the dataflow pragma
   // #pragma HLS dataflow
-  fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read);
+  fetch_elems(A, first_row_cached, A_row, reading_head, elements_in_row_read, size);
   cache_write(A_row, CACHE);
   cache_read(CACHE, A_cached, row_exhausted, tensor_exhausted);
   compute(A_cached, compute_fist_pass, C_row);
@@ -102,6 +102,7 @@ void left_tp_dataflow(Tensor::complex_t *A, Tensor::complex_t *C, cache_t &CACHE
 void fetch_elems(complex_t *A, bool first_row_cached, hls::stream<complex_t> &A_row,
                  size_t &reading_head, size_t &elements_in_row_read, size_t to_read) {
   bool end_of_row_reached = false;
+  size_t elements_read = 0;
   complex_t tmp;
   hls::stream<complex_t> burst_stream;
 
@@ -110,37 +111,40 @@ LTP_FETCH_READ_BURST:
     // clang-format off
 #pragma HLS PIPELINE II=1
     // clang-format on
-    if (!first_row_cached) {
+
+    if (!first_row_cached && reading_head < to_read) {
       // read from head index and update to the next one
       tmp = A[reading_head++]; // read from DDR
       // increase elements read in this row
       elements_in_row_read++;
 
+      // cout << "Reading tmp" << endl;
+      // cout << "Last in row: " << LAST_IN_ROW(tmp.m) << endl;
+      // cout << "Last in tensor: " << LAST_IN_TENSOR(tmp.m) << endl;
       burst_stream.write(tmp);
+      elements_read++;
       // A_row.write(tmp);
-
-      if (i + 1 >= to_read)
-        break;
     }
   }
+
+  cout << "Reading head: " << reading_head << endl;
 
 LTP_FETCH_CHECK_BOUNDARY:
   for (size_t i = 0; i < CACHE_SIZE; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
     // clang-format on
-    if (!first_row_cached) {
+    if (!first_row_cached && i < elements_read) {
       tmp = burst_stream.read();
       if (!end_of_row_reached)
         A_row.write(tmp);
 
       if (LAST_IN_ROW(tmp.m))
         end_of_row_reached = true;
-
-      if (i + 1 >= to_read)
-        break;
     }
   }
+
+  cout << "End of row reached: " << end_of_row_reached << endl;
 }
 
 void cache_write(hls::stream<complex_t> &A_row, cache_t &cache) {
@@ -153,8 +157,12 @@ TLP_CACHE_WRITE_LOOP:
     // clang-format on
     // exit prematurely if stream is consumed
     // write to cache from stream
-    if (A_row.read_nb(tmp))
+    if (A_row.read_nb(tmp)) {
+      cout << "Reading tmp" << endl;
+      cout << "Last in row: " << LAST_IN_ROW(tmp.m) << endl;
+      cout << "Last in tensor: " << LAST_IN_TENSOR(tmp.m) << endl;
       cache.write(tmp);
+    }
   }
 }
 
@@ -173,9 +181,12 @@ TLP_CACHE_READ_LOOP:
 
     // if last in row then break
     if (LAST_IN_ROW(tmp.m)) {
+      cout << "Last in row" << endl;
       row_exhausted = true;
-      if (LAST_IN_TENSOR(tmp.m))
+      if (LAST_IN_TENSOR(tmp.m)) {
+        cout << "Last in tensor" << endl;
         tensor_exhausted = true;
+      }
       break;
     }
   }

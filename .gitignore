@@ -14,3 +14,6 @@ logs
 
 # Results
 results
+
+# Temporary files
+scripts/just/sync-filelists/logs_list.txt
