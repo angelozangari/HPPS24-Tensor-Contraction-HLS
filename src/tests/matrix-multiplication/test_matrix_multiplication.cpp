@@ -1,85 +1,79 @@
-// Host code
+#include "core.h" // TODO fix relative include
+#include <stdio.h>
+#include "row_wise.h"
+#include "pe.h"
 
-#include <fstream>
-#include <stdlib.h>
+FILE *fp;
 
-#include "kernels/matrix-multiplication/krnl_mat_mul.h"
-#include "utils/golden_reader.h"
+#define rlen 13515
+#define vlen 352762
 
-using namespace std;
+__attribute ((aligned (16))) id_t Arcsr[13516];
+__attribute ((aligned (16))) val_t Aval[352764];
+__attribute ((aligned (16))) id_t Acid[352764];
 
-int main() {
-  GoldenReader reader("golden-vectors.dat");
-  reader.consume();
-  auto ops = &reader.operations;
+__attribute ((aligned (16))) id_t Brcsr[13516];
 
-#ifdef TEST_ALL
-  for (size_t i = 0; i < ops->size(); i++) {
-#else
-  for (size_t i = 10; i < 11; i++) {
-#endif
-    OP &op = ops->at(i);
+__attribute ((aligned (16))) id_t Crcsr[13516];
+__attribute ((aligned (16))) val_t Cval[2957530];
+__attribute ((aligned (16))) id_t Ccid[2957530];
 
-    CooTens left{op.left};
-    CooTens right{op.right};
-    CooTens real_out{op.out};
+id_t r1acc, r1hit, r2acc, r2hit, r3acc, r3hit, r4acc, r4hit, r5acc, r5hit, r6acc, r6hit, r7acc, r7hit, r8acc, r8hit;
 
-    dim_t N = 1 << left.rank;
-    size_t max_out_size = N * N;
-    dim_t real_size;
+id_t vc1acc, vc1hit, vc2acc, vc2hit, vc3acc, vc3hit, vc4acc, vc4hit, vc5acc, vc5hit, vc6acc, vc6hit, vc7acc, vc7hit, vc8acc, vc8hit;
 
-    float tmp_r[max_out_size];
-    float tmp_i[max_out_size];
-    coo_meta_t tmp_m[max_out_size];
+id_t fnum;
 
-    // op.print();
+id_t workload_counter1, workload_counter2, workload_counter3, workload_counter4;
 
-    flag_t left_row_format = left.format == MatrixFormat::RowMajor ? 1 : 0;
+__attribute__ ((aligned(16))) uint32_t source1[100], source2[100], source3[100], source4[100];
 
-    // Call the kernel
-    matrix_multiplication(left.data_r.data(), left.data_i.data(), left.data_m.data(),
-                          right.data_r.data(), right.data_i.data(), right.data_m.data(),
-                          tmp_r, tmp_i, tmp_m, left.size(), right.size(), &real_size,
-                          left_row_format);
+int main(){
 
-    // Compare the output
-    CooTens predicted_out{tmp_r, tmp_i, tmp_m, real_size, left.rank};
+	// TODO fix path
+	fp = fopen("/home/lsq/projects/pycharm_projects/spmm/bin/poisson3Da/csr.BIN", "rb");
+	fread(Arcsr, 4, rlen, fp);
+	fclose(fp);
 
-    if (real_size != real_out.size()) {
-      cout << "FAILED" << endl;
-      cout << "Mismatch in sizes" << endl;
-      cout << "Predicted output size: " << real_size << endl;
-      // predicted_out.print();
-      cout << "Real output size: " << real_out.size() << endl;
-      // real_out.print();
-      return 1;
-    }
+	fp = fopen("/home/lsq/projects/pycharm_projects/spmm/bin/poisson3Da/val.BIN", "rb");
+	fread(Aval, 4, vlen, fp);
+	fclose(fp);
 
-    for (size_t i = 0; i < predicted_out.size(); i++) {
-      if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
-            predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
-            predicted_out.data_m[i] == real_out.data_m[i])) {
-        cout << "FAILED" << endl;
-        cout << "Mismatch in data" << endl;
-        // print_op_matrices(op);
-        cout << "Predicted output:"
-             << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-             << "i) at (" << X(predicted_out.data_m[i]) << ", "
-             << Y(predicted_out.data_m[i]) << ")" << endl;
-        cout << "Real output:"
-             << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-             << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
-        cout << "Full Real output:" << endl;
-        real_out.print();
-        cout << "Full Predicted output:" << endl;
-        predicted_out.print();
-        op.print();
-        return 1;
-      }
-    }
+	fp = fopen("/home/lsq/projects/pycharm_projects/spmm/bin/poisson3Da/cid.BIN", "rb");
+	fread(Acid, 4, vlen, fp);
+	fclose(fp);
 
-    cout << "PASSED" << endl;
-  }
+	memcpy(Brcsr, Arcsr, rlen*4);
 
-  return 0;
+//	merger_test(Aval, Cval);
+
+	spmm(Arcsr, Acid, Aval, 10, Arcsr[10], (ap_uint<128> *)Brcsr, (ap_uint<128> *)Brcsr,
+			(ap_uint<128> *)Brcsr, (ap_uint<128> *)Brcsr,
+			(ap_uint<128> *)Aval, (ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+			(ap_uint<128> *)Aval, (ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+			13514, vlen, (ap_uint<128> *)Aval,
+			(ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+			(ap_uint<128> *)Aval, (ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+			Crcsr, Ccid, Cval, reinterpret_cast<uintptr_t>(Brcsr), reinterpret_cast<uintptr_t>(Aval), reinterpret_cast<uintptr_t>(Acid),
+			&r1acc, &r1hit, &r2acc, &r2hit, &r3acc, &r3hit, &r4acc, &r4hit, &r5acc, &r5hit, &r6acc, &r6hit, &r7acc, &r7hit, &r8acc, &r8hit,
+			&vc1acc, &vc1hit, &vc2acc, &vc2hit, &vc3acc, &vc3hit, &vc4acc, &vc4hit,
+			&vc5acc, &vc5hit, &vc6acc, &vc6hit, &vc7acc, &vc7hit, &vc8acc, &vc8hit, &fnum, &workload_counter1,
+			&workload_counter2, &workload_counter3, &workload_counter4);
+
+//	spmm_row_wise(Arcsr, Acid, Aval, 10, 257, Brcsr, Brcsr,
+//			Brcsr, Brcsr, (ap_uint<128> *)Brcsr, (ap_uint<128> *)Brcsr,
+//			(ap_uint<128> *)Brcsr, (ap_uint<128> *)Brcsr,
+//			Aval, Acid, Aval, Acid,
+//			Aval, Acid, Aval, Acid,
+//			(ap_uint<128> *)Aval, (ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+//			(ap_uint<128> *)Aval, (ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+//			13514, vlen, (ap_uint<128> *)Aval,
+//			(ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+//			(ap_uint<128> *)Aval, (ap_uint<128> *)Acid, (ap_uint<128> *)Aval, (ap_uint<128> *)Acid,
+//			Crcsr, Ccid, Cval, reinterpret_cast<uintptr_t>(Brcsr), reinterpret_cast<uintptr_t>(Aval), reinterpret_cast<uintptr_t>(Acid),
+//			&r1acc, &r1hit, &r2acc, &r2hit, &r3acc, &r3hit, &r4acc, &r4hit, &r5acc, &r5hit, &r6acc, &r6hit, &r7acc, &r7hit, &r8acc, &r8hit,
+//			&vc1acc, &vc1hit, &vc2acc, &vc2hit, &vc3acc, &vc3hit, &vc4acc, &vc4hit,
+//			&vc5acc, &vc5hit, &vc6acc, &vc6hit, &vc7acc, &vc7hit, &vc8acc, &vc8hit, &fnum);
+
+	return 0;
 }

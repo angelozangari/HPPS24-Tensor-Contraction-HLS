@@ -17,3 +17,6 @@ results
 
 # Temporary files
 scripts/just/sync-filelists/logs_list.txt
+
+# matrix preprocessing
+src/tests/matrix-multiplication/matrix-preprocessing
