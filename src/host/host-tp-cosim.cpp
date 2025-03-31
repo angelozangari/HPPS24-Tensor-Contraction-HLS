@@ -18,39 +18,40 @@
 #include <vector>
 
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
 using namespace Tensor;
 
-static const std::string error_message = "Error: Result mismatch:\n"
-                                         "i = %d CPU result = %d Device result = %d\n";
+static const string error_message = "Error: Result mismatch:\n"
+                                    "i = %d CPU result = %d Device result = %d\n";
 constexpr size_t TO_TEST = 117;
 
 int main(int argc, char *argv[]) {
   // TARGET_DEVICE macro needs to be passed from gcc command line
   if (argc != 3) {
-    std::cout << "Usage: " << argv[0] << " <xclbin>"
-              << " <golden-vectors.dat>" << std::endl;
+    cout << "Usage: " << argv[0] << " <xclbin>"
+         << " <golden-vectors.dat>" << endl;
     return EXIT_FAILURE;
   }
 
-  std::string xclbinFilename = argv[1];
-  std::string goldenVectorsFile = argv[2];
+  string xclbinFilename = argv[1];
+  string goldenVectorsFile = argv[2];
 
-  std::vector<cl::Device> devices;
+  vector<cl::Device> devices;
   cl_int err;
   cl::Context context;
   cl::CommandQueue q;
   cl::Kernel krnl_tp_left;
   cl::Kernel krnl_tp_right;
   cl::Program program;
-  std::vector<cl::Platform> platforms;
+  vector<cl::Platform> platforms;
   bool found_device = false;
+
   // Traversing all Platforms To find Xilinx Platform and targeted
   // Device in Xilinx Platform
   cl::Platform::get(&platforms);
   for (size_t i = 0; (i < platforms.size()) & (found_device == false); i++) {
     cl::Platform platform = platforms[i];
-    std::string platformName = platform.getInfo<CL_PLATFORM_NAME>();
+    string platformName = platform.getInfo<CL_PLATFORM_NAME>();
     if (platformName == "Xilinx") {
       devices.clear();
       platform.getDevices(CL_DEVICE_TYPE_ACCELERATOR, &devices);
@@ -61,19 +62,20 @@ int main(int argc, char *argv[]) {
     }
   }
   if (found_device == false) {
-    std::cout << "Error: Unable to find Target Device " << std::endl;
+    cout << "Error: Unable to find Target Device " << endl;
     return EXIT_FAILURE;
   }
 
-  std::cout << "INFO: Reading " << xclbinFilename << std::endl;
+  cout << "INFO: Reading " << xclbinFilename << endl;
   FILE *fp;
   if ((fp = fopen(xclbinFilename.c_str(), "r")) == nullptr) {
     printf("ERROR: %s xclbin not available please build\n", xclbinFilename.c_str());
     exit(EXIT_FAILURE);
   }
+
   // Load xclbin
-  std::cout << "Loading: '" << xclbinFilename << "'\n";
-  std::ifstream bin_file(xclbinFilename, std::ifstream::binary);
+  cout << "Loading: '" << xclbinFilename << endl;
+  ifstream bin_file(xclbinFilename, ifstream::binary);
   bin_file.seekg(0, bin_file.end);
   unsigned nb = bin_file.tellg();
   bin_file.seekg(0, bin_file.beg);
@@ -90,13 +92,13 @@ int main(int argc, char *argv[]) {
     OCL_CHECK(err, context = cl::Context(device, nullptr, nullptr, nullptr, &err));
     OCL_CHECK(err,
               q = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
-    std::cout << "Trying to program device[" << i
-              << "]: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+    cout << "Trying to program device[" << i << "]: " << device.getInfo<CL_DEVICE_NAME>()
+         << endl;
     cl::Program program(context, {device}, bins, nullptr, &err);
     if (err != CL_SUCCESS) {
-      std::cout << "Failed to program device[" << i << "] with xclbin file!\n";
+      cout << "Failed to program device[" << i << "] with xclbin file!" << endl;
     } else {
-      std::cout << "Device[" << i << "]: program successful!\n";
+      cout << "Device[" << i << "]: program successful!" << endl;
       // OCL_CHECK(err, krnl_tp_left = cl::Kernel(program, "krnl_left_tp", &err));
       OCL_CHECK(err, krnl_tp_right = cl::Kernel(program, "krnl_right_tp", &err));
       valid_device = true;
@@ -104,13 +106,13 @@ int main(int argc, char *argv[]) {
     }
   }
   if (!valid_device) {
-    std::cout << "Failed to program any device found, exit!\n";
+    cout << "Failed to program any device found, exit!\n";
     exit(EXIT_FAILURE);
   }
 
   GoldenReader reader(goldenVectorsFile);
   reader.consume();
-  std::vector<std::unique_ptr<OP>> &ops = reader.operations;
+  vector<unique_ptr<OP>> &ops = reader.operations;
 
   int match = 0;
   for (size_t i = TO_TEST; i < TO_TEST + 1; i++) {
@@ -125,9 +127,9 @@ int main(int argc, char *argv[]) {
     CooTens input{unary_op.input}, real_out{op.out}, out;
 
     // Call the kernel
-    std::vector<float> out_r(input.size() * 2);
-    std::vector<float> out_i(input.size() * 2);
-    std::vector<coo_meta_t> out_m(input.size() * 2);
+    vector<float> out_r(input.size() * 2);
+    vector<float> out_i(input.size() * 2);
+    vector<coo_meta_t> out_m(input.size() * 2);
 
     if (unary_op.kind == OpKind::TensProdLeft) {
       cout << "Running test " << i << " with sizes " << input.rank << " x " << 1 << " -> "

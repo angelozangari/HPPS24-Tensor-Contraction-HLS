@@ -44,6 +44,7 @@ endif
 TARGET := hw
 VPP_LDFLAGS :=
 KRNL := tp
+GOLDEN_LOCATION := $(XF_PROJ_ROOT)/src/tests/tensor-expansion/golden-vectors.dat
 INPUT_FILE := golden-vectors.dat
 KRNL_FREQ := 300
 include ./utils.mk
@@ -95,7 +96,7 @@ xclbin: build
 
 $(TEMP_DIR)/krnl_right_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_right_tp.cpp
 	mkdir -p $(TEMP_DIR)
-	v++ -R 2 -c $(VPP_FLAGS) -t $(TARGET) --kernel_frequency $(KRNL_FREQ) --platform $(PLATFORM) -k krnl_right_tp --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
+	v++ -c $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) -k krnl_right_tp --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
 # $(TEMP_DIR)/krnl_mat_mul.xo: $(XF_PROJ_ROOT)/src/kernels/matrix-multiplication/krnl_mat_mul.cpp
 # 	mkdir -p $(TEMP_DIR)
@@ -111,9 +112,8 @@ $(TEMP_DIR)/krnl_right_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_
 # $(BUILD_DIR)/krnl_tp.xclbin: $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
 $(BUILD_DIR)/krnl_tp.xclbin: $(TEMP_DIR)/krnl_right_tp.xo
 	mkdir -p $(BUILD_DIR)
-	# v++ -R 2 -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
-	v++ -R 2 -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(TEMP_DIR)/krnl_right_tp.xo
-	v++ -R 2 -p $(BUILD_DIR)/krnl_tp.link.xclbin $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $@
+	v++ -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(+)
+	v++ -p $(BUILD_DIR)/krnl_tp.link.xclbin $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $@
 
 ############################## Setting Rules for Host (Building Host Executable) ##############################
 $(EXECUTABLE): $(HOST_SRCS) | check-xrt
@@ -127,6 +127,7 @@ $(EMCONFIG_DIR)/emconfig.json:
 run: all
 ifeq ($(TARGET),$(filter $(TARGET),sw_emu hw_emu))
 	cp -rf $(EMCONFIG_DIR)/emconfig.json .
+	cp $(GOLDEN_LOCATION) $(INPUT_FILE)
 	XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(CMD_ARGS)
 else
 	$(EXECUTABLE) $(CMD_ARGS)
