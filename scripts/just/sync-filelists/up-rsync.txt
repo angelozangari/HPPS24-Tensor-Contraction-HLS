@@ -2,13 +2,16 @@
 ../../src/host/common.h
 ../../src/host/host-combined.cpp
 ../../src/host/host-combined.h
-../../src/host/host-tp.cpp
+../../src/host/host-mm.cpp
 ../../src/host/host-tp-cosim.cpp
+../../src/host/host-tp.cpp
 ../../src/kernels/tensor-expansion/krnl_left_tp.cpp
 ../../src/kernels/tensor-expansion/krnl_left_tp.h
 ../../src/kernels/tensor-expansion/krnl_right_tp.cpp
 ../../src/kernels/tensor-expansion/krnl_right_tp.h
 ../../src/kernels/types.h
+../../src/tests/tensor-expansion/golden-vectors.dat
+../../src/tests/tensor-expansion/test_tensor_product.cpp
 ../../src/utils/csv_writer.cpp
 ../../src/utils/csv_writer.h
 ../../src/utils/golden_reader.cpp

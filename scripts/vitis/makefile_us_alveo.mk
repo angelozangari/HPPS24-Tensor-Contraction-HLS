@@ -89,9 +89,9 @@ build: check-vitis check-device $(BUILD_DIR)/krnl_tp.xclbin
 xclbin: build
 
 ############################## Setting Rules for Binary Containers (Building Kernels) ##############################
-$(TEMP_DIR)/krnl_left_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_left_tp.cpp
-	mkdir -p $(TEMP_DIR)
-	v++ -R 2 -c $(VPP_FLAGS) -t $(TARGET) --kernel_frequency $(KRNL_FREQ) --platform $(PLATFORM) -k krnl_left_tp --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
+# $(TEMP_DIR)/krnl_left_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_left_tp.cpp
+# 	mkdir -p $(TEMP_DIR)
+# 	v++ -R 2 -c $(VPP_FLAGS) -t $(TARGET) --kernel_frequency $(KRNL_FREQ) --platform $(PLATFORM) -k krnl_left_tp --temp_dir $(TEMP_DIR) -I'$(<D)' -I'$(XF_PROJ_ROOT)/src' -o'$@' '$<'
 
 $(TEMP_DIR)/krnl_right_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_right_tp.cpp
 	mkdir -p $(TEMP_DIR)
@@ -108,9 +108,11 @@ $(TEMP_DIR)/krnl_right_tp.xo: $(XF_PROJ_ROOT)/src/kernels/tensor-expansion/krnl_
 # 	v++ -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_qcs.link.xclbin' $(+)
 # 	v++ -p $(BUILD_DIR)/krnl_qcs.link.xclbin $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $(BUILD_DIR)/krnl_qcs.xclbin
 
-$(BUILD_DIR)/krnl_tp.xclbin: $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
+# $(BUILD_DIR)/krnl_tp.xclbin: $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
+$(BUILD_DIR)/krnl_tp.xclbin: $(TEMP_DIR)/krnl_right_tp.xo
 	mkdir -p $(BUILD_DIR)
-	v++ -R 2 -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
+	# v++ -R 2 -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(TEMP_DIR)/krnl_left_tp.xo $(TEMP_DIR)/krnl_right_tp.xo
+	v++ -R 2 -l $(VPP_FLAGS) $(VPP_LDFLAGS) -t $(TARGET) --platform $(PLATFORM) --temp_dir $(TEMP_DIR) -o'$(BUILD_DIR)/krnl_tp.link.xclbin' $(TEMP_DIR)/krnl_right_tp.xo
 	v++ -R 2 -p $(BUILD_DIR)/krnl_tp.link.xclbin $(VPP_FLAGS) -t $(TARGET) --platform $(PLATFORM) --package.out_dir $(PACKAGE_OUT) -o $@
 
 ############################## Setting Rules for Host (Building Host Executable) ##############################

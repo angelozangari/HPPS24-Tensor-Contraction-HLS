@@ -40,13 +40,12 @@ int main(int argc, char *argv[]) {
   cl_int err;
   cl::Context context;
   cl::CommandQueue q;
-  cl::Kernel krnl_tensor_product_left;
-  cl::Kernel krnl_tensor_product_right;
+  cl::Kernel krnl_tp_left;
+  cl::Kernel krnl_tp_right;
   cl::Program program;
   std::vector<cl::Platform> platforms;
   bool found_device = false;
-
-  // traversing all Platforms To find Xilinx Platform and targeted
+  // Traversing all Platforms To find Xilinx Platform and targeted
   // Device in Xilinx Platform
   cl::Platform::get(&platforms);
   for (size_t i = 0; (i < platforms.size()) & (found_device == false); i++) {
@@ -98,10 +97,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Failed to program device[" << i << "] with xclbin file!\n";
     } else {
       std::cout << "Device[" << i << "]: program successful!\n";
-      // OCL_CHECK(err,
-      //           krnl_tensor_product_left = cl::Kernel(program, "krnl_left_tp", &err));
-      OCL_CHECK(err,
-                krnl_tensor_product_right = cl::Kernel(program, "krnl_right_tp", &err));
+      // OCL_CHECK(err, krnl_tp_left = cl::Kernel(program, "krnl_left_tp", &err));
+      OCL_CHECK(err, krnl_tp_right = cl::Kernel(program, "krnl_right_tp", &err));
       valid_device = true;
       break; // we break because we found a valid device
     }
@@ -141,12 +138,11 @@ int main(int argc, char *argv[]) {
     }
     TeExecution te_exe;
     if (unary_op.kind == OpKind::TensProdLeft) {
-      // out = enqueue_tensor_product(input, krnl_tensor_product_left, q, context,
+      // out = enqueue_tensor_product(input, krnl_tp_left, q, context,
       // &te_exe,
       //                              true);
     } else {
-      out = enqueue_tensor_product(input, krnl_tensor_product_right, q, context, &te_exe,
-                                   false);
+      out = enqueue_tensor_product(input, krnl_tp_right, q, context, &te_exe, false);
     }
 
     for (size_t i = 0; i < out.size(); i++) {

@@ -32,8 +32,8 @@ cmd CMD MODE:
     mkdir -p ./build/vitis/logs/
     cp ./scripts/vitis/* ./build/vitis/
     # source the correct settings files
-    . {{VITIS_SETTINGS_PATH}}
-    . {{XRT_SETUP_PATH}}
+    source {{VITIS_SETTINGS_PATH}}
+    source {{XRT_SETUP_PATH}}
     # run CMD with MODE
     cd ./build/vitis
     make {{CMD}} TARGET={{MODE}} > ./logs/{{CMD}}_{{MODE}}.log 2>&1 &
