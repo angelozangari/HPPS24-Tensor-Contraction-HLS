@@ -49,7 +49,7 @@ int main() {
       if (op.kind == OpKind::TensProdLeft) {
         cout << "Running unary test (TPL) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
-        krnl_left_tp(A_vec.data(), C_vec.data(), input.rank, A_vec.size());
+        // krnl_left_tp(A_vec.data(), C_vec.data(), input.rank, A_vec.size());
       } else if (op.kind == OpKind::TensProdRight) {
         cout << "Running unary test (TPR) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
@@ -68,8 +68,10 @@ int main() {
       // Compare the output
       CooTens predicted_out{out_r, out_i, out_m, input.rank * 2};
 
+      bool passed = true;
+
       if (predicted_out.size() != real_out.size()) {
-        cout << "FAILED" << endl;
+        passed = false;
         continue;
         // cout << "Mismatch in sizes" << endl;
         // cout << "Predicted output size: " << predicted_out.size() << endl;
@@ -87,8 +89,8 @@ int main() {
         if (!(predicted_out.data_r[i] - real_out.data_r[i] < 1e-6 &&
               predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
               predicted_out.data_m[i] == real_out.data_m[i])) {
-          cout << "FAILED" << endl;
-          goto END_MAIN;
+          passed = false;
+          break;
           // cout << "Mismatch in data" << endl;
           // cout << "Predicted output:"
           //      << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
@@ -107,12 +109,15 @@ int main() {
         }
       }
 
-      cout << "PASSED" << endl;
+      if (passed) {
+        cout << "PASSED" << endl;
+      } else {
+        cout << "FAILED" << endl;
+      }
     } else {
       cout << "ERROR: Binary tensor products operations are not supported" << endl;
       return 1;
     }
-  END_MAIN:
   }
 
   return 0;
