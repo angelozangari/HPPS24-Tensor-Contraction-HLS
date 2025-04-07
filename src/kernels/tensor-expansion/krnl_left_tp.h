@@ -4,7 +4,9 @@
 
 #include "ap_int.h"
 #include "hls_stream.h"
+#include "hls_task.h"
 #include "kernels/types.h"
+#include <array>
 
 extern "C" {
 /**
@@ -23,7 +25,30 @@ namespace Product {
 namespace Left {
 
 // constexpr uint16_t CACHE_SIZE = 8;
-constexpr uint16_t STREAM_SIZE = 8;
+constexpr uint16_t CHUNK_SIZE = 8;
+constexpr uint16_t STREAM_SIZE = 64;
+
+struct load_request_t {
+  dim_t start;
+  dim_t row_start_at;
+  ap_uint<1> first_pass;
+
+  load_request_t() : start(0), row_start_at(0), first_pass(1) {}
+};
+
+struct value_t {
+  complex_t value;
+  ap_uint<1> valid;
+  dim_t row_start_at;
+  dim_t index_on_A;
+  ap_uint<1> first_pass;
+
+  value_t(complex_t v)
+      : value(v), row_start_at(0), valid(1), index_on_A(0), first_pass(1) {}
+  value_t() : valid(0) {}
+};
+
+typedef std::array<value_t, CHUNK_SIZE> chunk_t;
 
 /**
  * @brief Circular buffer implementation for caching tensor elements.
@@ -62,13 +87,14 @@ constexpr uint16_t STREAM_SIZE = 8;
 
 // using cache_t = CircularBuffer<CACHE_SIZE>;
 
-/**
- * @brief Fetch elements from tensor A and write them to a stream.
- * @param A Pointer to the tensor in DDR.
- * @param A_row Stream to write the fetched elements.
- * @param size Size of the tensor.
- */
-// void load(complex_t *A, hls::stream<complex_t> &A_row, size_t size);
+void load_chunk(complex_t *A, std::size_t size,
+                hls::stream<load_request_t> &request_stream,
+                hls::stream<chunk_t> &to_compute);
+
+void compute(hls::stream<chunk_t> &to_compute, hls::stream<chunk_t> &to_write,
+             hls::stream<load_request_t> &request_stream);
+
+void store(complex_t *C, dim_t &writing_ix, hls::stream<chunk_t> &to_write);
 
 /**
  * @brief Compute the pass described by the flag provided of the tensor product.
