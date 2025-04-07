@@ -4,8 +4,8 @@ using namespace std;
 
 void krnl_right_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t size) {
   // clang-format off
-#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=16
-#pragma HLS INTERFACE m_axi port=C bundle=gmem0 depth=32
+#pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=4096 latency=30 num_read_outstanding=128 max_read_burst_length=128
+#pragma HLS INTERFACE m_axi port=C bundle=gmem0 depth=8192 latency=30 num_write_outstanding=128 max_write_burst_length=128
 #pragma HLS INTERFACE s_axilite port=A_R bundle=control
 #pragma HLS INTERFACE s_axilite port=size bundle=control
 #pragma HLS INTERFACE s_axilite port=return bundle=control
@@ -33,12 +33,23 @@ namespace Right {
 void load(complex_t *A, hls::stream<complex_t> &A_stream, dim_t size) {
   complex_t tmp;
 
-TPR_LOAD_LOOP:
-  for (size_t i = 0; i < size * 2; i++) {
+TPR_LOAD_LOOP_1:
+  for (size_t i = 0; i < size; i++) {
+    // clang-format off
+  #pragma HLS PIPELINE II=1
+  #pragma HLS LOOP_TRIPCOUNT max=4096 min=4096
+    // clang-format on
+    tmp = A[i];
+    A_stream.write(tmp);
+  }
+
+TPR_LOAD_LOOP_2:
+  for (size_t i = 0; i < size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT max=4096 min=4096
     // clang-format on
-    tmp = A[i % size];
+    tmp = A[i];
     A_stream.write(tmp);
   }
 }
@@ -52,6 +63,7 @@ TPR_COMPUTE_LOOP_1:
   for (size_t i = 0; i < size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT max=4096 min=4096
     // clang-format on
     a = A_stream.read();
     LAST_IN_TENSOR(a.m) = false;
@@ -62,6 +74,7 @@ TPR_COMPUTE_LOOP_2:
   for (size_t i = 0; i < size; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT max=4096 min=4096
     // clang-format on
     a = A_stream.read();
     X(a.m) = X(a.m) + skip;
@@ -77,6 +90,7 @@ TPR_STORE_LOOP:
   for (size_t i = 0; i < size * 2; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT max=8192 min=8192
     // clang-format on
     c = C_stream.read();
     C[i] = c;

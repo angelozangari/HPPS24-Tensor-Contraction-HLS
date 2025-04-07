@@ -23,7 +23,7 @@ namespace Tensor {
 namespace Product {
 namespace Right {
 
-constexpr uint16_t STREAM_SIZE = 8;
+constexpr uint16_t STREAM_SIZE = 64;
 
 /**
  * @brief Load elements from tensor A to a stream.
