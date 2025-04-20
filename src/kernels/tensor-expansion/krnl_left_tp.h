@@ -77,13 +77,15 @@ public:
 };
 
 void chunk_load(complex_t *A, std::size_t size, hls::stream<LoadJob> &load_jobs,
-                hls::stream<ComputeJob> &compute_jobs);
+                hls::stream<ComputeJob> &compute_jobs,
+                std::unique_ptr<LoadJob> &last_load_job);
 
 void chunk_compute(hls::stream<ComputeJob> &compute_jobs,
-                   hls::stream<StoreJob> &store_jobs, hls::stream<LoadJob> &load_jobs);
+                   hls::stream<StoreJob> &store_jobs, hls::stream<LoadJob> &load_jobs,
+                   ap_uint<1> &compute_is_in_first_pass, edge_t &computing_row_ix);
 
-void chunk_store(hls::stream<StoreJob> &store_jobs, complex_t *C,
-                 ap_uint<1> &stop_signal);
+void chunk_store(hls::stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_signal,
+                 dim_t &writing_ix);
 
 } // namespace Left
 } // namespace Product

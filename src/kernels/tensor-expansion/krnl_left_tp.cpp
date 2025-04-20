@@ -27,15 +27,22 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
 #pragma HLS STREAM variable=writing_stream depth=STREAM_SIZE
   // clang-format on
 
+  // initialize stage variables
+  unique_ptr<LoadJob> last_load_job = nullptr;
+  dim_t writing_ix = 0;
+  ap_uint<1> compute_is_in_first_pass = 1;
+  edge_t computing_row_ix = 0;
+
   while (!stop_signal) {
     // clang-format off
   #pragma HLS PIPELINE II=8 style=frp
   #pragma HLS DATAFLOW
     // clang-format on
 
-    chunk_load(A, size, load_jobs_stream, compute_jobs_stream);
-    chunk_compute(compute_jobs_stream, store_jobs_stream, load_jobs_stream);
-    chunk_store(store_jobs_stream, C, stop_signal);
+    chunk_load(A, size, load_jobs_stream, compute_jobs_stream, last_load_job);
+    chunk_compute(compute_jobs_stream, store_jobs_stream, load_jobs_stream,
+                  compute_is_in_first_pass, computing_row_ix);
+    chunk_store(store_jobs_stream, C, stop_signal, writing_ix);
   }
 }
 
@@ -43,13 +50,8 @@ namespace Tensor {
 namespace Product {
 namespace Left {
 
-static unique_ptr<LoadJob> LAST_LOAD_JOB = nullptr;
-static dim_t WRITING_IX = 0;
-static ap_uint<1> COMPUTE_IS_IN_FIRST_PASS = 1;
-static edge_t COMPUTING_ROW_IX = 0;
-
 void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
-                stream<ComputeJob> &compute_jobs) {
+                stream<ComputeJob> &compute_jobs, unique_ptr<LoadJob> &last_load_job) {
   // clang-format off
 #pragma HLS INLINE off
   // clang-format on
@@ -61,9 +63,9 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
 
   if (load_jobs.read_nb(job)) {
     // if we have a request, override the load flow and use it
-  } else if (LAST_LOAD_JOB != NULL) {
+  } else if (last_load_job != NULL) {
     // else, if we have a last request, we advance on it
-    job = LAST_LOAD_JOB->advance_for_first_pass();
+    job = last_load_job->advance_for_first_pass();
   } else {
     // else, we create a default request (starting from 0)
     job = LoadJob();
@@ -88,14 +90,15 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
   }
 
   // save the request as last request
-  LAST_LOAD_JOB = make_unique<LoadJob>(job);
+  last_load_job = make_unique<LoadJob>(job);
 
   // send the chunk to the next stage
   compute_jobs.write(ComputeJob(job, chunk));
 }
 
 void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_jobs,
-                   stream<LoadJob> &load_jobs) {
+                   stream<LoadJob> &load_jobs, ap_uint<1> &compute_is_in_first_pass,
+                   edge_t &computing_row_ix) {
   // clang-format off
 #pragma HLS INLINE off
   // clang-format on
@@ -114,7 +117,7 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
     complex_t &a = v.value;
 
     if (!first_pass_ended && v.valid) {
-      if (COMPUTE_IS_IN_FIRST_PASS) {
+      if (compute_is_in_first_pass) {
         X(a.m) = X(a.m) << 1;
         Y(a.m) = Y(a.m) << 1;
         LAST_IN_TENSOR(a.m) = false;
@@ -124,15 +127,13 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
       }
 
       if (LAST_IN_ROW(a.m)) {
-        if (COMPUTE_IS_IN_FIRST_PASS) {
+        if (compute_is_in_first_pass) {
           first_pass_ended = 1;
-          // cout << "i: " << i << endl;
           second_pass_job = prev_job.reset_for_second_pass(prev_job.start + i + 1);
-          // cout << "second_pass_job: " << second_pass_job.start << endl;
           need_override = 1;
         }
         // update the mode of the compute
-        COMPUTE_IS_IN_FIRST_PASS = ~COMPUTE_IS_IN_FIRST_PASS;
+        compute_is_in_first_pass = ~compute_is_in_first_pass;
       }
     } else {
       // end of row was prematurely reached, invalidate all subsequent values
@@ -142,7 +143,7 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
   }
 
   // if the compute pass is the same of the previous job then pass it to the next stage
-  if (prev_job.row_index == COMPUTING_ROW_IX) {
+  if (prev_job.row_index == computing_row_ix) {
     store_job = {job.chunk};
   } else { // else write an invalid job
     store_job = {};
@@ -154,11 +155,12 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
   // a new job request
   if (need_override) {
     load_jobs.write(second_pass_job);
-    COMPUTING_ROW_IX++;
+    computing_row_ix++;
   }
 }
 
-void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_signal) {
+void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_signal,
+                 dim_t &writing_ix) {
   // clang-format off
   #pragma HLS INLINE off
   // clang-format on
@@ -171,7 +173,7 @@ void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_si
       value_t tmp = chunk[i];
       // write the value if valid else spin
       if (tmp.valid)
-        C[WRITING_IX++] = tmp.value;
+        C[writing_ix++] = tmp.value;
       // if the start of the chunk was invalid, stop the outer loop
       else if (i == 0) {
         stop_signal = 1;
