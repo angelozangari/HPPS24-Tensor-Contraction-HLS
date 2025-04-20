@@ -29,7 +29,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   // clang-format on
 
   // initialize stage variables
-  unique_ptr<LoadJob> last_load_job = nullptr;
+  LoadJob last_load_job = {};
   dim_t writing_ix = 0;
   ap_uint<1> compute_is_in_first_pass = 1;
   edge_t computing_row_ix = 0;
@@ -55,7 +55,7 @@ namespace Product {
 namespace Left {
 
 void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
-                stream<ComputeJob> &compute_jobs, unique_ptr<LoadJob> &last_load_job) {
+                stream<ComputeJob> &compute_jobs, LoadJob &last_load_job) {
   // clang-format off
 #pragma HLS INLINE off
   // clang-format on
@@ -67,12 +67,13 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
 
   if (load_jobs.read_nb(job)) {
     // if we have a request, override the load flow and use it
-  } else if (last_load_job != NULL) {
+  } else if (!last_load_job.is_first) {
     // else, if we have a last request, we advance on it
-    job = last_load_job->advance_for_first_pass();
+    job = last_load_job.advance_for_first_pass();
   } else {
     // else, we create a default request (starting from 0)
-    job = LoadJob();
+    job = last_load_job;
+    job.is_first = 0;
   }
 
   // second load the chunk detailed by the LoadParams request
@@ -94,7 +95,7 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
   }
 
   // save the request as last request
-  last_load_job = make_unique<LoadJob>(job);
+  last_load_job = job;
 
   // send the chunk to the next stage
   compute_jobs.write(ComputeJob(job, chunk));

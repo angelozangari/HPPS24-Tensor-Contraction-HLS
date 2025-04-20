@@ -60,7 +60,7 @@ public:
   /**
    * @brief Default constructor.
    */
-  LoadJob() : start(0), row_start_at(0), row_index(0) {}
+  LoadJob() : start(0), row_start_at(0), row_index(0), is_first(1) {}
   /**
    * @brief Parameterized constructor.
    * @param s Start index.
@@ -68,7 +68,7 @@ public:
    * @param row_ix Row index.
    */
   LoadJob(dim_t s, dim_t r, edge_t row_ix)
-      : start(s), row_start_at(r), row_index(row_ix) {}
+      : start(s), row_start_at(r), row_index(row_ix), is_first(0) {}
 
   /**
    * @brief Advance the job for the first pass.
@@ -91,6 +91,8 @@ public:
   dim_t row_start_at; ///< Index of the first element of the row (to rewind it back).
   edge_t row_index;   ///< Index of the row in the tensor (used to invalidate the chunk to
                       ///< flush after the first pass).
+  ap_uint<1> is_first; ///< Bit indicating if this is the first LoadJob (used to start the
+                       ///< computation).
 };
 
 /**
@@ -142,8 +144,7 @@ public:
  * @param last_load_job Pointer to the last load job.
  */
 void chunk_load(complex_t *A, std::size_t size, hls::stream<LoadJob> &load_jobs,
-                hls::stream<ComputeJob> &compute_jobs,
-                std::unique_ptr<LoadJob> &last_load_job);
+                hls::stream<ComputeJob> &compute_jobs, LoadJob &last_load_job);
 
 /**
  * @brief Computes the tensor product for a chunk of data.
