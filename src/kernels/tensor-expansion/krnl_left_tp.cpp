@@ -37,10 +37,10 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   // stop signal to stop the outer loop
   ap_uint<1> stop_signal = 0;
 
+OUTER_LOOP:
   while (!stop_signal_stream.read_nb(stop_signal) || stop_signal == 0) {
     // clang-format off
-  #pragma HLS PIPELINE II=8 style=frp
-  #pragma HLS DATAFLOW
+#pragma HLS PIPELINE II=8 style=frp
     // clang-format on
 
     chunk_load(A, size, load_jobs_stream, compute_jobs_stream, last_load_job);
@@ -82,7 +82,13 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
   value_t v;
   chunk_t chunk;
 
+LOAD_LOOP:
   for (size_t i = 0; i < CHUNK_SIZE; i++) {
+    // clang-format off
+// #pragma HLS ARRAY_PARTITION variable = chunk complete dim = 1
+#pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
+    // clang-format on
     l = job.start + i;
     // if the request is out of bounds, we load an invalid value
     if (l < size) {
@@ -117,7 +123,12 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
   ComputeJob job = compute_jobs.read();
   prev_job = job.load_job;
 
+COMPUTE_LOOP:
   for (size_t i = 0; i < CHUNK_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
+    // clang-format on
     value_t &v = job.chunk[i];
     complex_t &a = v.value;
 
@@ -173,7 +184,12 @@ void chunk_store(stream<StoreJob> &store_jobs, complex_t *C,
   StoreJob store_job = store_jobs.read();
   chunk_t &chunk = store_job.chunk;
 
+STORE_LOOP:
   for (size_t i = 0; i < CHUNK_SIZE; i++) {
+    // clang-format off
+#pragma HLS PIPELINE II=1
+#pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
+    // clang-format on
     if (store_job.is_valid) {
       value_t tmp = chunk[i];
       // write the value if valid else spin
