@@ -16,6 +16,7 @@ extern "C" {
  * @param A pointer to the tensor in DDR
  * @param C pointer to the output tensor in DDR
  * @param A_R rank of the tensor A
+ * @param size size of the tensor A (number of elements)
  */
 void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t size);
 }
@@ -84,8 +85,8 @@ void chunk_compute(hls::stream<ComputeJob> &compute_jobs,
                    hls::stream<StoreJob> &store_jobs, hls::stream<LoadJob> &load_jobs,
                    ap_uint<1> &compute_is_in_first_pass, edge_t &computing_row_ix);
 
-void chunk_store(hls::stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_signal,
-                 dim_t &writing_ix);
+void chunk_store(hls::stream<StoreJob> &store_jobs, complex_t *C,
+                 hls::stream<ap_uint<1>> &stop_signal_stream, dim_t &writing_ix);
 
 } // namespace Left
 } // namespace Product

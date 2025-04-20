@@ -17,14 +17,15 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   using namespace Tensor;
   using namespace Tensor::Product::Left;
 
-  ap_uint<1> stop_signal = 0;
+  stream<ap_uint<1>> stop_signal_stream;
   stream<LoadJob> load_jobs_stream;
   stream<ComputeJob> compute_jobs_stream;
   stream<StoreJob> store_jobs_stream;
   // clang-format off
+#pragma HLS STREAM variable=stop_signal_stream depth=STREAM_SIZE
 #pragma HLS STREAM variable=load_jobs_stream depth=STREAM_SIZE
 #pragma HLS STREAM variable=compute_jobs_stream depth=STREAM_SIZE
-#pragma HLS STREAM variable=writing_stream depth=STREAM_SIZE
+#pragma HLS STREAM variable=store_jobs_stream depth=STREAM_SIZE
   // clang-format on
 
   // initialize stage variables
@@ -33,7 +34,10 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   ap_uint<1> compute_is_in_first_pass = 1;
   edge_t computing_row_ix = 0;
 
-  while (!stop_signal) {
+  // stop signal to stop the outer loop
+  ap_uint<1> stop_signal = 0;
+
+  while (!stop_signal_stream.read_nb(stop_signal) || stop_signal == 0) {
     // clang-format off
   #pragma HLS PIPELINE II=8 style=frp
   #pragma HLS DATAFLOW
@@ -42,7 +46,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
     chunk_load(A, size, load_jobs_stream, compute_jobs_stream, last_load_job);
     chunk_compute(compute_jobs_stream, store_jobs_stream, load_jobs_stream,
                   compute_is_in_first_pass, computing_row_ix);
-    chunk_store(store_jobs_stream, C, stop_signal, writing_ix);
+    chunk_store(store_jobs_stream, C, stop_signal_stream, writing_ix);
   }
 }
 
@@ -159,8 +163,8 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
   }
 }
 
-void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_signal,
-                 dim_t &writing_ix) {
+void chunk_store(stream<StoreJob> &store_jobs, complex_t *C,
+                 stream<ap_uint<1>> &stop_signal_stream, dim_t &writing_ix) {
   // clang-format off
   #pragma HLS INLINE off
   // clang-format on
@@ -176,7 +180,7 @@ void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, ap_uint<1> &stop_si
         C[writing_ix++] = tmp.value;
       // if the start of the chunk was invalid, stop the outer loop
       else if (i == 0) {
-        stop_signal = 1;
+        stop_signal_stream.write_nb(1);
       }
     }
   }
