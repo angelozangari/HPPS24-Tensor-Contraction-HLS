@@ -5,8 +5,8 @@ using namespace hls;
 
 void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t size) {
   // clang-format off
-  #pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=4096 latency=30 num_read_outstanding=128 max_read_burst_length=128
-  #pragma HLS INTERFACE m_axi port=C bundle=gmem0 depth=8192 latency=30 num_write_outstanding=128 max_write_burst_length=128
+  #pragma HLS INTERFACE m_axi port=A bundle=gmem0 depth=16 latency=1 num_read_outstanding=128 max_read_burst_length=128
+  #pragma HLS INTERFACE m_axi port=C bundle=gmem0 depth=32 latency=1 num_write_outstanding=128 max_write_burst_length=128
   #pragma HLS INTERFACE s_axilite port=A_R bundle=control
   #pragma HLS INTERFACE s_axilite port=size bundle=control
   #pragma HLS INTERFACE s_axilite port=return bundle=control

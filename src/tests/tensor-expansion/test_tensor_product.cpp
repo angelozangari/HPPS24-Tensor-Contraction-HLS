@@ -49,7 +49,7 @@ int main() {
       if (op.kind == OpKind::TensProdLeft) {
         cout << "Running unary test (TPL) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
-        // krnl_left_tp(A_vec.data(), C_vec.data(), input.rank, A_vec.size());
+        krnl_left_tp(A_vec.data(), C_vec.data(), input.rank, A_vec.size());
       } else if (op.kind == OpKind::TensProdRight) {
         cout << "Running unary test (TPR) " << i << " with size " << input.rank << " -> "
              << real_out.rank << " ... " << flush;
@@ -90,22 +90,21 @@ int main() {
               predicted_out.data_i[i] - real_out.data_i[i] < 1e-6 &&
               predicted_out.data_m[i] == real_out.data_m[i])) {
           passed = false;
-          break;
-          // cout << "Mismatch in data" << endl;
-          // cout << "Predicted output:"
-          //      << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
-          //      << "i) at (" << X(predicted_out.data_m[i]) << ", "
-          //      << Y(predicted_out.data_m[i]) << ")" << endl;
-          // cout << "Real output:"
-          //      << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
-          //      << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" <<
-          //      endl;
-          // cout << "Full Real output:" << endl;
-          // real_out.print();
-          // cout << "Full Predicted output:" << endl;
-          // predicted_out.print();
-          // op.print();
-          // return 1;
+          // break;
+          cout << "Mismatch in data" << endl;
+          cout << "Predicted output:"
+               << "(" << predicted_out.data_r[i] << " + " << predicted_out.data_i[i]
+               << "i) at (" << X(predicted_out.data_m[i]) << ", "
+               << Y(predicted_out.data_m[i]) << ")" << endl;
+          cout << "Real output:"
+               << "(" << real_out.data_r[i] << " + " << real_out.data_i[i] << "i) at ("
+               << X(real_out.data_m[i]) << ", " << Y(real_out.data_m[i]) << ")" << endl;
+          cout << "Full Real output:" << endl;
+          real_out.print();
+          cout << "Full Predicted output:" << endl;
+          predicted_out.print();
+          op.print();
+          return 1;
         }
       }
 
