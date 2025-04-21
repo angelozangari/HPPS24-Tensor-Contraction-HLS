@@ -167,8 +167,7 @@ void chunk_compute(hls::stream<ComputeJob> &compute_jobs,
  * @param stop_signal_stream Stream to signal stopping.
  * @param writing_ix Reference to current write index.
  */
-void chunk_store(hls::stream<StoreJob> &store_jobs, complex_t *C,
-                 hls::stream<ap_uint<1>> &stop_signal_stream, dim_t &writing_ix);
+void chunk_store(hls::stream<StoreJob> &store_jobs, complex_t *C, dim_t &writing_ix);
 
 } // namespace Left
 } // namespace Product

@@ -1,4 +1,5 @@
 #include "krnl_left_tp.h"
+#include "hls_print.h"
 
 using namespace std;
 using namespace hls;
@@ -17,12 +18,10 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   using namespace Tensor;
   using namespace Tensor::Product::Left;
 
-  stream<ap_uint<1>> stop_signal_stream;
   stream<LoadJob> load_jobs_stream;
   stream<ComputeJob> compute_jobs_stream;
   stream<StoreJob> store_jobs_stream;
   // clang-format off
-#pragma HLS STREAM variable=stop_signal_stream depth=STREAM_SIZE
 #pragma HLS STREAM variable=load_jobs_stream depth=STREAM_SIZE
 #pragma HLS STREAM variable=compute_jobs_stream depth=STREAM_SIZE
 #pragma HLS STREAM variable=store_jobs_stream depth=STREAM_SIZE
@@ -38,7 +37,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   ap_uint<1> stop_signal = 0;
 
 OUTER_LOOP:
-  while (!stop_signal_stream.read_nb(stop_signal) || stop_signal == 0) {
+  for (size_t i = 0; i < 5; i++) {
     // clang-format off
 #pragma HLS PIPELINE II=8 style=frp
     // clang-format on
@@ -46,7 +45,7 @@ OUTER_LOOP:
     chunk_load(A, size, load_jobs_stream, compute_jobs_stream, last_load_job);
     chunk_compute(compute_jobs_stream, store_jobs_stream, load_jobs_stream,
                   compute_is_in_first_pass, computing_row_ix);
-    chunk_store(store_jobs_stream, C, stop_signal_stream, writing_ix);
+    chunk_store(store_jobs_stream, C, writing_ix);
   }
 }
 
@@ -77,6 +76,7 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
   }
 
   // second load the chunk detailed by the LoadParams request
+  print("LOAD: Loading chunk from %d\n", job.start);
 
   dim_t l;
   value_t v;
@@ -93,7 +93,9 @@ LOAD_LOOP:
     // if the request is out of bounds, we load an invalid value
     if (l < size) {
       v = value_t(A[l]);
+      print("LOAD: loading value at %d\n", l);
     } else {
+      print("LOAD: loading invalid value\n");
       // load an invalid value
       v = value_t();
     }
@@ -132,6 +134,8 @@ COMPUTE_LOOP:
     value_t &v = job.chunk[i];
     complex_t &a = v.value;
 
+    print("COMPUTE: computing value at %d\n", (int)(prev_job.start + i));
+
     if (!first_pass_ended && v.valid) {
       if (compute_is_in_first_pass) {
         X(a.m) = X(a.m) << 1;
@@ -154,6 +158,7 @@ COMPUTE_LOOP:
     } else {
       // end of row was prematurely reached, invalidate all subsequent values
       // or the value was invalidated in previous blocks
+      print("COMPUTE: invalidated value\n");
       v.valid = 0;
     }
   }
@@ -170,13 +175,13 @@ COMPUTE_LOOP:
   // if during the first pass we met the end_of_row override the chunk_load with
   // a new job request
   if (need_override) {
+    print("COMPUTE: override\n");
     load_jobs.write(second_pass_job);
     computing_row_ix++;
   }
 }
 
-void chunk_store(stream<StoreJob> &store_jobs, complex_t *C,
-                 stream<ap_uint<1>> &stop_signal_stream, dim_t &writing_ix) {
+void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, dim_t &writing_ix) {
   // clang-format off
   #pragma HLS INLINE off
   // clang-format on
@@ -193,11 +198,13 @@ STORE_LOOP:
     if (store_job.is_valid) {
       value_t tmp = chunk[i];
       // write the value if valid else spin
-      if (tmp.valid)
+      if (tmp.valid) {
+        print("STORE: storing value - valid: 1\n");
+        // cout << "storing value: " << tmp.value.r << " + " << tmp.value.i << "i at ("
+        //      << X(tmp.value.m) << ", " << Y(tmp.value.m) << ")" << endl;
         C[writing_ix++] = tmp.value;
-      // if the start of the chunk was invalid, stop the outer loop
-      else if (i == 0) {
-        stop_signal_stream.write_nb(1);
+      } else {
+        print("STORE: storing value - valid: 0\n");
       }
     }
   }
