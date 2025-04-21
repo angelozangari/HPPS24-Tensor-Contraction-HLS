@@ -71,18 +71,18 @@ int main() {
       bool passed = true;
 
       if (predicted_out.size() != real_out.size()) {
-        passed = false;
-        continue;
-        // cout << "Mismatch in sizes" << endl;
-        // cout << "Predicted output size: " << predicted_out.size() << endl;
-        // cout << "Real output size: " << real_out.size() << endl;
-        // cout << "Input: " << endl;
-        // input.print();
-        // cout << "Predicted output:" << endl;
-        // predicted_out.print();
-        // cout << "Real output:" << endl;
-        // real_out.print();
-        // return 1;
+        // passed = false;
+        // continue;
+        cout << "Mismatch in sizes" << endl;
+        cout << "Predicted output size: " << predicted_out.size() << endl;
+        cout << "Real output size: " << real_out.size() << endl;
+        cout << "Input: " << endl;
+        input.print();
+        cout << "Predicted output:" << endl;
+        predicted_out.print();
+        cout << "Real output:" << endl;
+        real_out.print();
+        return 1;
       }
 
       for (size_t i = 0; i < predicted_out.size(); i++) {
