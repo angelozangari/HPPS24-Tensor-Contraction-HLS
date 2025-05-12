@@ -21,7 +21,8 @@ typedef ap_uint<74> coo_meta_t;
 typedef ap_uint<7> rank_t;
 
 // squared dimension of a tensor (length of the matrix side)
-typedef ap_uint<18> edge_t;
+// typedef ap_uint<18> edge_t;
+typedef int edge_t;
 
 // max size supported is 64 GBs (considering a identity-like sparsity)
 typedef ap_uint<36> dim_t;

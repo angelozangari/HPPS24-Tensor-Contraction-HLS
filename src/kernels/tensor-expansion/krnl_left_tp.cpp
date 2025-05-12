@@ -11,8 +11,8 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   #pragma HLS INTERFACE s_axilite port=A_R bundle=control
   #pragma HLS INTERFACE s_axilite port=size bundle=control
   #pragma HLS INTERFACE s_axilite port=return bundle=control
-  #pragma HLS STABLE variable=A
-  #pragma HLS STABLE variable=C
+  // #pragma HLS STABLE variable=A
+  // #pragma HLS STABLE variable=C
   // clang-format on
 
   using namespace Tensor;
@@ -28,7 +28,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
   // clang-format on
 
   // initialize stage variables
-  LoadJob last_load_job = {};
+  LoadJob last_load_job = LoadJob();
   dim_t writing_ix = 0;
   ap_uint<1> compute_is_in_first_pass = 1;
   edge_t computing_row_ix = 0;
@@ -39,7 +39,7 @@ void krnl_left_tp(Tensor::complex_t *A, Tensor::complex_t *C, rank_t A_R, dim_t 
 OUTER_LOOP:
   for (size_t i = 0; i < 5; i++) {
     // clang-format off
-#pragma HLS PIPELINE II=8 style=frp
+#pragma HLS PIPELINE II=8
     // clang-format on
 
     chunk_load(A, size, load_jobs_stream, compute_jobs_stream, last_load_job);
@@ -59,7 +59,7 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
 #pragma HLS INLINE off
   // clang-format on
 
-  LoadJob job;
+  LoadJob job = LoadJob();
 
   // first, get the request, either from the stream or advancing on the last one
   // the load_jobs is used to update the loader for the second pass on the same row
@@ -77,25 +77,26 @@ void chunk_load(complex_t *A, size_t size, stream<LoadJob> &load_jobs,
 
   // second load the chunk detailed by the LoadParams request
   print("LOAD: Loading chunk from %d\n", job.start);
+  print("LOAD: Loading row index %d\n", job.row_index);
 
-  dim_t l;
-  value_t v;
-  chunk_t chunk;
+  dim_t l = 0;
+  value_t v = value_t();
+  chunk_t chunk = chunk_t();
 
 LOAD_LOOP:
   for (size_t i = 0; i < CHUNK_SIZE; i++) {
     // clang-format off
 // #pragma HLS ARRAY_PARTITION variable = chunk complete dim = 1
-#pragma HLS PIPELINE II=1
-#pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
+// #pragma HLS PIPELINE II=1
+// #pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
     // clang-format on
     l = job.start + i;
     // if the request is out of bounds, we load an invalid value
     if (l < size) {
       v = value_t(A[l]);
-      print("LOAD: loading value at %d\n", l);
+      // print("LOAD: loading value at %d\n", l);
     } else {
-      print("LOAD: loading invalid value\n");
+      // print("LOAD: loading invalid value at %d\n", l);
       // load an invalid value
       v = value_t();
     }
@@ -128,13 +129,15 @@ void chunk_compute(stream<ComputeJob> &compute_jobs, stream<StoreJob> &store_job
 COMPUTE_LOOP:
   for (size_t i = 0; i < CHUNK_SIZE; i++) {
     // clang-format off
-#pragma HLS PIPELINE II=1
-#pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
+// #pragma HLS PIPELINE II=1
+// #pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
     // clang-format on
     value_t &v = job.chunk[i];
     complex_t &a = v.value;
 
     print("COMPUTE: computing value at %d\n", (int)(prev_job.start + i));
+    print("COMPUTE: first_pass_ended: %d\n", (int)first_pass_ended);
+    print("COMPUTE: v.valid: %d\n", (int)v.valid);
 
     if (!first_pass_ended && v.valid) {
       if (compute_is_in_first_pass) {
@@ -164,6 +167,8 @@ COMPUTE_LOOP:
   }
 
   // if the compute pass is the same of the previous job then pass it to the next stage
+  print("COMPUTE: row index: %d\n", prev_job.row_index);
+  print("COMPUTE: computing now: %d\n", (int)computing_row_ix);
   if (prev_job.row_index == computing_row_ix) {
     store_job = {job.chunk};
   } else { // else write an invalid job
@@ -192,8 +197,8 @@ void chunk_store(stream<StoreJob> &store_jobs, complex_t *C, dim_t &writing_ix) 
 STORE_LOOP:
   for (size_t i = 0; i < CHUNK_SIZE; i++) {
     // clang-format off
-#pragma HLS PIPELINE II=1
-#pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
+// #pragma HLS PIPELINE II=1
+// #pragma HLS LOOP_TRIPCOUNT min=CHUNK_SIZE max=CHUNK_SIZE
     // clang-format on
     if (store_job.is_valid) {
       value_t tmp = chunk[i];
