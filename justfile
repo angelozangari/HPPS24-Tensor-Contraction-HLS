@@ -42,8 +42,8 @@ debug-tensor-product: build-ninja
 test-matrix-multiplication: build-ninja
     #!/usr/bin/env bash
     set -euo pipefail
-    cd src/tests/matrix-multiplication
-    ../../../build/test-matrix-multiplication
+    cd build
+    ./test-matrix-multiplication
 
 test-combined: build-ninja
     #!/usr/bin/env bash
