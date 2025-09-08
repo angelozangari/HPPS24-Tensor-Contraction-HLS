@@ -7,6 +7,8 @@ add_library(qcsutils STATIC
     src/utils/golden_reader.cpp
     src/utils/qcf_reader.cpp
     src/utils/csv_writer.cpp
+    # C-sim kernels (host implementations)
+    src/kernels/matrix-multiplication/krnl_mat_mul.cpp
 )
 target_include_directories(qcsutils PUBLIC include src)
 

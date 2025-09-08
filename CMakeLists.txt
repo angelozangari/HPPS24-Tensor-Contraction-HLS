@@ -33,10 +33,19 @@ add_custom_command(TARGET print-golden POST_BUILD
 )
 
 # matmul
-# add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)
-# target_compile_definitions(test-matrix-multiplication PRIVATE TEST_ALL)
-# target_include_directories(test-matrix-multiplication PUBLIC include)
-# target_link_libraries(test-matrix-multiplication PUBLIC qcslib)
+add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)
+target_compile_definitions(test-matrix-multiplication PRIVATE TEST_ALL)
+target_include_directories(test-matrix-multiplication PUBLIC include)
+# link against utils + csim kernels (no HLS dependencies)
+target_link_libraries(test-matrix-multiplication PUBLIC qcsutils)
+
+# copy golden file next to test binary for easily run from build/
+add_custom_command(TARGET test-matrix-multiplication POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/matrix-multiplication/golden-vectors.dat
+          $<TARGET_FILE_DIR:test-matrix-multiplication>/golden-vectors.dat
+  COMMENT "Copying golden-vectors.dat for test-matrix-multiplication"
+)
 
 # combined
 # add_executable(test-combined src/tests/combined/test_combined.cpp)
