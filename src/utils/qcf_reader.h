@@ -1,6 +1,7 @@
 #pragma once
 
-#include "kernels/types.h"
+// Host-only types to avoid HLS headers
+#include "utils/host_types.h"
 #include "golden_reader.h"
 #include <fstream>
 #include <iostream>

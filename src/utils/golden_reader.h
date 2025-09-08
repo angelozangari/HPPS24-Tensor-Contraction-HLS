@@ -1,6 +1,7 @@
 #pragma once
 
-#include "kernels/types.h"
+// Use a lightweight host-only type definition to avoid pulling in HLS headers
+#include "utils/host_types.h"
 #include <fstream>
 #include <iostream>
 #include <memory>

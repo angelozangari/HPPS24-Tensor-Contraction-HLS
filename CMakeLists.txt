@@ -13,10 +13,24 @@ include(scripts/cmake/dependencies.cmake)
 ##########################################################################
 
 # expansion
-add_executable(test-tensor-product src/tests/tensor-expansion/test_tensor_product.cpp)
-target_compile_definitions(test-tensor-product PRIVATE)
-target_include_directories(test-tensor-product PUBLIC include)
-target_link_libraries(test-tensor-product PUBLIC qcslib)
+# add_executable(test-tensor-product src/tests/tensor-expansion/test_tensor_product.cpp)
+# target_compile_definitions(test-tensor-product PRIVATE)
+# target_include_directories(test-tensor-product PUBLIC include)
+# target_link_libraries(test-tensor-product PUBLIC qcslib)
+
+# print contents of .dat file
+add_executable(print-golden src/tests/matrix-multiplication/print_golden.cpp)
+target_include_directories(print-golden PUBLIC include)
+# we link only the utils library (HLS kernels not needed so we avoid compiling them)
+target_link_libraries(print-golden PUBLIC qcsutils)
+
+# copy golden-vectors.dat in same place as built binary for runtime
+add_custom_command(TARGET print-golden POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/matrix-multiplication/golden-vectors.dat
+          $<TARGET_FILE_DIR:print-golden>/golden-vectors.dat
+  COMMENT "Copying golden-vectors.dat for print-golden"
+)
 
 # matmul
 # add_executable(test-matrix-multiplication src/tests/matrix-multiplication/test_matrix_multiplication.cpp)

@@ -1,6 +1,6 @@
-mod vitis 'scripts/just/vitis.just'
-mod sync 'scripts/just/sync.just'
-mod report 'scripts/just/report.just'
+# mod vitis 'scripts/just/vitis.just'
+# mod sync 'scripts/just/sync.just'
+# mod report 'scripts/just/report.just'
 
 set dotenv-load
 
@@ -56,6 +56,12 @@ test-qft: build-ninja
     set -euo pipefail
     cd src/tests/qft
     ../../../build/test-qft
+
+print-golden: build-ninja
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd build
+    ./print-golden
 
 clean:
     rm -rf ./build
