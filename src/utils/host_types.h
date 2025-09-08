@@ -29,3 +29,8 @@ struct complex_t {
 };
 }
 
+// Equality for metadata (used by tests)
+inline bool operator==(const coo_meta_t_host &a, const coo_meta_t_host &b) {
+  return a.x == b.x && a.y == b.y && a.last_in_row == b.last_in_row &&
+         a.last_in_tensor == b.last_in_tensor;
+}

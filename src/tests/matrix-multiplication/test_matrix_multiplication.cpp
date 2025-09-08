@@ -18,10 +18,15 @@ int main() {
 #else
   for (size_t i = 10; i < 11; i++) {
 #endif
-    OP &op = ops->at(i);
+    OP &op = *ops->at(i);
 
-    CooTens left{op.left};
-    CooTens right{op.right};
+    if (op.is_unary()) {
+      cout << "ERROR: Expected binary operation for matmul" << endl;
+      return 1;
+    }
+    BinaryOP &bop = static_cast<BinaryOP &>(op);
+    CooTens left{bop.left};
+    CooTens right{bop.right};
     CooTens real_out{op.out};
 
     dim_t N = 1 << left.rank;
